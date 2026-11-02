@@ -1,7 +1,7 @@
 {
   "name": "Nigeria-Ghana International School",
-  "short_name": "NGIS",
-  "description": "Weekly Assessment System",
+  "short_name": "NGIS LIVE",
+  "description": "NGIS LIVE PORTAL",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

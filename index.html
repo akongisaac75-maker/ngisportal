@@ -25,8 +25,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="NGIS">
-<title>Nigeria-Ghana International School - Weekly Assessment System</title>
+<meta name="apple-mobile-web-app-title" content="NGIS LIVE">
+<title>NGIS LIVE PORTAL - Nigeria-Ghana International School</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
@@ -59,6 +59,19 @@ body{background:linear-gradient(135deg,#f5f7fa 0%,#e4e8ec 100%);min-height:100vh
 .school-logo{width:120px;height:120px;border-radius:50%;object-fit:cover;border:4px solid var(--accent);box-shadow:0 8px 30px rgba(0,0,0,0.2);margin-bottom:20px;cursor:pointer;transition:transform 0.3s}
 .school-logo:hover{transform:scale(1.1) rotate(5deg)}
 .school-name{font-size:1.8rem;font-weight:800;color:var(--primary);margin-bottom:5px;line-height:1.2}
+
+/* ===== NGIS LIVE PORTAL: landing logo bounce + welcome marquee ===== */
+.landing{position:relative}
+.landing-welcome{position:absolute;top:0;left:0;right:0;z-index:3;overflow:hidden;height:46px;background:rgba(8,18,48,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:2px solid var(--accent)}
+.landing-welcome span{position:absolute;top:0;line-height:46px;white-space:nowrap;color:#fff;font-weight:800;font-size:1.05rem;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,.5);left:0;transform:translateX(-100%);animation:ngisWelcomeSlide 9s ease-in-out infinite alternate}
+@keyframes ngisWelcomeSlide{from{left:0;transform:translateX(-100%)}to{left:100%;transform:translateX(0)}}
+.landing-logo{display:block;width:92px;height:auto;max-height:100px;object-fit:contain;margin:0 auto 8px;animation:ngisLogoBounce 1.1s cubic-bezier(.28,.84,.42,1) infinite;filter:drop-shadow(0 6px 6px rgba(0,0,0,.25));will-change:transform}
+@keyframes ngisLogoBounce{0%,100%{transform:translateY(0) scale(1,1)}20%{transform:translateY(0) scale(1.08,.92)}50%{transform:translateY(-26px) scale(.97,1.04)}80%{transform:translateY(0) scale(1.06,.94)}}
+.landing-portal-title{display:inline-block;margin:0 auto 10px;padding:5px 16px;border-radius:999px;background:var(--primary);color:#fff;font-weight:800;font-size:.8rem;letter-spacing:2px}
+.landing-portal-title i{color:#ff4d4d;margin-right:6px;animation:ngisLivePulse 1.4s ease-in-out infinite}
+@keyframes ngisLivePulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media(max-width:600px){.landing-welcome{height:40px}.landing-welcome span{line-height:40px;font-size:.82rem;letter-spacing:.8px;animation-duration:8s}.landing-logo{width:76px}}
+@media(prefers-reduced-motion:reduce){.landing-logo,.landing-portal-title i{animation:none}}
 .school-motto{color:var(--secondary);font-weight:500;font-size:0.9rem;margin-bottom:30px;font-style:italic}
 .login-box h3{color:var(--dark);margin-bottom:20px;font-weight:600}
 .input-group{position:relative;margin-bottom:20px}
@@ -730,7 +743,10 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="admin-trigger" id="adminTrigger" title="Admin Access"></div>
 
 <div class="landing" id="landingPage">
+<div class="landing-welcome" aria-label="Welcome to Nigeria-Ghana International School"><span>Welcome to Nigeria-Ghana International School</span></div>
 <div class="landing-content">
+<img id="landingLogo" class="landing-logo" alt="NGIS Logo">
+<div class="landing-portal-title"><i class="fas fa-circle"></i>NGIS LIVE PORTAL</div>
 <div class="school-name">Nigeria-Ghana<br>International School</div>
 <div class="school-motto">&quot;Knowledge &amp; Morality&quot;</div>
 <div class="login-tabs">
@@ -11310,5 +11326,10 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http")){window.ad
   };
 })();
 </script>
+<script>
+(function(){function setLogo(){var l=document.getElementById('landingLogo'),a=document.getElementById('schoolLogo');if(l&&a&&a.getAttribute('src'))l.src=a.getAttribute('src');}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setLogo);else setLogo();})();
+</script>
+<style>.landing{padding-top:58px!important}@media(max-width:600px){.landing{padding-top:52px!important}}</style>
 </body>
 </html>
