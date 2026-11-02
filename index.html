@@ -6,35 +6,23 @@
 <meta name="theme-color" content="#1a5f2a">
 <link rel="manifest" href="manifest.json">
 <script>
-/* Preserve the login/section link used when NGIS is installed.
-   The installed app starts at the main URL, then restores the saved route. */
-(function(){
-  try {
-    var KEY='ngis_launch_route';
-    var params=new URLSearchParams(location.search);
-    var standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
-    var safe=new URLSearchParams();
-    ['portal','section','login','apply'].forEach(function(k){
-      var v=params.get(k);
-      if(v) safe.set(k,v);
-    });
-    var route=safe.toString();
-    if(route) localStorage.setItem(KEY,'?'+route);
-    else if(standalone){
-      var saved=localStorage.getItem(KEY);
-      if(saved && location.search===''){
-        location.replace(location.pathname+saved+location.hash);
-      }
-    }
-  } catch(e) {}
-})();
-</script>
-<script>
-/* Catch the browser's install prompt as early as possible so it is never missed on any link */
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__ngisDP=e;window.dispatchEvent(new Event('ngis-install-ready'));});
+/* Each section / student link installs as its OWN app that reopens on that same link */
+(function(){try{
+ var q=location.search;if(!q)return;
+ var p=new URLSearchParams(q),portal=(p.get('portal')||p.get('section')||'').toLowerCase(),stu=(p.get('login')||'').toLowerCase()==='student';
+ var names={nursery:'Nursery',primary:'Primary',secondary:'Secondary'};
+ if(p.get('apply')==='teacher'||(!names[portal]&&!stu))return;
+ var sec=names[portal]||'',full='NGIS '+(sec?sec+' ':'')+(stu?'Student':'Portal'),short=(sec?sec+' ':'NGIS ')+(stu?'Student':'Portal');
+ var base=new URL('.',location.href).href,start=location.origin+location.pathname+q;
+ var m={id:start,name:full,short_name:short.slice(0,15),description:full,start_url:start,scope:base,display:'standalone',background_color:'#1a5f2a',theme_color:'#1a5f2a',
+  icons:[{src:base+'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any'},{src:base+'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any'},{src:base+'icon-512-maskable.png',sizes:'512x512',type:'image/png',purpose:'maskable'}]};
+ var l=document.querySelector('link[rel="manifest"]');
+ if(l)l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/manifest+json'}));
+ document.title=full;
+}catch(e){}})();
 </script>
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="NGIS">
@@ -781,7 +769,9 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 </div>
 <p style="margin-top:20px;font-size:0.75rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Secured by Supabase Realtime Cloud</p>
 <div id="ngisInstallBox" style="margin-top:18px;display:none">
-<button type="button" class="btn btn-primary" style="width:100%;justify-content:center;background:#f4b400;color:#1a1a1a;font-weight:700" onclick="ngisInstallApp()"><i class="fas fa-download"></i> Download NGIS App</button>
+<button type="button" id="ngisInstallBtn" class="btn btn-primary" style="width:100%;justify-content:center;background:#f4b400;color:#1a1a1a;font-weight:700" onclick="ngisInstallApp()"><i class="fas fa-download"></i> Download / Install NGIS App</button>
+<a id="ngisApkBtn" href="#" style="display:none;margin-top:8px;text-decoration:none;justify-content:center" class="btn btn-secondary" download><i class="fab fa-android"></i> Download Android APK</a>
+<p id="ngisInstallHelp" style="display:none;margin-top:10px;font-size:.82rem;color:#444;text-align:left;line-height:1.5;background:#fff8e1;border:1px solid #f4b400;border-radius:8px;padding:10px"></p>
 </div>
 
 </div>
@@ -11289,91 +11279,35 @@ if(!APPLY){
 })();
 </script>
 <script>
-if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}
+if("serviceWorker" in navigator&&location.protocol.startsWith("http")){window.addEventListener("load",()=>{navigator.serviceWorker.register("service-worker.js").catch(()=>{});});}
 </script>
 <script>
-/* ===== Universal NGIS PWA installation on every login/section link ===== */
+/* ===== Install App button (Android, iPhone, Windows, Mac) ===== */
 (function(){
-  var deferred=window.__ngisDP||null;
-  var ua=navigator.userAgent||'';
-  var isIOS=/iphone|ipad|ipod/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
-  var isAndroid=/android/i.test(ua);
-  var inApp=/FBAN|FBAV|Instagram|WhatsApp|Telegram|Line\/|MicroMessenger|; wv\)/i.test(ua);
-  var standalone=function(){
-    return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+  /* If you build an APK with pwabuilder.com, upload it to your Netlify folder (e.g. NGIS.apk)
+     and put its name here: const APK_URL='NGIS.apk';  Leave empty to hide the APK button. */
+  const APK_URL='';
+  let deferred=null;
+  const $=id=>document.getElementById(id);
+  const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+  const ua=navigator.userAgent||'';
+  const isIOS=/iphone|ipad|ipod/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+  const inApp=/FBAN|FBAV|Instagram|WhatsApp|Telegram|Line\/|; wv\)/i.test(ua);
+  function show(){
+    if(standalone())return;
+    const b=$('ngisInstallBox');if(b)b.style.display='block';
+    const a=$('ngisApkBtn');if(a&&APK_URL&&/android/i.test(ua)){a.href=APK_URL;a.style.display='inline-flex';}
+  }
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;show();});
+  window.addEventListener('appinstalled',()=>{deferred=null;const b=$('ngisInstallBox');if(b)b.style.display='none';});
+  document.addEventListener('DOMContentLoaded',show);
+  function help(html){const h=$('ngisInstallHelp');if(h){h.innerHTML=html;h.style.display='block';}}
+  window.ngisInstallApp=async function(){
+    if(deferred){deferred.prompt();try{await deferred.userChoice;}catch(e){}deferred=null;return;}
+    if(isIOS){help('<b>iPhone / iPad:</b> open this link in <b>Safari</b>, tap the <b>Share</b> button, then choose <b>Add to Home Screen</b> and tap <b>Add</b>.');return;}
+    if(inApp){help('<b>Open in your browser first.</b> Tap the menu (&#8942;) and choose <b>Open in Chrome</b> (or copy this link and paste it into Chrome), then tap this button again.');return;}
+    help('<b>Android (Chrome):</b> tap the menu (&#8942;) then <b>Install app</b> or <b>Add to Home screen</b>.<br><b>Windows / Mac (Chrome or Edge):</b> click the install icon at the right of the address bar, or menu &gt; <b>Install NGIS</b>.');
   };
-  function closeGuide(){
-    var g=document.getElementById('ngisGuide');
-    if(g)g.remove();
-  }
-  function modal(inner){
-    closeGuide();
-    var d=document.createElement('div');
-    d.id='ngisGuide';
-    d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100000;display:flex;align-items:center;justify-content:center;padding:14px';
-    d.onclick=function(e){if(e.target===d)closeGuide();};
-    d.innerHTML='<div style="background:#fff;border-radius:16px;max-width:440px;width:100%;padding:22px;text-align:center;font-family:Arial,sans-serif;color:#222;box-shadow:0 12px 40px rgba(0,0,0,.25)">'+inner+'<button type="button" onclick="document.getElementById(\'ngisGuide\').remove()" style="margin-top:14px;border:0;background:none;color:#777;padding:8px 16px;cursor:pointer">Close</button></div>';
-    document.body.appendChild(d);
-  }
-  var primary='width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;color:#fff;background:#1a5f2a';
-  function guide(){
-    modal('<h3 style="color:#1a5f2a;margin:0 0 6px">Install NGIS App</h3><p style="font-size:14px;color:#666;margin-bottom:10px">Choose your device. You will keep the same NGIS login link.</p>'+
-      '<button style="'+primary+'" onclick="ngisInstallChoice(\'mobile\')">Mobile / Tablet</button>'+
-      '<button style="'+primary+';background:#1565c0" onclick="ngisInstallChoice(\'computer\')">Windows / Mac Computer</button>');
-  }
-  async function promptInstall(){
-    if(!deferred)return false;
-    try{
-      closeGuide();
-      deferred.prompt();
-      await deferred.userChoice;
-    }catch(e){}
-    deferred=null;
-    return true;
-  }
-  window.addEventListener('beforeinstallprompt',function(e){
-    e.preventDefault();deferred=e;window.__ngisDP=e;
-  });
-  window.addEventListener('ngis-install-ready',function(){deferred=window.__ngisDP||deferred;});
-  window.addEventListener('appinstalled',function(){deferred=null;closeGuide();});
-  window.ngisInstallApp=guide;
-  window.ngisInstallChoice=async function(kind){
-    if(kind==='mobile'){
-      if(!isIOS&&!isAndroid){
-        modal('<h3>Open on your phone or tablet</h3><p>Open this same NGIS login link on your Android or iPhone/iPad.</p>');
-        return;
-      }
-      if(isIOS){
-        modal('<h3>Install on iPhone / iPad</h3><ol style="text-align:left;line-height:1.7;padding-left:22px"><li>Open this link in <b>Safari</b> (not inside WhatsApp or another app).</li><li>Tap the <b>Share</b> icon.</li><li>Choose <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>.</li></ol>');
-        return;
-      }
-      if(inApp){
-        modal('<h3>Open in Chrome first</h3><p style="text-align:left">Use the browser menu and choose <b>Open in Chrome</b>. Then return to this same login link and tap Download NGIS App.</p>');
-        return;
-      }
-      if(await promptInstall())return;
-      modal('<h3>Install on Android</h3><ol style="text-align:left;line-height:1.7;padding-left:22px"><li>Open this page in <b>Chrome</b>.</li><li>Tap the three-dot menu.</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li><li>Confirm <b>Install</b> or <b>Add</b>.</li></ol>');
-      return;
-    }
-    if(isIOS||isAndroid){
-      modal('<h3>Open on a computer</h3><p>Open this same NGIS login link on a Windows or Mac computer to install the desktop app.</p>');
-      return;
-    }
-    if(await promptInstall())return;
-    modal('<h3>Install on Windows / Mac</h3><ol style="text-align:left;line-height:1.7;padding-left:22px"><li>Open this link in <b>Google Chrome</b> or <b>Microsoft Edge</b>.</li><li>Click the Install icon near the address bar, or open the browser menu.</li><li>Choose <b>Install NGIS</b> / <b>Install this site as an app</b>.</li><li>Confirm installation.</li></ol><p style="font-size:12px;color:#666;text-align:left">On Safari for Mac, use File → Add to Dock.</p>');
-  };
-  function addButton(){
-    if(standalone()||document.getElementById('ngisUniversalInstall'))return;
-    var b=document.createElement('button');
-    b.id='ngisUniversalInstall';b.type='button';
-    b.textContent='⬇ Download NGIS App';
-    b.setAttribute('aria-label','Install NGIS App on this device');
-    b.style.cssText='position:fixed;right:16px;bottom:16px;z-index:99998;padding:13px 18px;border:0;border-radius:28px;background:#f4b400;color:#1a1a1a;font-size:14px;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.25);cursor:pointer';
-    b.onclick=guide;
-    document.body.appendChild(b);
-  }
-  document.addEventListener('DOMContentLoaded',addButton);
-  if(document.readyState!=='loading')addButton();
 })();
 </script>
 </body>
