@@ -723,48 +723,6 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 .ngis-link-row .nl-name{min-width:110px;font-weight:700}
 .ngis-link-row input{flex:1;min-width:220px;padding:9px 10px;border:2px solid #e0e0e0;border-radius:8px;font-size:.82rem;background:#f8f9fa}
 </style>
-<style id="wcr-style">
-/* ===== Weekly Class Review (report cards sent to class teachers) ===== */
-.wr-badge{display:none;margin-left:auto;background:#c41e3a;color:#fff;border-radius:20px;font-size:.68rem;font-weight:700;padding:2px 8px;min-width:20px;text-align:center}
-.wr-badge.on{display:inline-block}
-.wcr-intro{font-size:.86rem;color:#555;background:#f1f8f3;border-left:4px solid var(--primary);border-radius:10px;padding:12px 14px;margin-bottom:16px;line-height:1.5}
-.wcr-warn{background:#fff4d6;border:1px solid #f0d48a;color:#6b4a00;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:.88rem;line-height:1.5}
-.wcr-sql{background:#1a1a2e;color:#d6f5dc;border-radius:10px;padding:12px;font:12px/1.45 ui-monospace,Consolas,monospace;max-height:220px;overflow:auto;white-space:pre;margin-top:10px}
-.wcr-chip{display:inline-block;padding:3px 11px;border-radius:999px;font-size:.72rem;font-weight:700;white-space:nowrap}
-.wcr-chip.grey{background:#eee;color:#666}.wcr-chip.orange{background:#fff3e0;color:#e65100}
-.wcr-chip.blue{background:#e3f2fd;color:#1565c0}.wcr-chip.green{background:#e8f5e9;color:#1a5f2a}.wcr-chip.red{background:#fde8ea;color:#c41e3a}
-.wcr-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.wcr-item{background:#fff;border:1px solid #e4e8e5;border-left:5px solid #9aa5a0;border-radius:14px;padding:16px 18px;box-shadow:0 4px 16px rgba(0,0,0,.05)}
-.wcr-item.st-new{border-left-color:#e65100}.wcr-item.st-prog{border-left-color:#1565c0}.wcr-item.st-done{border-left-color:#1a5f2a}
-.wcr-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px}
-.wcr-top h4{font-size:1rem;color:var(--dark)}
-.wcr-item small{color:#777;display:block;line-height:1.45}
-.wcr-bar{height:8px;background:#e8ece9;border-radius:999px;overflow:hidden;margin:12px 0 6px}
-.wcr-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:999px;transition:width .3s}
-.wcr-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0 14px}
-.wcr-tile{background:#f6f8f7;border-radius:12px;padding:12px 14px;border:1px solid #e4e8e5}
-.wcr-tile b{display:block;font-size:1.35rem;color:var(--primary)}.wcr-tile span{font-size:.74rem;color:#777;text-transform:uppercase;letter-spacing:.04em}
-.wcr-tbl td,.wcr-tbl th{vertical-align:middle}
-.wcr-tbl tr.sel td{background:#eef7f0}
-.wcr-tbl tbody tr.wcr-row{cursor:pointer}.wcr-tbl tbody tr.wcr-row:hover td{background:#f6faf7}
-.wcr-detail{margin-top:20px;border:2px solid var(--primary);border-radius:16px;padding:18px;background:#fff}
-.wcr-dhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
-.wcr-dhead h4{font-size:1.05rem;color:var(--primary)}
-.wcr-cardbox{max-height:520px;overflow:auto;border:1px solid #e4e8e5;border-radius:12px;padding:10px;background:#fafbfa;margin-bottom:16px}
-.wcr-cardbox .wr-remark-block{display:none!important}
-.wcr-form label{font-weight:600;font-size:.85rem;display:block;margin-bottom:6px;color:var(--dark)}
-.wcr-form textarea{min-height:110px}
-.wcr-hint{font-size:.76rem;color:#888;margin-top:4px}
-.wcr-ro{background:#f3f3f3!important;color:#555}
-.wcr-dash{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#fff7e6,#fff);border:1px solid #f0d48a;border-left:5px solid #e65100;border-radius:14px;padding:14px 18px;margin-bottom:20px}
-.wcr-dash>i{font-size:1.5rem;color:#e65100}.wcr-dash>div{flex:1;line-height:1.4}.wcr-dash small{color:#777}
-.wr-remark-block{display:grid;gap:10px;margin-top:10px}
-.wr-remark-block .report-comment p{font-style:normal;white-space:pre-line}
-.wcr-switch{display:flex;align-items:center;gap:10px;font-size:.88rem;background:#f6f8f7;border:1px solid #e4e8e5;border-radius:12px;padding:10px 14px}
-.wcr-switch input{width:18px;height:18px;accent-color:var(--primary)}
-@media(max-width:600px){.wcr-list{grid-template-columns:1fr}.wcr-detail{padding:12px}.wcr-dash{flex-wrap:wrap}}
-</style>
-<style>script,style,noscript,template{display:none!important}</style>
 </head>
 
 <!-- MID-TERM MODULE: requires the midterm_assessments table. SQL is supplied separately with this update. -->
@@ -842,7 +800,6 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('enterGrades',this)"><i class="fas fa-edit"></i> Enter Assessment</div>
 <div class="nav-item" onclick="showSection('midTermPortal',this)"><i class="fas fa-clipboard-check"></i> Mid-Term Assessment</div>
 <div class="nav-item" onclick="showSection('viewReports',this)"><i class="fas fa-file-alt"></i> View Reports</div>
-<div class="nav-item wcr-nav-teacher" style="display:none" onclick="showSection('weeklyReview',this)"><i class="fas fa-paper-plane"></i> Weekly Report Cards<span class="wr-badge"></span></div>
 <div class="nav-item" onclick="showSection('teacherCBTSubmit',this)"><i class="fas fa-upload"></i> Submit CBT Questions</div>
 <div class="nav-item" onclick="showSection('teacherAssignments',this)"><i class="fas fa-tasks"></i> Assignments</div>
 <div class="nav-item" onclick="showSection('teacherCBTFeedback',this)"><i class="fas fa-chart-line"></i> CBT Student Feedback</div>
@@ -905,7 +862,6 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('midTermAnalysis',this)"><i class="fas fa-trophy"></i> Mid-Term Analysis</div>
 <div class="nav-item" onclick="showSection('midTermBroadsheet',this)"><i class="fas fa-table"></i> Mid-Term Broadsheet</div>
 <div class="nav-item" onclick="showSection('reportCardSection',this)"><i class="fas fa-id-card"></i> Report Cards</div>
-<div class="nav-item" onclick="showSection('weeklyReview',this)"><i class="fas fa-paper-plane"></i> Weekly Report Dispatch</div>
 <div class="nav-item" onclick="showSection('enoteTeacher',this)"><i class="fas fa-chalkboard-teacher"></i> E-Notes (Teach Online)</div>
 <div class="nav-item" onclick="lpSetScope('mine');showSection('lessonPlans',this)"><i class="fas fa-book-open"></i> Lesson Plans<span class="lp-badge"></span></div>
 <div class="nav-item" onclick="showSection('departmentsMgmt',this)"><i class="fas fa-sitemap"></i> Departments &amp; HODs</div>
@@ -1053,8 +1009,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
         </div>
         <div id="nurserySheetForm"></div>
         <div class="form-grid">
-          <div class="form-group"><label>General Observations / Social-Emotional Notes</label><textarea id="nurseryGeneral" class="comment-box" placeholder="General observations and social-emotional notes"></textarea></div>
-          <div class="form-group"><label>Next Steps / Follow-Up</label><textarea id="nurseryNext" class="comment-box" placeholder="Next steps and follow-up"></textarea></div>
+          <div class="form-group" style="grid-column:1/-1"><label>Observations &amp; Recommendations</label><textarea id="nurseryGeneral" class="comment-box" style="min-height:120px" placeholder="Write the general observations / social-emotional notes and your recommendations / next steps here"></textarea></div>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;">
           <button class="btn btn-primary" onclick="saveNurserySheet()"><i class="fas fa-save"></i> Save Sheet</button>
@@ -1593,24 +1548,20 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div id="reportCardDisplay" style="margin-top:30px;"></div>
 <div id="reportCardTeacherCommentEditor" class="card no-print hidden" style="margin-top:20px;">
 <div class="card-header">
-<h3><i class="fas fa-user-edit"></i> Class Teacher's Observations &amp; Recommendation</h3>
-<span style="font-size:0.85rem;color:#888;">Complete these while viewing the learner's generated weekly report card</span>
+<h3><i class="fas fa-comment-dots"></i> Class Teacher's Comment</h3>
+<span style="font-size:0.85rem;color:#888;">Write or update the comment while viewing this report card</span>
 </div>
 <div style="background:#eef7f0;border:1px solid #d7eadb;padding:12px 15px;border-radius:10px;margin-bottom:15px;">
 <i class="fas fa-info-circle" style="color:var(--primary);margin-right:6px;"></i>
-Only the class teacher assigned to the selected class can enter or update these remarks. Both entries will appear on the report card and in the class review.
+Only the class teacher assigned to this class can save the comment.
 </div>
 <div class="form-group">
-<label><i class="fas fa-eye"></i> Observation</label>
-<textarea id="reportCardTeacherObservation" class="comment-box" maxlength="1200" placeholder="Describe the learner's effort, participation, behaviour, strengths and progress this week..."></textarea>
-</div>
-<div class="form-group" style="margin-top:14px">
-<label><i class="fas fa-lightbulb"></i> Recommendation</label>
-<textarea id="reportCardTeacherRecommendation" class="comment-box" maxlength="1200" placeholder="State what the learner, parents or teachers should do next to support improvement..."></textarea>
+<label>Class Teacher's Comment</label>
+<textarea id="reportCardTeacherCommentText" class="comment-box" placeholder="Write a comment about the student's performance, conduct, strengths and areas for improvement..."></textarea>
 </div>
 <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:15px;">
-<button class="btn btn-primary" onclick="saveReportCardTeacherComment()"><i class="fas fa-save"></i> Save Observation &amp; Recommendation</button>
-<button class="btn btn-secondary" onclick="loadReportCardTeacherComment()"><i class="fas fa-sync"></i> Reload</button>
+<button class="btn btn-primary" onclick="saveReportCardTeacherComment()"><i class="fas fa-save"></i> Save Comment</button>
+<button class="btn btn-secondary" onclick="loadReportCardTeacherComment()"><i class="fas fa-sync"></i> Reload Comment</button>
 </div>
 </div>
 </div>
@@ -1965,14 +1916,6 @@ Only the class teacher assigned to the selected class can enter or update these 
 <div class="card">
 <div class="card-header"><h3><i class="fas fa-users-cog"></i> Class Teacher Assignments</h3><button class="btn btn-primary btn-sm" onclick="openModal('classTeacherModal')"><i class="fas fa-plus"></i> Assign Teacher</button></div>
 <div class="table-container"><table><thead><tr><th>Teacher</th><th>Class</th><th>Actions</th></tr></thead><tbody id="classTeachersTable"></tbody></table></div>
-</div>
-</div>
-
-<div id="weeklyReview" class="section hidden">
-<div class="card">
-<div class="card-header"><h3 id="wcrHeading"><i class="fas fa-paper-plane"></i> Weekly Report Cards</h3></div>
-<div id="wcrBanner"></div>
-<div id="wcrBody"><div class="empty-state">Loading…</div></div>
 </div>
 </div>
 
@@ -2354,36 +2297,24 @@ function showAdminLogin(){showLoginTab('admin');}
 function showTeacherLogin(){showLoginTab('teacher');}
 
 async function login(){
-const btn=document.querySelector('button[onclick="login()"]');
-try{
 const email=document.getElementById('loginEmail').value.trim();
 const password=document.getElementById('loginPassword').value;
 if(!email||!password){showToast('Please enter email and password','error');return;}
-if(typeof supabaseClient==='undefined'||!supabaseClient){showToast('Cannot reach the server. Check your internet connection and refresh the page.','error');return;}
-if(btn){btn.disabled=true;btn.dataset.t=btn.innerHTML;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Signing in...';}
-let{data,error}=await supabaseClient.from('teachers').select('*').eq('email',email).eq('password',password).limit(1);
-data=data&&data[0];
+let{data,error}=await supabaseClient.from('teachers').select('*').eq('email',email).eq('password',password).single();
 if(error||!data){
   // emails are not case-sensitive: retry ignoring upper/lower case
   const esc=email.replace(/[\\%_]/g,'\\$&');
   const r=await supabaseClient.from('teachers').select('*').ilike('email',esc).eq('password',password).limit(1);
-  if(r.error){console.error(r.error);showToast('Login error: '+(r.error.message||'server problem'),'error');return;}
-  data=r.data&&r.data[0];error=data?null:true;
+  data=r.data&&r.data[0];error=r.error||(data?null:true);
 }
 if(error||!data){showToast('Invalid email or password','error');return;}
 currentUser=data;
-try{
+// Load all subjects assigned to this teacher for the mid-term portal.
 const{data:teacherSubjects,error:teacherSubjectsError}=await supabaseClient.from('teacher_subjects').select('subject_id').eq('teacher_id',data.id);
 currentUser.teacher_subjects=teacherSubjectsError?[]:(teacherSubjects||[]);
-}catch(e){currentUser.teacher_subjects=[];console.warn('Teacher subject assignments unavailable',e);}
+if(teacherSubjectsError) console.warn('Teacher subject assignments unavailable:',teacherSubjectsError.message);
 sessionStorage.setItem('ngis_user',JSON.stringify(currentUser));
 await setupDashboard();
-}catch(e){
-  console.error('Login failed',e);
-  showToast('Login failed: '+(e&&e.message?e.message:'unexpected error')+'. Please refresh and try again.','error');
-}finally{
-  if(btn){btn.disabled=false;if(btn.dataset.t)btn.innerHTML=btn.dataset.t;}
-}
 }
 
 async function adminLogin(){
@@ -2832,7 +2763,7 @@ function downloadAllClassesLoginExcel(){return downloadAllStudentLoginsExcel();}
 function buildLoginWordDocument(title,list){
  const generated=new Date().toLocaleString();
  const rows=makeLoginRows(list).map(r=>'<tr><td>'+r.No+'</td><td>'+escapeHtml(r.Student_Name)+'</td><td>'+escapeHtml(r.Class)+'</td><td><b>'+escapeHtml(r.Login_ID)+'</b></td><td><b>'+escapeHtml(r.Password)+'</b></td><td>'+r.Login_Status+'</td></tr>').join('');
- return '<\!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(title)+'</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:22px;margin-bottom:4px}h2{text-align:center;font-size:15px;margin:0 0 8px}p.meta{text-align:center;color:#666;font-size:11px;margin-bottom:22px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1a5f2a;color:#fff;padding:8px;text-align:left}td{border:1px solid #ccc;padding:7px}tr:nth-child(even){background:#f6f8f7}.note{margin-top:18px;padding:10px;border:1px solid #ddd;background:#fafafa;font-size:10px}</style><\/head><body><h1>NIGERIA-GHANA INTERNATIONAL SCHOOL</h1><h2>'+escapeHtml(title)+'</h2><p class="meta">Generated: '+escapeHtml(generated)+' | Keep student credentials confidential.</p><table><thead><tr><th>No.</th><th>Student Name</th><th>Class</th><th>Login ID</th><th>Password</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table><div class="note"><b>Important:</b> These credentials provide access to the student portal. Distribute them only to the intended student/parent and avoid publishing the file publicly.</div><\/body><\/html>';
+ return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(title)+'</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:22px;margin-bottom:4px}h2{text-align:center;font-size:15px;margin:0 0 8px}p.meta{text-align:center;color:#666;font-size:11px;margin-bottom:22px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1a5f2a;color:#fff;padding:8px;text-align:left}td{border:1px solid #ccc;padding:7px}tr:nth-child(even){background:#f6f8f7}.note{margin-top:18px;padding:10px;border:1px solid #ddd;background:#fafafa;font-size:10px}</style></head><body><h1>NIGERIA-GHANA INTERNATIONAL SCHOOL</h1><h2>'+escapeHtml(title)+'</h2><p class="meta">Generated: '+escapeHtml(generated)+' | Keep student credentials confidential.</p><table><thead><tr><th>No.</th><th>Student Name</th><th>Class</th><th>Login ID</th><th>Password</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table><div class="note"><b>Important:</b> These credentials provide access to the student portal. Distribute them only to the intended student/parent and avoid publishing the file publicly.</div></body></html>';
 }
 function downloadWordFile(filename,title,list){const html=buildLoginWordDocument(title,list);const blob=new Blob([html],{type:'application/msword;charset=utf-8'});const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function downloadAllStudentLoginsWord(){
@@ -3703,7 +3634,7 @@ return '<tr><td>'+(a.subjects?.name||'Subject')+'</td><td>'+(a.assignment_score?
 }).join('');
 const overallPercent=totalPossible>0?((totalScore/totalPossible)*100).toFixed(1):0;
 const overallGrade=getGrade((totalScore/(assess.length||1)));
-const html='<div class="report-card animate-fade"><div class="report-header"><img src="data:image/png;base64,'+LOGO_B64+'" alt="Logo"><h2>Nigeria-Ghana International School</h2><p>&quot;Knowledge &amp; Morality&quot;</p><p style="margin-top:8px;font-size:0.8rem;color:#888;font-style:normal;">Weekly Assessment Report Card</p></div><div class="report-meta"><div class="report-meta-item"><h5>Student Name</h5><p>'+(student?.name||'-')+'</p></div><div class="report-meta-item"><h5>Class</h5><p>'+(cls?.name||'-')+'</p></div><div class="report-meta-item"><h5>Week</h5><p>'+(week?.name||'-')+'</p></div></div><div class="report-meta" style="margin-top:10px;background:#e8f5e9;"><div class="report-meta-item"><h5>Term</h5><p>'+(term?.name||'-')+'</p></div><div class="report-meta-item"><h5>Session</h5><p>'+(session?.name||'-')+'</p></div><div class="report-meta-item"><h5>Date</h5><p>'+new Date().toLocaleDateString()+'</p></div></div><div class="table-container"><table class="report-table"><thead><tr><th>Subject</th><th>Class Work /10</th><th>Test /10</th><th>Total /20</th><th>Grade</th><th>Remark</th>'+SEC.th+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(SEC.sec?7:6)+'" style="text-align:center;padding:30px;">No assessments recorded for this week</td></tr>')+'</tbody></table></div><div style="margin-top:20px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:12px;text-align:center;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;"><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Score</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+totalScore.toFixed(1)+' / '+totalPossible+'</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Percentage</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+overallPercent+'%</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Overall Grade</div><div style="font-size:1.5rem;font-weight:800;color:var(--secondary);">'+(assess.length>0?overallGrade.grade:'-')+'</div></div></div></div><div class="report-summary"><div class="report-comment"><h4><i class="fas fa-comment"></i> '+SEC.title+'</h4><p>&quot;'+comment+'&quot;</p></div>'+(SEC.sec?'':'<div class="report-comment" style="border-left-color:var(--secondary);"><h4><i class="fas fa-chart-line"></i> Performance Summary</h4><p>'+(assess.length>0?overallGrade.remark+' performance this week. Keep up the good work!':'No data available for this week.')+'</p></div>')+'</div>'+(typeof ngisWeeklyRemarkHtml==='function'?await ngisWeeklyRemarkHtml(studentId,weekId):'')+'<div class="report-signature"><div class="signature-line"><div class="line"></div><p><strong>Class Teacher</strong><br>'+(ctTeacher?.name||'Not Assigned')+'</p></div><div class="signature-line"><div class="line"></div><p><strong>Date</strong><br>'+new Date().toLocaleDateString()+'</p></div></div><div style="text-align:center;margin-top:30px;font-size:0.75rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Powered by NGIS Assessment System | Supabase Cloud</div></div>';
+const html='<div class="report-card animate-fade"><div class="report-header"><img src="data:image/png;base64,'+LOGO_B64+'" alt="Logo"><h2>Nigeria-Ghana International School</h2><p>&quot;Knowledge &amp; Morality&quot;</p><p style="margin-top:8px;font-size:0.8rem;color:#888;font-style:normal;">Weekly Assessment Report Card</p></div><div class="report-meta"><div class="report-meta-item"><h5>Student Name</h5><p>'+(student?.name||'-')+'</p></div><div class="report-meta-item"><h5>Class</h5><p>'+(cls?.name||'-')+'</p></div><div class="report-meta-item"><h5>Week</h5><p>'+(week?.name||'-')+'</p></div></div><div class="report-meta" style="margin-top:10px;background:#e8f5e9;"><div class="report-meta-item"><h5>Term</h5><p>'+(term?.name||'-')+'</p></div><div class="report-meta-item"><h5>Session</h5><p>'+(session?.name||'-')+'</p></div><div class="report-meta-item"><h5>Date</h5><p>'+new Date().toLocaleDateString()+'</p></div></div><div class="table-container"><table class="report-table"><thead><tr><th>Subject</th><th>Class Work /10</th><th>Test /10</th><th>Total /20</th><th>Grade</th><th>Remark</th>'+SEC.th+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(SEC.sec?7:6)+'" style="text-align:center;padding:30px;">No assessments recorded for this week</td></tr>')+'</tbody></table></div><div style="margin-top:20px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:12px;text-align:center;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;"><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Score</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+totalScore.toFixed(1)+' / '+totalPossible+'</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Percentage</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+overallPercent+'%</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Overall Grade</div><div style="font-size:1.5rem;font-weight:800;color:var(--secondary);">'+(assess.length>0?overallGrade.grade:'-')+'</div></div></div></div><div class="report-summary"><div class="report-comment"><h4><i class="fas fa-comment"></i> '+SEC.title+'</h4><p>&quot;'+comment+'&quot;</p></div>'+(SEC.sec?'':'<div class="report-comment" style="border-left-color:var(--secondary);"><h4><i class="fas fa-chart-line"></i> Performance Summary</h4><p>'+(assess.length>0?overallGrade.remark+' performance this week. Keep up the good work!':'No data available for this week.')+'</p></div>')+'</div><div class="report-signature"><div class="signature-line"><div class="line"></div><p><strong>Class Teacher</strong><br>'+(ctTeacher?.name||'Not Assigned')+'</p></div><div class="signature-line"><div class="line"></div><p><strong>Date</strong><br>'+new Date().toLocaleDateString()+'</p></div></div><div style="text-align:center;margin-top:30px;font-size:0.75rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Powered by NGIS Assessment System | Supabase Cloud</div></div>';
 document.getElementById('reportCardDisplay').innerHTML=html;
 await loadReportCardTeacherCommentEditor(studentId,weekId,student?.class_id);
 }
@@ -3782,7 +3713,7 @@ return '<tr><td>'+bulkReportEsc(a.subjects?.name||'Subject')+'</td><td>'+(a.assi
 }).join('');
 const overallPercent=totalPossible>0?((totalScore/totalPossible)*100).toFixed(1):'0.0';
 const overallGrade=assess.length>0?getGrade(totalScore/(assess.length||1)):getGrade(0);
-return '<div class="report-card bulk-pdf-card"><div class="report-header"><img src="data:image/png;base64,'+LOGO_B64+'" alt="Logo"><h2>Nigeria-Ghana International School</h2><p>&quot;Knowledge &amp; Morality&quot;</p><p style="margin-top:8px;font-size:0.8rem;color:#888;font-style:normal;">Weekly Assessment Report Card</p></div><div class="report-meta"><div class="report-meta-item"><h5>Student Name</h5><p>'+bulkReportEsc(student?.name||'-')+'</p></div><div class="report-meta-item"><h5>Class / Arm</h5><p>'+bulkReportEsc(cls?.name||'-')+'</p></div><div class="report-meta-item"><h5>Week</h5><p>'+bulkReportEsc(week?.name||'-')+'</p></div></div><div class="report-meta" style="margin-top:10px;background:#e8f5e9;"><div class="report-meta-item"><h5>Term</h5><p>'+bulkReportEsc(term?.name||'-')+'</p></div><div class="report-meta-item"><h5>Session</h5><p>'+bulkReportEsc(session?.name||'-')+'</p></div><div class="report-meta-item"><h5>Date</h5><p>'+new Date().toLocaleDateString()+'</p></div></div><div class="table-container"><table class="report-table"><thead><tr><th>Subject</th><th>Class Work /10</th><th>Test /10</th><th>Total /20</th><th>Grade</th><th>Remark</th>'+SEC.th+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(SEC.sec?7:6)+'" style="text-align:center;padding:30px;">No assessments recorded for this week</td></tr>')+'</tbody></table></div><div style="margin-top:20px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:12px;text-align:center;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;"><div><div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Score</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+totalScore.toFixed(1)+' / '+totalPossible+'</div></div><div><div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Percentage</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+overallPercent+'%</div></div><div><div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Overall Grade</div><div style="font-size:1.5rem;font-weight:800;color:var(--secondary);">'+(assess.length>0?overallGrade.grade:'-')+'</div></div></div></div><div class="report-summary"><div class="report-comment"><h4><i class="fas fa-comment"></i> '+SEC.title+'</h4><p>&quot;'+bulkReportEsc(comment)+'&quot;</p></div>'+(SEC.sec?'':'<div class="report-comment" style="border-left-color:var(--secondary);"><h4><i class="fas fa-chart-line"></i> Performance Summary</h4><p>'+(assess.length>0?bulkReportEsc(overallGrade.remark)+' performance this week. Keep up the good work!':'No data available for this week.')+'</p></div>')+'</div>'+(typeof ngisWeeklyRemarkHtml==='function'?await ngisWeeklyRemarkHtml(student.id,weekId):'')+'<div class="report-signature"><div class="signature-line"><div class="line"></div><p><strong>Class Teacher</strong><br>'+bulkReportEsc(ctTeacher?.name||'Not Assigned')+'</p></div><div class="signature-line"><div class="line"></div><p><strong>Date</strong><br>'+new Date().toLocaleDateString()+'</p></div></div><div class="grading-scale-info"><h4><i class="fas fa-info-circle"></i> Grading Scale</h4><div class="grading-scale-grid"><div class="grading-scale-item"><span>A+</span><span>95-100%</span></div><div class="grading-scale-item"><span>A</span><span>85-95%</span></div><div class="grading-scale-item"><span>B+</span><span>80-85%</span></div><div class="grading-scale-item"><span>B</span><span>70-80%</span></div><div class="grading-scale-item"><span>C</span><span>60-70%</span></div><div class="grading-scale-item"><span>D</span><span>50-60%</span></div><div class="grading-scale-item"><span>E</span><span>45-50%</span></div><div class="grading-scale-item"><span>F</span><span>Below 40%</span></div></div></div><div style="text-align:center;margin-top:10px;font-size:.6rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Powered by NGIS Assessment System | Supabase Cloud</div></div>';
+return '<div class="report-card bulk-pdf-card"><div class="report-header"><img src="data:image/png;base64,'+LOGO_B64+'" alt="Logo"><h2>Nigeria-Ghana International School</h2><p>&quot;Knowledge &amp; Morality&quot;</p><p style="margin-top:8px;font-size:0.8rem;color:#888;font-style:normal;">Weekly Assessment Report Card</p></div><div class="report-meta"><div class="report-meta-item"><h5>Student Name</h5><p>'+bulkReportEsc(student?.name||'-')+'</p></div><div class="report-meta-item"><h5>Class / Arm</h5><p>'+bulkReportEsc(cls?.name||'-')+'</p></div><div class="report-meta-item"><h5>Week</h5><p>'+bulkReportEsc(week?.name||'-')+'</p></div></div><div class="report-meta" style="margin-top:10px;background:#e8f5e9;"><div class="report-meta-item"><h5>Term</h5><p>'+bulkReportEsc(term?.name||'-')+'</p></div><div class="report-meta-item"><h5>Session</h5><p>'+bulkReportEsc(session?.name||'-')+'</p></div><div class="report-meta-item"><h5>Date</h5><p>'+new Date().toLocaleDateString()+'</p></div></div><div class="table-container"><table class="report-table"><thead><tr><th>Subject</th><th>Class Work /10</th><th>Test /10</th><th>Total /20</th><th>Grade</th><th>Remark</th>'+SEC.th+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(SEC.sec?7:6)+'" style="text-align:center;padding:30px;">No assessments recorded for this week</td></tr>')+'</tbody></table></div><div style="margin-top:20px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:12px;text-align:center;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;"><div><div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Score</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+totalScore.toFixed(1)+' / '+totalPossible+'</div></div><div><div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Percentage</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+overallPercent+'%</div></div><div><div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Overall Grade</div><div style="font-size:1.5rem;font-weight:800;color:var(--secondary);">'+(assess.length>0?overallGrade.grade:'-')+'</div></div></div></div><div class="report-summary"><div class="report-comment"><h4><i class="fas fa-comment"></i> '+SEC.title+'</h4><p>&quot;'+bulkReportEsc(comment)+'&quot;</p></div>'+(SEC.sec?'':'<div class="report-comment" style="border-left-color:var(--secondary);"><h4><i class="fas fa-chart-line"></i> Performance Summary</h4><p>'+(assess.length>0?bulkReportEsc(overallGrade.remark)+' performance this week. Keep up the good work!':'No data available for this week.')+'</p></div>')+'</div><div class="report-signature"><div class="signature-line"><div class="line"></div><p><strong>Class Teacher</strong><br>'+bulkReportEsc(ctTeacher?.name||'Not Assigned')+'</p></div><div class="signature-line"><div class="line"></div><p><strong>Date</strong><br>'+new Date().toLocaleDateString()+'</p></div></div><div class="grading-scale-info"><h4><i class="fas fa-info-circle"></i> Grading Scale</h4><div class="grading-scale-grid"><div class="grading-scale-item"><span>A+</span><span>95-100%</span></div><div class="grading-scale-item"><span>A</span><span>85-95%</span></div><div class="grading-scale-item"><span>B+</span><span>80-85%</span></div><div class="grading-scale-item"><span>B</span><span>70-80%</span></div><div class="grading-scale-item"><span>C</span><span>60-70%</span></div><div class="grading-scale-item"><span>D</span><span>50-60%</span></div><div class="grading-scale-item"><span>E</span><span>45-50%</span></div><div class="grading-scale-item"><span>F</span><span>Below 40%</span></div></div></div><div style="text-align:center;margin-top:10px;font-size:.6rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Powered by NGIS Assessment System | Supabase Cloud</div></div>';
 }
 
 /* ===== INDIVIDUAL REPORT CARD PDF DOWNLOADS (weekly + mid-term) ===== */
@@ -4080,7 +4011,7 @@ const overallPercent=totalPossible>0?((totalScore/totalPossible)*100).toFixed(1)
 const overallAvg=assess.length>0?(totalScore/assess.length):0;
 const overallPercentAvg=overallAvg>0?(overallAvg/20)*100:0;
 const overallGrade=getGrade(overallPercentAvg);
-const html='<div class="report-card animate-fade"><div class="report-header"><img src="data:image/png;base64,'+LOGO_B64+'" alt="Logo"><h2>Nigeria-Ghana International School</h2><p>&quot;Knowledge &amp; Morality&quot;</p><p style="margin-top:8px;font-size:0.8rem;color:#888;font-style:normal;">Weekly Assessment Report Card</p></div><div class="report-meta"><div class="report-meta-item"><h5>Student Name</h5><p>'+(student?.name||'-')+'</p></div><div class="report-meta-item"><h5>Class</h5><p>'+(cls?.name||'-')+'</p></div><div class="report-meta-item"><h5>Week</h5><p>'+(week?.name||'-')+'</p></div></div><div class="report-meta" style="margin-top:10px;background:#e8f5e9;"><div class="report-meta-item"><h5>Term</h5><p>'+(term?.name||'-')+'</p></div><div class="report-meta-item"><h5>Session</h5><p>'+(session?.name||'-')+'</p></div><div class="report-meta-item"><h5>Date</h5><p>'+new Date().toLocaleDateString()+'</p></div></div><div class="table-container"><table class="report-table"><thead><tr><th>Subject</th><th>Class Work /10</th><th>Test /10</th><th>Total /20</th><th>Grade</th><th>Remark</th>'+SEC.th+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(SEC.sec?7:6)+'" style="text-align:center;padding:30px;">No assessments recorded for this week</td></tr>')+'</tbody></table></div><div style="margin-top:20px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:12px;text-align:center;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;"><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Score</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+totalScore.toFixed(1)+' / '+totalPossible+'</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Percentage</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+overallPercent+'%</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Overall Grade</div><div style="font-size:1.5rem;font-weight:800;color:var(--secondary);">'+(assess.length>0?overallGrade.grade:'-')+'</div></div></div></div><div class="report-summary"><div class="report-comment"><h4><i class="fas fa-comment"></i> '+SEC.title+'</h4><p>&quot;'+comment+'&quot;</p></div>'+(SEC.sec?'':'<div class="report-comment" style="border-left-color:var(--secondary);"><h4><i class="fas fa-chart-line"></i> Performance Summary</h4><p>'+(assess.length>0?overallGrade.remark+' performance this week. Keep up the good work!':'No data available for this week.')+'</p></div>')+'</div>'+(typeof ngisWeeklyRemarkHtml==='function'?await ngisWeeklyRemarkHtml(studentId,weekId):'')+'<div class="report-signature"><div class="signature-line"><div class="line">'+(ctTeacher?.name||'____________________')+'</div><p><strong>Class Teacher</strong><br>'+(ctTeacher?.name||'Not Assigned')+'</p></div><div class="signature-line"><div class="line">'+new Date().toLocaleDateString()+'</div><p><strong>Date</strong><br>Issued on '+new Date().toLocaleDateString()+'</p></div></div><div class="grading-scale-info"><h4><i class="fas fa-info-circle"></i> Grading Scale</h4><div class="grading-scale-grid"><div class="grading-scale-item"><span>A+</span><span>95-100%</span></div><div class="grading-scale-item"><span>A</span><span>85-95%</span></div><div class="grading-scale-item"><span>B+</span><span>80-85%</span></div><div class="grading-scale-item"><span>B</span><span>70-80%</span></div><div class="grading-scale-item"><span>C</span><span>60-70%</span></div><div class="grading-scale-item"><span>D</span><span>50-60%</span></div><div class="grading-scale-item"><span>E</span><span>45-50%</span></div><div class="grading-scale-item"><span>F</span><span>Below 40%</span></div></div></div><div style="text-align:center;margin-top:30px;font-size:0.75rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Powered by NGIS Assessment System | Supabase Cloud</div></div>';
+const html='<div class="report-card animate-fade"><div class="report-header"><img src="data:image/png;base64,'+LOGO_B64+'" alt="Logo"><h2>Nigeria-Ghana International School</h2><p>&quot;Knowledge &amp; Morality&quot;</p><p style="margin-top:8px;font-size:0.8rem;color:#888;font-style:normal;">Weekly Assessment Report Card</p></div><div class="report-meta"><div class="report-meta-item"><h5>Student Name</h5><p>'+(student?.name||'-')+'</p></div><div class="report-meta-item"><h5>Class</h5><p>'+(cls?.name||'-')+'</p></div><div class="report-meta-item"><h5>Week</h5><p>'+(week?.name||'-')+'</p></div></div><div class="report-meta" style="margin-top:10px;background:#e8f5e9;"><div class="report-meta-item"><h5>Term</h5><p>'+(term?.name||'-')+'</p></div><div class="report-meta-item"><h5>Session</h5><p>'+(session?.name||'-')+'</p></div><div class="report-meta-item"><h5>Date</h5><p>'+new Date().toLocaleDateString()+'</p></div></div><div class="table-container"><table class="report-table"><thead><tr><th>Subject</th><th>Class Work /10</th><th>Test /10</th><th>Total /20</th><th>Grade</th><th>Remark</th>'+SEC.th+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(SEC.sec?7:6)+'" style="text-align:center;padding:30px;">No assessments recorded for this week</td></tr>')+'</tbody></table></div><div style="margin-top:20px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:12px;text-align:center;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;"><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Score</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+totalScore.toFixed(1)+' / '+totalPossible+'</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Percentage</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+overallPercent+'%</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Overall Grade</div><div style="font-size:1.5rem;font-weight:800;color:var(--secondary);">'+(assess.length>0?overallGrade.grade:'-')+'</div></div></div></div><div class="report-summary"><div class="report-comment"><h4><i class="fas fa-comment"></i> '+SEC.title+'</h4><p>&quot;'+comment+'&quot;</p></div>'+(SEC.sec?'':'<div class="report-comment" style="border-left-color:var(--secondary);"><h4><i class="fas fa-chart-line"></i> Performance Summary</h4><p>'+(assess.length>0?overallGrade.remark+' performance this week. Keep up the good work!':'No data available for this week.')+'</p></div>')+'</div><div class="report-signature"><div class="signature-line"><div class="line">'+(ctTeacher?.name||'____________________')+'</div><p><strong>Class Teacher</strong><br>'+(ctTeacher?.name||'Not Assigned')+'</p></div><div class="signature-line"><div class="line">'+new Date().toLocaleDateString()+'</div><p><strong>Date</strong><br>Issued on '+new Date().toLocaleDateString()+'</p></div></div><div class="grading-scale-info"><h4><i class="fas fa-info-circle"></i> Grading Scale</h4><div class="grading-scale-grid"><div class="grading-scale-item"><span>A+</span><span>95-100%</span></div><div class="grading-scale-item"><span>A</span><span>85-95%</span></div><div class="grading-scale-item"><span>B+</span><span>80-85%</span></div><div class="grading-scale-item"><span>B</span><span>70-80%</span></div><div class="grading-scale-item"><span>C</span><span>60-70%</span></div><div class="grading-scale-item"><span>D</span><span>50-60%</span></div><div class="grading-scale-item"><span>E</span><span>45-50%</span></div><div class="grading-scale-item"><span>F</span><span>Below 40%</span></div></div></div><div style="text-align:center;margin-top:30px;font-size:0.75rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Powered by NGIS Assessment System | Supabase Cloud</div></div>';
 document.getElementById('adminReportCardDisplay').innerHTML=html;
 }
 
@@ -4124,7 +4055,7 @@ const overallPercent=totalPossible>0?((totalScore/totalPossible)*100).toFixed(1)
 const overallAvg=assess.length>0?(totalScore/assess.length):0;
 const overallPercentAvg=overallAvg>0?(overallAvg/20)*100:0;
 const overallGrade=getGrade(overallPercentAvg);
-const html='<div class="report-card animate-fade"><div class="report-header"><img src="data:image/png;base64,'+LOGO_B64+'" alt="Logo"><h2>Nigeria-Ghana International School</h2><p>&quot;Knowledge &amp; Morality&quot;</p><p style="margin-top:8px;font-size:0.8rem;color:#888;font-style:normal;">Weekly Assessment Report Card</p></div><div class="report-meta"><div class="report-meta-item"><h5>Student Name</h5><p>'+(student?.name||'-')+'</p></div><div class="report-meta-item"><h5>Class</h5><p>'+(cls?.name||'-')+'</p></div><div class="report-meta-item"><h5>Week</h5><p>'+(week?.name||'-')+'</p></div></div><div class="report-meta" style="margin-top:10px;background:#e8f5e9;"><div class="report-meta-item"><h5>Term</h5><p>'+(term?.name||'-')+'</p></div><div class="report-meta-item"><h5>Session</h5><p>'+(session?.name||'-')+'</p></div><div class="report-meta-item"><h5>Date</h5><p>'+new Date().toLocaleDateString()+'</p></div></div><div class="table-container"><table class="report-table"><thead><tr><th>Subject</th><th>Class Work /10</th><th>Test /10</th><th>Total /20</th><th>Grade</th><th>Remark</th>'+SEC.th+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(SEC.sec?7:6)+'" style="text-align:center;padding:30px;">No assessments recorded for this week</td></tr>')+'</tbody></table></div><div style="margin-top:20px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:12px;text-align:center;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;"><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Score</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+totalScore.toFixed(1)+' / '+totalPossible+'</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Percentage</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+overallPercent+'%</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Overall Grade</div><div style="font-size:1.5rem;font-weight:800;color:var(--secondary);">'+(assess.length>0?overallGrade.grade:'-')+'</div></div></div></div><div class="report-summary"><div class="report-comment"><h4><i class="fas fa-comment"></i> '+SEC.title+'</h4><p>&quot;'+comment+'&quot;</p></div>'+(SEC.sec?'':'<div class="report-comment" style="border-left-color:var(--secondary);"><h4><i class="fas fa-chart-line"></i> Performance Summary</h4><p>'+(assess.length>0?overallGrade.remark+' performance this week. Keep up the good work!':'No data available for this week.')+'</p></div>')+'</div>'+(typeof ngisWeeklyRemarkHtml==='function'?await ngisWeeklyRemarkHtml(studentId,weekId):'')+'<div class="report-signature"><div class="signature-line"><div class="line">'+(ctTeacher?.name||'____________________')+'</div><p><strong>Class Teacher</strong><br>'+(ctTeacher?.name||'Not Assigned')+'</p></div><div class="signature-line"><div class="line">'+new Date().toLocaleDateString()+'</div><p><strong>Date</strong><br>Issued on '+new Date().toLocaleDateString()+'</p></div></div><div class="grading-scale-info"><h4><i class="fas fa-info-circle"></i> Grading Scale</h4><div class="grading-scale-grid"><div class="grading-scale-item"><span>A+</span><span>95-100%</span></div><div class="grading-scale-item"><span>A</span><span>85-95%</span></div><div class="grading-scale-item"><span>B+</span><span>80-85%</span></div><div class="grading-scale-item"><span>B</span><span>70-80%</span></div><div class="grading-scale-item"><span>C</span><span>60-70%</span></div><div class="grading-scale-item"><span>D</span><span>50-60%</span></div><div class="grading-scale-item"><span>E</span><span>45-50%</span></div><div class="grading-scale-item"><span>F</span><span>Below 40%</span></div></div></div><div style="text-align:center;margin-top:30px;font-size:0.75rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Powered by NGIS Assessment System | Supabase Cloud</div></div>';
+const html='<div class="report-card animate-fade"><div class="report-header"><img src="data:image/png;base64,'+LOGO_B64+'" alt="Logo"><h2>Nigeria-Ghana International School</h2><p>&quot;Knowledge &amp; Morality&quot;</p><p style="margin-top:8px;font-size:0.8rem;color:#888;font-style:normal;">Weekly Assessment Report Card</p></div><div class="report-meta"><div class="report-meta-item"><h5>Student Name</h5><p>'+(student?.name||'-')+'</p></div><div class="report-meta-item"><h5>Class</h5><p>'+(cls?.name||'-')+'</p></div><div class="report-meta-item"><h5>Week</h5><p>'+(week?.name||'-')+'</p></div></div><div class="report-meta" style="margin-top:10px;background:#e8f5e9;"><div class="report-meta-item"><h5>Term</h5><p>'+(term?.name||'-')+'</p></div><div class="report-meta-item"><h5>Session</h5><p>'+(session?.name||'-')+'</p></div><div class="report-meta-item"><h5>Date</h5><p>'+new Date().toLocaleDateString()+'</p></div></div><div class="table-container"><table class="report-table"><thead><tr><th>Subject</th><th>Class Work /10</th><th>Test /10</th><th>Total /20</th><th>Grade</th><th>Remark</th>'+SEC.th+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(SEC.sec?7:6)+'" style="text-align:center;padding:30px;">No assessments recorded for this week</td></tr>')+'</tbody></table></div><div style="margin-top:20px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:12px;text-align:center;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;"><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Score</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+totalScore.toFixed(1)+' / '+totalPossible+'</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Percentage</div><div style="font-size:1.5rem;font-weight:800;color:var(--primary);">'+overallPercent+'%</div></div><div><div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Overall Grade</div><div style="font-size:1.5rem;font-weight:800;color:var(--secondary);">'+(assess.length>0?overallGrade.grade:'-')+'</div></div></div></div><div class="report-summary"><div class="report-comment"><h4><i class="fas fa-comment"></i> '+SEC.title+'</h4><p>&quot;'+comment+'&quot;</p></div>'+(SEC.sec?'':'<div class="report-comment" style="border-left-color:var(--secondary);"><h4><i class="fas fa-chart-line"></i> Performance Summary</h4><p>'+(assess.length>0?overallGrade.remark+' performance this week. Keep up the good work!':'No data available for this week.')+'</p></div>')+'</div><div class="report-signature"><div class="signature-line"><div class="line">'+(ctTeacher?.name||'____________________')+'</div><p><strong>Class Teacher</strong><br>'+(ctTeacher?.name||'Not Assigned')+'</p></div><div class="signature-line"><div class="line">'+new Date().toLocaleDateString()+'</div><p><strong>Date</strong><br>Issued on '+new Date().toLocaleDateString()+'</p></div></div><div class="grading-scale-info"><h4><i class="fas fa-info-circle"></i> Grading Scale</h4><div class="grading-scale-grid"><div class="grading-scale-item"><span>A+</span><span>95-100%</span></div><div class="grading-scale-item"><span>A</span><span>85-95%</span></div><div class="grading-scale-item"><span>B+</span><span>80-85%</span></div><div class="grading-scale-item"><span>B</span><span>70-80%</span></div><div class="grading-scale-item"><span>C</span><span>60-70%</span></div><div class="grading-scale-item"><span>D</span><span>50-60%</span></div><div class="grading-scale-item"><span>E</span><span>45-50%</span></div><div class="grading-scale-item"><span>F</span><span>Below 40%</span></div></div></div><div style="text-align:center;margin-top:30px;font-size:0.75rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Powered by NGIS Assessment System | Supabase Cloud</div></div>';
 document.getElementById('studentReportCardDisplay').innerHTML=html;
 }
 
@@ -4470,7 +4401,7 @@ async function generateMidTermAdminReport(){
 }
 function setupMidTermStudentPortal(){fillMidTermTermSelect('midTermStudentTerm');fillMidTermSessionSelect('midTermStudentSession');}
 async function loadStudentMidTermReport(){const tid=document.getElementById('midTermStudentTerm').value,sidn=document.getElementById('midTermStudentSession').value;if(!tid||!sidn){document.getElementById('midTermStudentReportDisplay').innerHTML='';return;}const st=students.find(s=>sameId(s.id,currentUser?.id))||currentUser;try{const r=await fetchMidTermRecords(st.id,tid,sidn),rm=await fetchMidTermRemark(st.id,tid,sidn),ct=getClassTeacherRecord(st?.class_id),ctt=teachers.find(t=>String(t.id)===String(ct?.teacher_id));document.getElementById('midTermStudentReportDisplay').innerHTML=midTermMultiReportHtml(st,r,terms.find(t=>String(t.id)===String(tid)),sessions.find(x=>String(x.id)===String(sidn)),ctt,rm);}catch(e){showToast('Error loading mid-term report: '+e.message,'error');}}
-function printMidTermReport(id){const el=document.getElementById(id);if(!el||!el.innerHTML.trim()){showToast('Generate a mid-term report first','error');return;}const w=window.open('','_blank','width=1000,height=900');if(!w){showToast('Please allow pop-ups to print the report','error');return;}w.document.write('<\!doctype html><html><head><title>MID-TERM ASSESSMENT REPORT CARD</title><style>body{font-family:Arial,sans-serif;background:#fff;margin:0;padding:10mm;color:#222}.midterm-report-card{width:194mm;max-width:194mm;margin:0 auto;padding:8mm;box-sizing:border-box;background:#fff}.report-header{text-align:center;border-bottom:2px solid #1a5f2a;padding-bottom:10px;margin-bottom:15px}.report-header img{width:60px;height:60px;object-fit:contain}.report-header h2{margin:4px 0;color:#1a5f2a}.report-header p{margin:3px 0;color:#666}.midterm-title{font-weight:800;color:#1a5f2a}.report-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#f5f7f6;padding:10px;margin-bottom:10px}.report-meta-item h5{margin:0 0 3px;font-size:10px;color:#777;text-transform:uppercase}.report-meta-item p{margin:0;font-size:13px;font-weight:700}.report-table{width:100%;border-collapse:collapse}.report-table th{background:#1a5f2a;color:#fff;padding:8px;font-size:11px}.report-table td{border:1px solid #ddd;padding:8px;font-size:11px}.report-summary{margin-top:14px}.report-comment{padding:12px;border-left:4px solid #1a5f2a;background:#f8faf9}.report-comment h4{margin:0 0 6px;font-size:11px}.report-comment p{margin:0;font-size:12px;line-height:1.5}.report-signature{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:25px}.signature-line .line{border-bottom:1px solid #555;min-height:24px;padding-bottom:3px}.signature-line p{font-size:10px;text-align:center;margin:4px 0}.grading-scale-info{margin-top:18px;padding:10px;background:#f7f7f7}.grading-scale-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.grading-scale-item{display:flex;justify-content:space-between;font-size:9px;padding:4px;border:1px solid #ddd}.grade-badge{display:inline-block;padding:3px 7px;border-radius:12px;font-weight:700}.grade-a-plus,.grade-a,.grade-b-plus,.grade-b{background:#dff4e5}.grade-c,.grade-d{background:#fff3cd}.grade-e,.grade-f{background:#fde2e1}@page{size:A4;margin:0} @media print{body{padding:0}.midterm-report-card{page-break-after:always}}</style><\/head><body>'+el.innerHTML+'<\/body><\/html>');w.document.close();w.focus();setTimeout(()=>w.print(),500);}
+function printMidTermReport(id){const el=document.getElementById(id);if(!el||!el.innerHTML.trim()){showToast('Generate a mid-term report first','error');return;}const w=window.open('','_blank','width=1000,height=900');if(!w){showToast('Please allow pop-ups to print the report','error');return;}w.document.write('<!doctype html><html><head><title>MID-TERM ASSESSMENT REPORT CARD</title><style>body{font-family:Arial,sans-serif;background:#fff;margin:0;padding:10mm;color:#222}.midterm-report-card{width:194mm;max-width:194mm;margin:0 auto;padding:8mm;box-sizing:border-box;background:#fff}.report-header{text-align:center;border-bottom:2px solid #1a5f2a;padding-bottom:10px;margin-bottom:15px}.report-header img{width:60px;height:60px;object-fit:contain}.report-header h2{margin:4px 0;color:#1a5f2a}.report-header p{margin:3px 0;color:#666}.midterm-title{font-weight:800;color:#1a5f2a}.report-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#f5f7f6;padding:10px;margin-bottom:10px}.report-meta-item h5{margin:0 0 3px;font-size:10px;color:#777;text-transform:uppercase}.report-meta-item p{margin:0;font-size:13px;font-weight:700}.report-table{width:100%;border-collapse:collapse}.report-table th{background:#1a5f2a;color:#fff;padding:8px;font-size:11px}.report-table td{border:1px solid #ddd;padding:8px;font-size:11px}.report-summary{margin-top:14px}.report-comment{padding:12px;border-left:4px solid #1a5f2a;background:#f8faf9}.report-comment h4{margin:0 0 6px;font-size:11px}.report-comment p{margin:0;font-size:12px;line-height:1.5}.report-signature{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:25px}.signature-line .line{border-bottom:1px solid #555;min-height:24px;padding-bottom:3px}.signature-line p{font-size:10px;text-align:center;margin:4px 0}.grading-scale-info{margin-top:18px;padding:10px;background:#f7f7f7}.grading-scale-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.grading-scale-item{display:flex;justify-content:space-between;font-size:9px;padding:4px;border:1px solid #ddd}.grade-badge{display:inline-block;padding:3px 7px;border-radius:12px;font-weight:700}.grade-a-plus,.grade-a,.grade-b-plus,.grade-b{background:#dff4e5}.grade-c,.grade-d{background:#fff3cd}.grade-e,.grade-f{background:#fde2e1}@page{size:A4;margin:0} @media print{body{padding:0}.midterm-report-card{page-break-after:always}}</style></head><body>'+el.innerHTML+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),500);}
 async function buildMidTermReportCardHTML(student,termId,sessionId){const r=await fetchMidTermRecords(student.id,termId,sessionId),rm=await fetchMidTermRemark(student.id,termId,sessionId),ct=getClassTeacherRecord(student.class_id),ctt=teachers.find(t=>String(t.id)===String(ct?.teacher_id));return midTermMultiReportHtml(student,r,terms.find(t=>String(t.id)===String(termId)),sessions.find(x=>String(x.id)===String(sessionId)),ctt,rm).replace('class="midterm-report-card"','class="midterm-report-card report-card bulk-pdf-card"');}
 
 /* ===== MID-TERM ANALYSIS (admin) ===== */
@@ -4559,7 +4490,7 @@ function printMidTermAnalysis(){
   const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');
   const w=window.open('','_blank','width=1000,height=900');
   if(!w){showToast('Please allow pop-ups to print','error');return;}
-  w.document.write('<\!doctype html><html><head><title>Mid-Term Performance Analysis</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>'+css+'@page{size:A4 portrait;margin:10mm}body{background:#fff!important;padding:0!important;display:block!important}.mta-class{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px}.card{box-shadow:none!important}</style><\/head><body><div style="padding:6mm;font-family:Poppins,Arial,sans-serif"><div style="text-align:center;margin-bottom:10px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:55px;height:55px"><h2 style="color:#1a5f2a;margin:4px 0">Nigeria-Ghana International School</h2></div>'+el.innerHTML+'</div><\/body><\/html>');
+  w.document.write('<!doctype html><html><head><title>Mid-Term Performance Analysis</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>'+css+'@page{size:A4 portrait;margin:10mm}body{background:#fff!important;padding:0!important;display:block!important}.mta-class{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px}.card{box-shadow:none!important}</style></head><body><div style="padding:6mm;font-family:Poppins,Arial,sans-serif"><div style="text-align:center;margin-bottom:10px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:55px;height:55px"><h2 style="color:#1a5f2a;margin:4px 0">Nigeria-Ghana International School</h2></div>'+el.innerHTML+'</div></body></html>');
   w.document.close();w.focus();setTimeout(()=>w.print(),700);
 }
 
@@ -4666,7 +4597,7 @@ function printMidTermBroadsheet(){
   const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');
   const w=window.open('','_blank','width=1200,height=900');
   if(!w){showToast('Please allow pop-ups to print','error');return;}
-  w.document.write('<\!doctype html><html><head><title>Mid-Term Broadsheet</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>'+css+'@page{size:A4 landscape;margin:8mm}body{background:#fff!important;padding:0!important;display:block!important;font-family:Poppins,Arial,sans-serif}.card{display:none}.bs-wrap{overflow:visible!important;border:none;margin-bottom:8px}.bs-table{min-width:0!important;width:100%;font-size:8px}.bs-table th{font-size:7px;padding:4px 2px}.bs-table td{padding:3px 2px}.bs-table tr{page-break-inside:avoid}.bs-print-block{page-break-before:always;break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style><\/head><body><div style="text-align:center;margin-bottom:6px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:45px;height:45px;vertical-align:middle"> <span style="font-size:15px;font-weight:800;color:#1a5f2a">Nigeria-Ghana International School</span></div>'+el.innerHTML+'<\/body><\/html>');
+  w.document.write('<!doctype html><html><head><title>Mid-Term Broadsheet</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>'+css+'@page{size:A4 landscape;margin:8mm}body{background:#fff!important;padding:0!important;display:block!important;font-family:Poppins,Arial,sans-serif}.card{display:none}.bs-wrap{overflow:visible!important;border:none;margin-bottom:8px}.bs-table{min-width:0!important;width:100%;font-size:8px}.bs-table th{font-size:7px;padding:4px 2px}.bs-table td{padding:3px 2px}.bs-table tr{page-break-inside:avoid}.bs-print-block{page-break-before:always;break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><div style="text-align:center;margin-bottom:6px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:45px;height:45px;vertical-align:middle"> <span style="font-size:15px;font-weight:800;color:#1a5f2a">Nigeria-Ghana International School</span></div>'+el.innerHTML+'</body></html>');
   w.document.close();w.focus();setTimeout(()=>w.print(),900);
 }
 function downloadMidTermBroadsheetXlsx(){
@@ -5274,7 +5205,7 @@ async function deleteWeek(id){
   await Promise.all([clearIn('quiz_attempts','quiz_id',quizIds),clearIn('quiz_questions','quiz_id',quizIds)]);
   await clear('quizzes','week_id',id);
   // 2) Scores and comments for the week.
-  await Promise.all([clear('assessments','week_id',id),clear('weekly_comments','week_id',id),clear('weekly_remarks','week_id',id),clear('weekly_report_dispatch','week_id',id)]);
+  await Promise.all([clear('assessments','week_id',id),clear('weekly_comments','week_id',id)]);
 
   if(failures.length){
     console.error('Week delete blocked:',failures);
@@ -5879,7 +5810,7 @@ async function deleteStudent(id){
   if(!st){showToast('Student not found. Refresh the page.','error');return;}
   if(!confirm('Delete '+st.name+'? This also deletes all of their scores, comments, mid-term records and quiz attempts. This cannot be undone.'))return;
   // Remove dependent records first so foreign keys do not block the delete.
-  for(const table of ['assessments','weekly_comments','weekly_remarks','midterm_assessments','quiz_attempts','teacher_feedback']){
+  for(const table of ['assessments','weekly_comments','midterm_assessments','quiz_attempts','teacher_feedback']){
     const {error}=await supabaseClient.from(table).delete().eq('student_id',id);
     if(error)console.warn('Could not clear '+table+' for student:',error.message);
   }
@@ -7418,7 +7349,7 @@ const tile=(l,v,c)=>'<div style="flex:1 1 130px;border:1px solid #e3e6e8;border-
 const sel=(p,needT)=>{const c=$(p+'Class').value,s=$(p+'Session').value,t=needT?$(p+'Term').value:'x';if(!c||!t||!s){showToast('Select class'+(needT?', term':'')+' and session','error');return null;}return{c,t:needT?t:'',s};};
 window.tsPrint=function(id){const el=$(id);if(!el||!el.innerHTML.trim()){showToast('Generate the sheet first','error');return;}
   const w=window.open('','_blank','width=1200,height=900');if(!w){showToast('Please allow pop-ups to print','error');return;}
-  w.document.write('<\!doctype html><html><head><title>Print</title><style>@page{size:A4 landscape;margin:8mm}body{margin:0;font-family:Arial,sans-serif}table{border-collapse:collapse}</style><\/head><body>'+el.innerHTML+'<\/body><\/html>');w.document.close();w.focus();setTimeout(()=>w.print(),600);};
+  w.document.write('<!doctype html><html><head><title>Print</title><style>@page{size:A4 landscape;margin:8mm}body{margin:0;font-family:Arial,sans-serif}table{border-collapse:collapse}</style></head><body>'+el.innerHTML+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),600);};
 window.tsXlsx=function(k){const a=LAST[k];if(!a){showToast('Generate the sheet first','error');return;}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a.aoa),'Sheet1');XLSX.writeFile(wb,a.name+'.xlsx');};
 const empty=(id,m)=>{$(id).innerHTML='<div class="empty-state">'+m+'</div>';};
 
@@ -7745,7 +7676,7 @@ window.regTRender=function(){
 window.regPrint=function(id,title){const el=$(id);if(!el||!el.innerHTML.trim()){showToast('Nothing to print','error');return;}
   const c=$('regClass')&&id==='regGrid'?cName($('regClass').value):cName($('regTClass').value),w=id==='regGrid'?(wObj($('regWeek').value)||{}).name:'';
   const win=window.open('','_blank');if(!win){showToast('Allow pop-ups to print','error');return;}
-  win.document.write('<html><head><title>'+esc(title)+'</title><style>body{font-family:Arial,sans-serif;font-size:11px;margin:14px}table{border-collapse:collapse;width:100%;margin-bottom:12px}th,td{border:1px solid #444;padding:3px 4px;text-align:center}th{background:#ddd}button{border:0;background:none;font-weight:bold;font-size:11px}.rg-x,.rg-g{display:none}.rg-wrap,.rg-tw{overflow:visible;max-height:none}.rg-sum{display:flex;gap:10px;flex-wrap:wrap}.rg-box{border:1px solid #444;padding:6px;min-width:170px}.big{font-size:20px;font-weight:bold}.sname{text-align:left}h2,h3{text-align:center;margin:2px}</style><\/head><body><h2>Nigeria-Ghana International School</h2><h3>'+esc(title)+'</h3><p style="text-align:center">'+esc(c||'All classes')+(w?' – '+esc(w):'')+'</p>'+el.innerHTML+'<\/body><\/html>');
+  win.document.write('<html><head><title>'+esc(title)+'</title><style>body{font-family:Arial,sans-serif;font-size:11px;margin:14px}table{border-collapse:collapse;width:100%;margin-bottom:12px}th,td{border:1px solid #444;padding:3px 4px;text-align:center}th{background:#ddd}button{border:0;background:none;font-weight:bold;font-size:11px}.rg-x,.rg-g{display:none}.rg-wrap,.rg-tw{overflow:visible;max-height:none}.rg-sum{display:flex;gap:10px;flex-wrap:wrap}.rg-box{border:1px solid #444;padding:6px;min-width:170px}.big{font-size:20px;font-weight:bold}.sname{text-align:left}h2,h3{text-align:center;margin:2px}</style></head><body><h2>Nigeria-Ghana International School</h2><h3>'+esc(title)+'</h3><p style="text-align:center">'+esc(c||'All classes')+(w?' – '+esc(w):'')+'</p>'+el.innerHTML+'</body></html>');
   win.document.close();setTimeout(()=>win.print(),400);};
 window.regExcel=function(id,name){const el=$(id),tbs=el?el.querySelectorAll('table'):[];if(!tbs.length||typeof XLSX==='undefined'){showToast('Nothing to export','error');return;}
   const wb=XLSX.utils.book_new();tbs.forEach((t,i)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.table_to_sheet(t),'Sheet'+(i+1)));XLSX.writeFile(wb,name+'.xlsx');};
@@ -7803,7 +7734,7 @@ function planFromCsv(text){
   return p;}
 
 /* ---------- FULL APP BACKUP / RESTORE ---------- */
-const APP_TABLES=['sessions','terms','classes','subjects','weeks','teachers','students','class_teachers','teacher_subjects','assessments','weekly_comments','weekly_remarks','weekly_report_dispatch','midterm_assessments','midterm_remarks','term_scores','result_publications','quizzes','quiz_questions','quiz_attempts','assignments','assignment_submissions','teacher_feedback','exam_inbox','exam_inbox_files','enotes','enote_comments','enote_reads'];
+const APP_TABLES=['sessions','terms','classes','subjects','weeks','teachers','students','class_teachers','teacher_subjects','assessments','weekly_comments','midterm_assessments','midterm_remarks','term_scores','result_publications','quizzes','quiz_questions','quiz_attempts','assignments','assignment_submissions','teacher_feedback','exam_inbox','exam_inbox_files','enotes','enote_comments','enote_reads'];
 const ALL_TABLES=[...APP_TABLES,T.att,T.meta,T.stu];
 async function fullData(){
   await load();await flush();const tables={},skipped={};
@@ -7923,7 +7854,7 @@ window.regGPrint=function(){const p=regGPeople();
   if(!p.boys.length&&!p.girls.length){showToast('No students with a gender set for '+p.label,'error');return;}
   const tbl=(t,l)=>'<h2>'+t+' ('+l.length+')</h2><table><thead><tr><th>#</th><th>Student Name</th><th>Class</th></tr></thead><tbody>'+l.map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(s.name)+'</td><td>'+esc(cName(s.class_id))+'</td></tr>').join('')+'</tbody></table>';
   const w=window.open('','_blank');if(!w){showToast('Allow pop-ups to print','error');return;}
-  w.document.write('<\!doctype html><html><head><title>Boys and Girls - '+esc(p.label)+'</title><style>body{font-family:Arial,sans-serif;margin:20px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:18px;margin:0 0 4px}.s{text-align:center;color:#555;font-size:12px;margin-bottom:14px}h2{font-size:15px;margin:14px 0 6px;color:#1a5f2a}table{border-collapse:collapse;width:100%;font-size:12px;margin-bottom:10px}th,td{border:1px solid #999;padding:4px 7px;text-align:left}th{background:#e8f3ea}.pb{page-break-before:always}</style><\/head><body><h1>Nigeria-Ghana International School</h1><div class="s">Student list by gender &ndash; '+esc(p.label)+'</div>'+tbl('Boys',p.boys)+'<div class="pb"></div>'+tbl('Girls',p.girls)+(p.none.length?'<p style="font-size:11px;color:#c0392b">'+p.none.length+' student(s) have no gender set and are not listed.</p>':'')+'<script>window.onload=function(){window.print();}<\/script><\/body><\/html>');
+  w.document.write('<!doctype html><html><head><title>Boys and Girls - '+esc(p.label)+'</title><style>body{font-family:Arial,sans-serif;margin:20px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:18px;margin:0 0 4px}.s{text-align:center;color:#555;font-size:12px;margin-bottom:14px}h2{font-size:15px;margin:14px 0 6px;color:#1a5f2a}table{border-collapse:collapse;width:100%;font-size:12px;margin-bottom:10px}th,td{border:1px solid #999;padding:4px 7px;text-align:left}th{background:#e8f3ea}.pb{page-break-before:always}</style></head><body><h1>Nigeria-Ghana International School</h1><div class="s">Student list by gender &ndash; '+esc(p.label)+'</div>'+tbl('Boys',p.boys)+'<div class="pb"></div>'+tbl('Girls',p.girls)+(p.none.length?'<p style="font-size:11px;color:#c0392b">'+p.none.length+' student(s) have no gender set and are not listed.</p>':'')+'<script>window.onload=function(){window.print();}<\/script></body></html>');
   w.document.close();};
 window.regGImport=function(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{
   const rows=parseCsv(rd.result),H=rows[0].map(x=>norm(x).replace(/[ -]/g,'_')),ix=n=>H.indexOf(n),M=mapper(null);let ok=0,skip=0;
@@ -8633,8 +8564,8 @@ window.lpPrint=function(){
   const p=cur;if(!p)return;
   const w=window.open('','_blank');if(!w){showToast('Allow pop-ups to print','error');return;}
   const fx=f=>planCms(p.id,f).map(c=>'<div style="border-left:3px solid '+(c.author_role==='admin'?'#c41e3a':c.author_role==='hod'?'#e67e22':'#2d8a42')+';background:#f7f7f7;padding:5px 9px;margin:5px 0;font-size:12px"><b>'+esc(c.author_name||'')+' ('+roleName(c)+'):</b> '+nl(c.body)+(c.resolved?' <i>[fixed]</i>':'')+'</div>').join('');
-  w.document.write('<\!doctype html><html><head><title>Lesson Plan</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{color:#1a5f2a;font-size:20px;margin:0 0 4px}.m{font-size:12px;color:#444;margin-bottom:14px}.f{border:1px solid #ccc;border-radius:6px;padding:9px 11px;margin-bottom:9px;page-break-inside:avoid}.l{font-weight:700;font-size:11px;color:#1a5f2a;text-transform:uppercase;margin-bottom:3px}.b{font-size:13px;line-height:1.5}</style><\/head><body><h1>Nigeria-Ghana International School — Lesson Plan</h1><div class="m"><b>'+esc(p.topic||'')+'</b><br>Teacher: '+esc(p.teacher_name||'')+' · Class: '+esc(p.class_name||cName(p.class_id))+' · Subject: '+esc(p.subject_name||'')+' · Week: '+esc(p.week_name||'—')+(p.plan_date?' · Date: '+esc(p.plan_date):'')+(p.duration?' · Duration: '+esc(p.duration):'')+' · Status: '+esc((STATUS[p.status]||[p.status])[0])+(p.hod_checked?' · HOD checked: '+esc(p.hod_checked_by||''):'')+'</div>'+
-    FIELDS.filter(([k])=>k!=='topic').map(([k,l])=>'<div class="f"><div class="l">'+l+'</div><div class="b">'+nl(p[k]||'')+'</div>'+fx(k)+'</div>').join('')+(planCms(p.id,'general').length?'<div class="f"><div class="l">Overall comments</div>'+fx('general')+'</div>':'')+'<script>window.onload=function(){window.print()}<\/script><\/body><\/html>');
+  w.document.write('<!doctype html><html><head><title>Lesson Plan</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{color:#1a5f2a;font-size:20px;margin:0 0 4px}.m{font-size:12px;color:#444;margin-bottom:14px}.f{border:1px solid #ccc;border-radius:6px;padding:9px 11px;margin-bottom:9px;page-break-inside:avoid}.l{font-weight:700;font-size:11px;color:#1a5f2a;text-transform:uppercase;margin-bottom:3px}.b{font-size:13px;line-height:1.5}</style></head><body><h1>Nigeria-Ghana International School — Lesson Plan</h1><div class="m"><b>'+esc(p.topic||'')+'</b><br>Teacher: '+esc(p.teacher_name||'')+' · Class: '+esc(p.class_name||cName(p.class_id))+' · Subject: '+esc(p.subject_name||'')+' · Week: '+esc(p.week_name||'—')+(p.plan_date?' · Date: '+esc(p.plan_date):'')+(p.duration?' · Duration: '+esc(p.duration):'')+' · Status: '+esc((STATUS[p.status]||[p.status])[0])+(p.hod_checked?' · HOD checked: '+esc(p.hod_checked_by||''):'')+'</div>'+
+    FIELDS.filter(([k])=>k!=='topic').map(([k,l])=>'<div class="f"><div class="l">'+l+'</div><div class="b">'+nl(p[k]||'')+'</div>'+fx(k)+'</div>').join('')+(planCms(p.id,'general').length?'<div class="f"><div class="l">Overall comments</div>'+fx('general')+'</div>':'')+'<script>window.onload=function(){window.print()}<\/script></body></html>');
   w.document.close();
 };
 
@@ -9544,8 +9475,9 @@ function renderNurserySheetForm(){
 }
 function clearNurserySheet(){
   writeNurseryRows({});
-  ['nurseryAge','nurseryGeneral','nurseryNext'].forEach(id=>document.getElementById(id).value='');
+  ['nurseryAge','nurseryGeneral'].forEach(id=>document.getElementById(id).value='');
 }
+function nurseryMergeNotes(a,b){a=(a||'').trim();b=(b||'').trim();return a&&b?a+'\n\n'+b:(a||b);}
 function loadNurserySheet(){
   window._nurseryLast=null;
   clearNurserySheet();
@@ -9557,7 +9489,7 @@ function loadNurserySheet(){
   nurseryObservations.filter(o=>o.student_id===studentId&&o.week_id===weekId).forEach(o=>{map[o.subject_id]={topic:o.topics||'',materials:o.materials||'',level:o.engagement||'',obs:o.observation||''};});
   writeNurseryRows(map);
   const n=nurseryNotes.find(x=>x.student_id===studentId&&x.week_id===weekId);
-  if(n){document.getElementById('nurseryAge').value=n.age||'';document.getElementById('nurseryGeneral').value=n.general_notes||'';document.getElementById('nurseryNext').value=n.next_steps||'';}
+  if(n){document.getElementById('nurseryAge').value=n.age||'';document.getElementById('nurseryGeneral').value=nurseryMergeNotes(n.general_notes,n.next_steps);}
 }
 function nurserySelection(){
   return{classId:document.getElementById('nurseryClassSelect').value,studentId:document.getElementById('nurseryStudentSelect').value,weekId:document.getElementById('nurseryWeekSelect').value,sessionId:document.getElementById('nurserySessionSelect').value||null};
@@ -9569,7 +9501,7 @@ async function saveNurserySheet(){
   const rows=readNurseryRows();
   const age=cleanText(document.getElementById('nurseryAge').value);
   const general=document.getElementById('nurseryGeneral').value.trim();
-  const next=document.getElementById('nurseryNext').value.trim();
+  const next='';
   try{
     const{data:existing,error:e1}=await supabaseClient.from('nursery_observations').select('id,subject_id').eq('student_id',studentId).eq('week_id',weekId);
     if(e1)throw e1;
@@ -9589,7 +9521,7 @@ async function saveNurserySheet(){
     if(inserts.length){const res=await supabaseClient.from('nursery_observations').insert(inserts);if(res.error)throw res.error;saved+=inserts.length;}
     const{data:nex,error:e2}=await supabaseClient.from('nursery_week_notes').select('id').eq('student_id',studentId).eq('week_id',weekId).limit(1);
     if(e2)throw e2;
-    const notesEmpty=!age&&!general&&!next;
+    const notesEmpty=!age&&!general;
     const np={student_id:studentId,week_id:weekId,class_id:classId,session_id:sessionId,teacher_id:currentUser.id,age,general_notes:general,next_steps:next,updated_at:new Date().toISOString()};
     let nr;
     if(nex&&nex.length)nr=notesEmpty?await supabaseClient.from('nursery_week_notes').delete().eq('id',nex[0].id):await supabaseClient.from('nursery_week_notes').update(np).eq('id',nex[0].id);
@@ -9611,14 +9543,14 @@ function formSheetData(){
   const recs=nurseryObservations.filter(o=>o.student_id===studentId&&o.week_id===weekId);
   const tn=[...new Set(recs.map(r=>teachers.find(t=>t.id===r.teacher_id)?.name).filter(Boolean))];
   if(!tn.length&&currentUser)tn.push(currentUser.name);
-  return buildSheetData({classId,studentId,weekId,sessionId,rows,age:document.getElementById('nurseryAge').value,general:document.getElementById('nurseryGeneral').value,next:document.getElementById('nurseryNext').value,teacherNames:tn});
+  return buildSheetData({classId,studentId,weekId,sessionId,rows,age:document.getElementById('nurseryAge').value,general:document.getElementById('nurseryGeneral').value,next:'',teacherNames:tn});
 }
 function groupToSheetData(g){
   const rows={};
   g.records.forEach(r=>{rows[r.subject_id]={topic:r.topics||'',materials:r.materials||'',level:r.engagement||'',obs:r.observation||''};});
   const n=nurseryNotes.find(x=>x.student_id===g.studentId&&x.week_id===g.weekId)||{};
   const tn=[...new Set(g.records.map(r=>teachers.find(t=>t.id===r.teacher_id)?.name).filter(Boolean))];
-  return buildSheetData({classId:g.classId,studentId:g.studentId,weekId:g.weekId,sessionId:g.records[0]?.session_id||null,rows,age:n.age||'',general:n.general_notes||'',next:n.next_steps||'',teacherNames:tn});
+  return buildSheetData({classId:g.classId,studentId:g.studentId,weekId:g.weekId,sessionId:g.records[0]?.session_id||null,rows,age:n.age||'',general:nurseryMergeNotes(n.general_notes,n.next_steps),next:'',teacherNames:tn});
 }
 function buildSheetData(o){
   const sess=nSessions.find(x=>x.id===o.sessionId)||nCurrentSession();
@@ -9663,9 +9595,8 @@ function nurserySheetHtml(d){
     '<table width="88%" align="center" cellspacing="0" cellpadding="0" style="width:88%;margin:0 auto;border-collapse:collapse;table-layout:fixed;"><tr>'+lab("Child&#8217;s Name:",'17%')+val(esc(d.studentName),'33%')+lab('Week:','17%')+val(esc(d.weekName),'33%')+'</tr><tr>'+lab('Age:','17%')+val(esc(d.age),'33%')+lab("Teacher&#8217;s name:",'17%')+val(esc(d.teachers),'33%')+'</tr></table>'+
     '<div style="font-size:6pt;line-height:6pt;">&nbsp;</div>'+
     '<table '+tbl+'><tr>'+th('Subject Area','14%')+th('Topic','19%')+th('Material used','19%')+th('Level of Engagement','20%')+th('Observation Notes','28%')+'</tr>'+rows+'</table>'+
-    '<table '+tbl+'><tr>'+th('General Observations / Social-Emotional Notes','50%')+th('Next Steps / Follow-Up','50%')+'</tr><tr>'+
-    '<td height="80" width="50%" style="'+F+'width:50%;height:80pt;font-size:9.5pt;padding:4pt 5pt;vertical-align:top;word-wrap:break-word;'+bd2+'">'+(esc(d.general).replace(/\n/g,'<br>')||'&nbsp;')+'</td>'+
-    '<td height="80" width="50%" style="'+F+'width:50%;height:80pt;font-size:9.5pt;padding:4pt 5pt;vertical-align:top;word-wrap:break-word;'+bd2+'">'+(esc(d.next).replace(/\n/g,'<br>')||'&nbsp;')+'</td></tr></table>';
+    '<table '+tbl+'><tr>'+th('Observations &amp; Recommendations','100%')+'</tr><tr>'+
+    '<td height="80" width="100%" style="'+F+'width:100%;height:80pt;font-size:9.5pt;padding:4pt 5pt;vertical-align:top;word-wrap:break-word;'+bd2+'">'+(esc(nurseryMergeNotes(d.general,d.next)).replace(/\n/g,'<br>')||'&nbsp;')+'</td></tr></table>';
 }
 // mode 'doc' = Word file; anything else = browser page / PDF print / .html download
 function nurseryDocWrap(inner,mode){
@@ -9677,13 +9608,13 @@ function nurseryDocWrap(inner,mode){
     '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}';
   if(mode==='doc'){
     return "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Nursery Observation Sheet</title>"+
-      "<\!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->"+
-      "<style>"+pageCss+base+"</style><\/head><body><div class=Section1>"+inner+"</div><\/body><\/html>";
+      "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->"+
+      "<style>"+pageCss+base+"</style></head><body><div class=Section1>"+inner+"</div></body></html>";
   }
   // Browser: on screen show an A4 sheet; when printing/saving PDF the @page margin does the spacing
   const screenCss='@media screen{body{background:#e9ecef}.Section1{width:210mm;min-height:297mm;box-sizing:border-box;margin:8mm auto;padding:'+m+';background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18)}}'+
     '@media print{body{background:#fff}.Section1{width:auto;margin:0;padding:0;box-shadow:none}}';
-  return "<\!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Nursery Observation Sheet</title><style>"+pageCss+base+screenCss+"</style><\/head><body><div class=\"Section1\">"+inner+"</div><\/body><\/html>";
+  return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Nursery Observation Sheet</title><style>"+pageCss+base+screenCss+"</style></head><body><div class=\"Section1\">"+inner+"</div></body></html>";
 }
 function generateNurseryReport(){
   const d=formSheetData(); if(!d)return;
@@ -9827,15 +9758,14 @@ async function buildNurseryPdfBytes(d){
     y+=h;
   });
 
-  // ---- general observations / next steps ----
-  const gw=[CW/2,CW/2],GEN_MIN=80;
-  const gl=wrap(d.general,reg,9,gw[0]-2*PADX),nl=wrap(d.next,reg,9,gw[1]-2*PADX);
-  const gh=Math.max(GEN_MIN,Math.max(gl.length,nl.length)*LH+2*PADY);
+  // ---- observations & recommendations (single box) ----
+  const gw=[CW],GEN_MIN=80;
+  const gl=wrap(nurseryMergeNotes(d.general,d.next),reg,9,gw[0]-2*PADX);
+  const gh=Math.max(GEN_MIN,gl.length*LH+2*PADY);
   if(y+20+gh>BOTTOM)newPage();
-  headerRow(['General Observations / Social-Emotional Notes','Next Steps / Follow-Up'],gw);
-  rect(M,y,gw[0],gh,WHITE);rect(M+gw[0],y,gw[1],gh,WHITE);
+  headerRow(['Observations & Recommendations'],gw);
+  rect(M,y,gw[0],gh,WHITE);
   gl.forEach((ln,k)=>text(ln,reg,9,M+PADX,y+PADY+k*LH));
-  nl.forEach((ln,k)=>text(ln,reg,9,M+gw[0]+PADX,y+PADY+k*LH));
   return await doc.save();
 }
 async function downloadNurseryPdf(){
@@ -10108,9 +10038,9 @@ function emtWrap(inner,mode){
   const pageCss='@page{size:A4 portrait;margin:'+m+'}@page Section1{size:210mm 297mm;margin:'+m+' '+m+' '+m+' '+m+';mso-page-orientation:portrait;mso-header-margin:0mm;mso-footer-margin:0mm}div.Section1{page:Section1}';
   const base='html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#1e1e1e}table{border-collapse:collapse}img{border:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}';
   const T='Early Years Mid-Term Report';
-  if(mode==='doc')return "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>"+T+"</title><\!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]--><style>"+pageCss+base+"</style><\/head><body><div class=Section1>"+inner+"</div><\/body><\/html>";
+  if(mode==='doc')return "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>"+T+"</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]--><style>"+pageCss+base+"</style></head><body><div class=Section1>"+inner+"</div></body></html>";
   const screenCss='@media screen{body{background:#e9ecef}.Section1{width:210mm;min-height:297mm;box-sizing:border-box;margin:8mm auto;padding:'+m+';background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18)}}@media print{body{background:#fff}.Section1{width:auto;margin:0;padding:0;box-shadow:none}}';
-  return "<\!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>"+T+"</title><style>"+pageCss+base+screenCss+"</style><\/head><body><div class=\"Section1\">"+inner+"</div><\/body><\/html>";
+  return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>"+T+"</title><style>"+pageCss+base+screenCss+"</style></head><body><div class=\"Section1\">"+inner+"</div></body></html>";
 }
 function emtPreview(){
   const d=emtFormData(); if(!d)return;
@@ -11971,7 +11901,7 @@ if($('studentNameInput'))$('studentNameInput').addEventListener('blur',function(
 });
 
 /* ---- FULL BACKUP: one click -> JSON file + ZIP of CSV files ---- */
-const BACKUP_TABLES=['classes','students','teachers','teacher_subjects','class_teachers','subjects','sessions','terms','weeks','assessments','weekly_comments','weekly_topics','weekly_remarks','weekly_report_dispatch','weekly_report_settings','midterm_assessments','midterm_remarks','early_midterm_reports','nursery_observations','nursery_week_notes','term_scores','result_blocks','result_publications','teacher_feedback','teacher_applications','quizzes','quiz_questions','quiz_attempts','assignments','assignment_submissions','enotes','enote_comments','enote_reads','lesson_plans','lesson_plan_comments','lesson_plan_files','departments','department_members','exam_inbox','exam_inbox_files','daily_story_class','daily_story_student','mgmt_data','mgmt_users','register_attendance','register_week_meta','register_students'];
+const BACKUP_TABLES=['classes','students','teachers','teacher_subjects','class_teachers','subjects','sessions','terms','weeks','assessments','weekly_comments','weekly_topics','midterm_assessments','midterm_remarks','early_midterm_reports','nursery_observations','nursery_week_notes','term_scores','result_blocks','result_publications','teacher_feedback','teacher_applications','quizzes','quiz_questions','quiz_attempts','assignments','assignment_submissions','enotes','enote_comments','enote_reads','lesson_plans','lesson_plan_comments','lesson_plan_files','departments','department_members','exam_inbox','exam_inbox_files','daily_story_class','daily_story_student','mgmt_data','mgmt_users','register_attendance','register_week_meta','register_students'];
 async function pullTable(t){
   let out=[],from=0;
   for(;;){
@@ -12060,7 +11990,7 @@ window.ngisBackupAll=async function(){
 const $=id=>document.getElementById(id);
 const E=v=>escapeHtml(v);
 /* parents first so links between records stay valid */
-const ORDER=['classes','subjects','sessions','terms','weeks','teachers','students','teacher_subjects','class_teachers','departments','department_members','assessments','weekly_comments','weekly_topics','weekly_remarks','weekly_report_dispatch','weekly_report_settings','midterm_assessments','midterm_remarks','early_midterm_reports','nursery_observations','nursery_week_notes','term_scores','result_blocks','result_publications','teacher_feedback','teacher_applications','quizzes','quiz_questions','quiz_attempts','assignments','assignment_submissions','enotes','enote_comments','enote_reads','lesson_plans','lesson_plan_comments','lesson_plan_files','exam_inbox','exam_inbox_files','daily_story_class','daily_story_student','mgmt_data','mgmt_users','register_attendance','register_week_meta','register_students'];
+const ORDER=['classes','subjects','sessions','terms','weeks','teachers','students','teacher_subjects','class_teachers','departments','department_members','assessments','weekly_comments','weekly_topics','midterm_assessments','midterm_remarks','early_midterm_reports','nursery_observations','nursery_week_notes','term_scores','result_blocks','result_publications','teacher_feedback','teacher_applications','quizzes','quiz_questions','quiz_attempts','assignments','assignment_submissions','enotes','enote_comments','enote_reads','lesson_plans','lesson_plan_comments','lesson_plan_files','exam_inbox','exam_inbox_files','daily_story_class','daily_story_student','mgmt_data','mgmt_users','register_attendance','register_week_meta','register_students'];
 let loaded=null,fileName='';
 function parseCsv(text){
   text=String(text||'').replace(/^\ufeff/,'');
@@ -12465,565 +12395,6 @@ window.caUpload=async function(input){
 const _sx=window.showSection;
 window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('pageTitle');if(pt)pt.innerHTML='<i class="fas fa-clipboard-list"></i> General C.A Record';window.caInit();}};
 })();
-</script>
-<script>
-/* ===== Weekly Class Review =====
-   Weekly report cards are sent to each class teacher (by the admin, or automatically once a week has ended).
-   The class teacher opens the class, views every learner's weekly report card and writes an
-   Observation and a Recommendation, which then print on the weekly report card. */
-(function(){
-const $=id=>document.getElementById(id),esc=v=>escapeHtml(v),S=v=>String(v??'');
-const SQL=`create extension if not exists pgcrypto;
-create table if not exists weekly_report_dispatch(
-  id uuid primary key default gen_random_uuid(),
-  class_id text not null, week_id text not null,
-  teacher_id text, teacher_name text,
-  status text default 'sent', auto boolean default false,
-  sent_by text, sent_by_name text, sent_at timestamptz default now(),
-  teacher_seen boolean default false, seen_at timestamptz, completed_at timestamptz,
-  unique(class_id, week_id));
-create table if not exists weekly_remarks(
-  id uuid primary key default gen_random_uuid(),
-  student_id text not null, class_id text, week_id text not null,
-  observation text, recommendation text,
-  teacher_id text, teacher_name text, updated_at timestamptz default now(),
-  unique(student_id, week_id));
-create table if not exists weekly_report_settings(
-  key text primary key, value text, updated_at timestamptz default now());
-create index if not exists idx_wrd_class on weekly_report_dispatch(class_id);
-create index if not exists idx_wrd_week on weekly_report_dispatch(week_id);
-create index if not exists idx_wrr_week on weekly_remarks(week_id);
-create index if not exists idx_wrr_class on weekly_remarks(class_id);
-alter table weekly_report_dispatch enable row level security;
-alter table weekly_remarks enable row level security;
-alter table weekly_report_settings enable row level security;
-drop policy if exists "wrd_all" on weekly_report_dispatch;
-drop policy if exists "wrr_all" on weekly_remarks;
-drop policy if exists "wrs_all" on weekly_report_settings;
-create policy "wrd_all" on weekly_report_dispatch for all using(true) with check(true);
-create policy "wrr_all" on weekly_remarks for all using(true) with check(true);
-create policy "wrs_all" on weekly_report_settings for all using(true) with check(true);
-notify pgrst, 'reload schema';`;
-const MISS=/does not exist|schema cache|42P01|PGRST20[45]|Could not find/i;
-const NURSERY_RE=/nursery|playgroup|play group|creche|crèche|early years|(^|[^a-z])kg(\s*\d|$)|kindergarten/i;
-const AUTO_DAYS=14;      // auto-send only looks at weeks that ended within this many days
-const MAXLEN=1200;
-let missing=false,errMsg='',view=null,lastUid=null,ready=false,tickN=0,lastAuto=0,toasted=false,adminWeek='',autoOn=null,adminInfo=[],pending=0;
-
-const isAdmin=()=>currentUser&&currentUser.role==='admin',isTeacher=()=>currentUser&&currentUser.role==='teacher';
-const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const num=(a,b)=>S(a).localeCompare(S(b),undefined,{numeric:true});
-const cls=id=>(classes||[]).find(c=>sameId(c.id,id));
-const cName=id=>(cls(id)||{}).name||'Class';
-const wk=id=>(weeks||[]).find(w=>sameId(w.id,id));
-const wName=id=>(wk(id)||{}).name||'Week';
-const subName=id=>((subjects||[]).find(x=>sameId(x.id,id))||{}).name||'Subject';
-const isNursery=id=>{const c=cls(id);return !!(c&&NURSERY_RE.test(c.name||''));};
-const fdate=d=>d?new Date(d).toLocaleString([],{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
-const fday=d=>{if(!d)return '';const x=new Date(S(d).slice(0,10)+'T00:00:00');return isNaN(x)?S(d):x.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'});};
-const fmt=x=>Number.isInteger(x)?String(x):x.toFixed(1);
-const nl=t=>esc(t).replace(/\r?\n/g,'<br>');
-const empty=(icon,h,p)=>'<div class="empty-state"><i class="fas fa-'+icon+'" style="font-size:2.2rem;display:block;margin-bottom:10px"></i><h4>'+h+'</h4><p>'+(p||'')+'</p></div>';
-
-const sortedWeeks=()=>[...(weeks||[])].sort((a,b)=>(a.start_date&&b.start_date&&a.start_date!==b.start_date)?S(a.start_date).localeCompare(S(b.start_date)):num(a.name,b.name));
-function weekEnd(w){
-  if(!w)return '';
-  if(w.end_date)return S(w.end_date).slice(0,10);
-  if(w.start_date){const d=new Date(S(w.start_date).slice(0,10)+'T00:00:00');if(!isNaN(d)){d.setDate(d.getDate()+6);return ymd(d);}}
-  return '';
-}
-function defaultWeek(){
-  const l=sortedWeeks(),t=ymd(new Date());
-  const cur=l.find(w=>w.start_date&&w.end_date&&S(w.start_date).slice(0,10)<=t&&t<=S(w.end_date).slice(0,10));
-  if(cur)return cur;
-  const past=l.filter(w=>weekEnd(w)&&weekEnd(w)<=t);
-  return past.length?past[past.length-1]:(l[l.length-1]||null);
-}
-const eligibleClasses=()=>(classes||[]).filter(c=>!NURSERY_RE.test(c.name||'')).sort((a,b)=>num(a.name,b.name));
-const myClassIds=()=>isTeacher()?[...new Set((classTeachers||[]).filter(ct=>sameId(ct.teacher_id,currentUser.id)).map(ct=>S(ct.class_id)))].filter(id=>!isNursery(id)):[];
-const isMyClass=id=>myClassIds().includes(S(id));
-function teacherOf(classId){
-  const r=getClassTeacherRecord(classId);if(!r)return null;
-  const t=(teachers||[]).find(x=>sameId(x.id,r.teacher_id));
-  return {id:S(r.teacher_id),name:(t&&t.name)||(r.teachers&&r.teachers.name)||(isTeacher()&&sameId(currentUser.id,r.teacher_id)?currentUser.name:'')||''};
-}
-const clsStudents=classId=>(students||[]).filter(s=>sameId(s.class_id,classId)).sort((a,b)=>num(a.name,b.name));
-const reviewed=r=>!!(r&&(S(r.observation).trim()||S(r.recommendation).trim()));
-const flagErr=e=>{if(!e)return;errMsg=S(e.message);if(MISS.test(errMsg+S(e.code)))missing=true;};
-const saveErr=e=>{
-  const m=S(e&&e.message);
-  return /row-level security|permission denied/i.test(m)?'Saving was blocked by Supabase security rules. Run the Weekly Report Cards SQL (see the banner on this page).':MISS.test(m)?'The Weekly Report Cards tables are missing. Run the SQL shown on the Weekly Report Cards page.':'Error: '+m;
-};
-
-/* ---------- data ---------- */
-async function fetchDispatch(classIds,weekId){
-  if(classIds&&!classIds.length)return [];
-  let q=supabaseClient.from('weekly_report_dispatch').select('*');
-  if(classIds)q=q.in('class_id',classIds.map(S));
-  if(weekId)q=q.eq('week_id',S(weekId));
-  const r=await q.order('sent_at',{ascending:false}).limit(500);
-  if(r.error){flagErr(r.error);return [];}
-  missing=false;return r.data||[];
-}
-async function fetchRemarks(ids,weekId){
-  const m=new Map();if(!ids.length)return m;
-  const r=await selectByStudentIds('weekly_remarks','id,student_id,observation,recommendation,updated_at',{week_id:S(weekId)},ids);
-  if(r.error){flagErr(r.error);return m;}
-  (r.data||[]).forEach(x=>m.set(S(x.student_id),x));return m;
-}
-async function fetchAssess(ids,weekId){
-  const m=new Map();if(!ids.length)return m;
-  const r=await selectByStudentIds('assessments','student_id,subject_id,assignment_score,test_score',{week_id:weekId},ids);
-  if(r.error){console.warn('weekly review assessments:',r.error.message);return m;}
-  (r.data||[]).forEach(a=>{const k=S(a.student_id);if(!m.has(k))m.set(k,[]);m.get(k).push(a);});return m;
-}
-async function hasScores(ids,weekId){
-  for(const part of chunkArray(ids,80)){
-    const r=await supabaseClient.from('assessments').select('id',{count:'exact',head:true}).eq('week_id',weekId).in('student_id',part);
-    if(!r.error&&(r.count||0)>0)return true;
-  }
-  return false;
-}
-function statsOf(rows){
-  rows=rows||[];if(!rows.length)return {n:0,avg:null,pct:null,g:null,rows};
-  let t=0;rows.forEach(a=>{t+=(Number(a.assignment_score)||0)+(Number(a.test_score)||0);});
-  const avg=t/rows.length;return {n:rows.length,avg,pct:avg/20*100,g:getGrade(avg),rows};
-}
-async function readAuto(force){
-  if(autoOn!==null&&!force)return autoOn;
-  const r=await supabaseClient.from('weekly_report_settings').select('value').eq('key','auto_send').limit(1);
-  if(r.error){flagErr(r.error);return autoOn===null?true:autoOn;}
-  autoOn=!(r.data&&r.data[0]&&S(r.data[0].value)==='off');return autoOn;
-}
-
-/* ---------- sending ---------- */
-function newRow(classId,weekId,auto){
-  const tc=teacherOf(classId);if(!tc)return null;
-  return {class_id:S(classId),week_id:S(weekId),teacher_id:tc.id,teacher_name:tc.name,status:'sent',auto:!!auto,
-    sent_by:auto?'auto':S(currentUser.id),sent_by_name:auto?'Automatic':(currentUser.name||''),sent_at:new Date().toISOString(),teacher_seen:false};
-}
-async function autoDispatch(force){
-  try{
-    if(missing||!currentUser||!(isAdmin()||isTeacher()))return 0;
-    if(!force&&Date.now()-lastAuto<30*60*1000)return 0;
-    lastAuto=Date.now();
-    if(!(await readAuto(true))||missing)return 0;
-    const today=ymd(new Date()),lim=new Date();lim.setDate(lim.getDate()-AUTO_DAYS);const from=ymd(lim);
-    const cand=(weeks||[]).filter(w=>{const e=weekEnd(w);return e&&e<today&&e>=from;});
-    if(!cand.length)return 0;
-    const cids=(isAdmin()?eligibleClasses().map(c=>S(c.id)):myClassIds()).filter(id=>teacherOf(id));
-    if(!cids.length)return 0;
-    const ex=await supabaseClient.from('weekly_report_dispatch').select('class_id,week_id').in('week_id',cand.map(w=>S(w.id)));
-    if(ex.error){flagErr(ex.error);return 0;}
-    const have=new Set((ex.data||[]).map(x=>S(x.class_id)+'|'+S(x.week_id)));
-    const todo=[];cand.forEach(w=>cids.forEach(c=>{if(!have.has(c+'|'+S(w.id)))todo.push({w,c});}));
-    const rows=[];
-    await runPool(todo.map(t=>async()=>{
-      const ids=clsStudents(t.c).map(s=>s.id);if(!ids.length)return;
-      if(await hasScores(ids,t.w.id)){const r=newRow(t.c,t.w.id,true);if(r)rows.push(r);}
-    }),4);
-    if(!rows.length)return 0;
-    const r=await supabaseClient.from('weekly_report_dispatch').upsert(rows,{onConflict:'class_id,week_id',ignoreDuplicates:true});
-    if(r.error){flagErr(r.error);return 0;}
-    return rows.length;
-  }catch(e){console.warn('Weekly report auto-send:',e);return 0;}
-}
-
-/* ---------- badge + dashboard banner ---------- */
-function setBadge(n){document.querySelectorAll('.wr-badge').forEach(b=>{b.textContent=n||'';b.classList.toggle('on',!!n);});}
-function dashBanner(){
-  const host=$('teacherDashboard');if(!host)return;
-  let b=$('wcrDash');
-  if(!b){b=document.createElement('div');b.id='wcrDash';b.className='wcr-dash hidden';host.insertBefore(b,host.firstChild);}
-  if(!pending||!isTeacher()){b.classList.add('hidden');return;}
-  b.classList.remove('hidden');
-  b.innerHTML='<i class="fas fa-paper-plane"></i><div><b>'+pending+' weekly report card set'+(pending===1?'':'s')+' waiting for you</b><br><small>Review each learner’s report card and add your observation &amp; recommendation.</small></div><button class="btn btn-primary btn-sm" onclick="wcrGo()"><i class="fas fa-eye"></i> Open</button>';
-}
-async function badge(){
-  try{
-    if(!currentUser||missing||!isTeacher())return;
-    const ids=myClassIds();if(!ids.length){pending=0;setBadge(0);dashBanner();return;}
-    const since=new Date(Date.now()-60*864e5).toISOString();
-    const r=await supabaseClient.from('weekly_report_dispatch').select('id',{count:'exact',head:true}).in('class_id',ids).neq('status','completed').gte('sent_at',since);
-    if(r.error){flagErr(r.error);return;}
-    pending=r.count||0;setBadge(pending);dashBanner();
-    if(pending&&!toasted){toasted=true;showToast('You have '+pending+' weekly report card set'+(pending===1?'':'s')+' to review.','info');}
-  }catch(e){}
-}
-window.wcrGo=()=>showSection('weeklyReview',document.querySelector('.wcr-nav-teacher'));
-
-/* ---------- screen shell ---------- */
-function banner(){
-  const b=$('wcrBanner');if(!b)return;
-  if(!missing){b.innerHTML='';return;}
-  b.innerHTML=isAdmin()
-    ?'<div class="wcr-warn"><b><i class="fas fa-database"></i> One-time database setup needed.</b><br>Copy the SQL below, open <b>Supabase → SQL Editor</b>, paste it and press <b>Run</b>. Then refresh this page.<div class="rg-act" style="margin:10px 0 0"><button class="btn btn-sm btn-primary" onclick="wcrCopySql()"><i class="fas fa-copy"></i> Copy SQL</button></div><div class="wcr-sql">'+esc(SQL)+'</div></div>'
-    :'<div class="wcr-warn"><b><i class="fas fa-database"></i> Weekly report cards are not set up yet.</b><br>Please ask the administrator to complete the one-time database setup.</div>';
-}
-window.wcrCopySql=()=>navigator.clipboard.writeText(SQL).then(()=>showToast('SQL copied – paste it in Supabase SQL Editor'),()=>showToast('Copy manually from the box','error'));
-async function init(){
-  view=null;banner();
-  const body=$('wcrBody');if(!body)return;
-  $('wcrHeading').innerHTML=isAdmin()?'<i class="fas fa-paper-plane"></i> Weekly Report Dispatch':'<i class="fas fa-paper-plane"></i> Weekly Report Cards';
-  body.innerHTML='<div class="empty-state">Loading…</div>';
-  if(isAdmin())await renderAdmin();else await renderTeacher();
-  banner();badge();
-}
-window.wcrBack=()=>init();
-
-/* ---------- TEACHER: inbox ---------- */
-async function renderTeacher(){
-  const body=$('wcrBody'),ids=myClassIds();
-  if(!ids.length){body.innerHTML=empty('chalkboard-teacher','You are not a class teacher','Weekly report cards are sent to the class teacher of each class.');return;}
-  const disp=await fetchDispatch(ids);
-  if(missing){body.innerHTML='';return;}
-  const list=disp.slice(0,15);
-  const prog=await Promise.all(list.map(async d=>{
-    const ss=clsStudents(d.class_id),m=await fetchRemarks(ss.map(s=>s.id),d.week_id);
-    let done=0;ss.forEach(s=>{if(reviewed(m.get(S(s.id))))done++;});return {done,total:ss.length};
-  }));
-  const intro='<div class="wcr-intro"><i class="fas fa-info-circle"></i> Each week your class’s report cards are sent here. Open one, look through every learner’s report card, then write an <b>Observation</b> and a <b>Recommendation</b>. They appear on the learner’s weekly report card.</div>';
-  if(!list.length){body.innerHTML=intro+empty('inbox','No weekly report cards yet','They arrive here automatically after each week ends, or when the administrator sends them.');return;}
-  body.innerHTML=intro+'<div class="wcr-list">'+list.map((d,i)=>{
-    const p=prog[i],pct=p.total?Math.round(p.done/p.total*100):0,w=wk(d.week_id)||{};
-    const done=d.status==='completed'||(p.total&&p.done>=p.total);
-    const st=done?['Completed','green','st-done']:p.done>0?['In progress','blue','st-prog']:!d.teacher_seen?['New','orange','st-new']:['Opened','blue','st-prog'];
-    return '<div class="wcr-item '+st[2]+'"><div class="wcr-top"><h4>'+esc(cName(d.class_id))+' · '+esc(wName(d.week_id))+'</h4><span class="wcr-chip '+st[1]+'">'+st[0]+'</span></div>'
-      +'<small>'+(w.start_date||w.end_date?fday(w.start_date)+' – '+fday(w.end_date)+'<br>':'')+'Sent '+esc(fdate(d.sent_at))+(d.auto?' (automatically)':d.sent_by_name?' by '+esc(d.sent_by_name):'')+'</small>'
-      +'<div class="wcr-bar"><i style="width:'+pct+'%"></i></div><small>'+p.done+' of '+p.total+' learner'+(p.total===1?'':'s')+' reviewed</small>'
-      +'<div class="rg-act" style="margin:12px 0 0"><button class="btn btn-primary btn-sm" onclick="wcrOpen(\''+esc(d.class_id)+'\',\''+esc(d.week_id)+'\')"><i class="fas fa-eye"></i> '+(done?'View':'Review')+'</button></div></div>';
-  }).join('')+'</div>';
-}
-
-/* ---------- ADMIN: dispatch ---------- */
-async function renderAdmin(){
-  const body=$('wcrBody'),wl=sortedWeeks().reverse();
-  if(!wl.length){body.innerHTML=empty('calendar-week','No weeks yet','Create weeks under Weeks first.');return;}
-  if(!adminWeek||!wk(adminWeek)){const d=defaultWeek();adminWeek=S(d&&d.id);}
-  const auto=await readAuto();
-  body.innerHTML='<div class="wcr-intro"><i class="fas fa-info-circle"></i> Send a week’s report cards to the class teachers. They get a notification, review each learner’s card and add an observation and recommendation. Nursery classes are excluded (they use the Nursery Observation module).</div>'
-   +'<div class="rg-bar"><div class="form-group"><label>Week</label><select id="wcrWeek" onchange="wcrWeek(this.value)">'+wl.map(w=>'<option value="'+esc(w.id)+'"'+(sameId(w.id,adminWeek)?' selected':'')+'>'+esc(w.name)+(w.start_date?' ('+esc(S(w.start_date).slice(0,10))+')':'')+'</option>').join('')+'</select></div>'
-   +'<div class="form-group"><label>Automatic sending</label><label class="wcr-switch"><input type="checkbox" id="wcrAuto" '+(auto?'checked':'')+' onchange="wcrSetAuto(this.checked)"> <span>Send automatically the day after a week ends (once scores are entered)</span></label></div></div>'
-   +'<div class="rg-act"><button class="btn btn-primary btn-sm" onclick="wcrSendAll()"><i class="fas fa-paper-plane"></i> Send to all class teachers</button><button class="btn btn-sm" style="background:#eee" onclick="wcrReloadAdmin()"><i class="fas fa-sync"></i> Refresh</button></div>'
-   +'<div id="wcrAdminTbl"><div class="empty-state">Loading classes…</div></div>';
-  await loadAdminTable();
-}
-async function loadAdminTable(){
-  const box=$('wcrAdminTbl');if(!box)return;
-  const wid=adminWeek,dl=await fetchDispatch(null,wid);
-  if(missing){box.innerHTML='';banner();return;}
-  const dmap=new Map(dl.map(d=>[S(d.class_id),d]));
-  const infos=await runPool(eligibleClasses().map(c=>async()=>{
-    const ss=clsStudents(c.id),ids=ss.map(s=>s.id);
-    const [am,rm]=await Promise.all([fetchAssess(ids,wid),fetchRemarks(ids,wid)]);
-    let scored=0,done=0;ss.forEach(s=>{if((am.get(S(s.id))||[]).length)scored++;if(reviewed(rm.get(S(s.id))))done++;});
-    return {c,total:ss.length,scored,done,d:dmap.get(S(c.id))||null,tc:teacherOf(c.id)};
-  }),4);
-  if(wid!==adminWeek)return;
-  adminInfo=infos;
-  if(!infos.length){box.innerHTML=empty('school','No classes','');return;}
-  box.innerHTML='<div class="table-container"><table class="wcr-tbl"><thead><tr><th>Class</th><th>Class teacher</th><th>Scores entered</th><th>Status</th><th>Reviewed</th><th>Sent</th><th>Actions</th></tr></thead><tbody>'
-  +infos.map(x=>{
-    let chip;
-    if(!x.tc)chip=['No class teacher','red'];
-    else if(!x.d)chip=['Not sent','grey'];
-    else if(x.d.status==='completed'||(x.total&&x.done>=x.total))chip=['Completed','green'];
-    else if(x.done>0)chip=['In progress','blue'];
-    else chip=x.d.teacher_seen?['Opened','blue']:['Sent – unread','orange'];
-    const cid=esc(x.c.id);
-    let act='';
-    if(x.tc)act+='<button class="btn btn-sm btn-primary" onclick="wcrSend(\''+cid+'\')"><i class="fas fa-paper-plane"></i> '+(x.d?'Resend':'Send')+'</button> ';
-    if(x.total)act+='<button class="btn btn-sm" style="background:#eee" onclick="wcrOpen(\''+cid+'\',\''+esc(wid)+'\')"><i class="fas fa-eye"></i> View</button>';
-    return '<tr><td><strong>'+esc(x.c.name)+'</strong></td><td>'+(x.tc?esc(x.tc.name||'—'):'<span style="color:#c41e3a">Not assigned</span>')+'</td><td>'+x.scored+' / '+x.total+'</td><td><span class="wcr-chip '+chip[1]+'">'+chip[0]+'</span></td><td>'+x.done+' / '+x.total+'</td><td>'+(x.d?'<small>'+esc(fdate(x.d.sent_at))+(x.d.auto?'<br>automatic':'')+'</small>':'—')+'</td><td style="white-space:nowrap">'+act+'</td></tr>';
-  }).join('')+'</tbody></table></div>';
-}
-window.wcrWeek=v=>{adminWeek=S(v);const b=$('wcrAdminTbl');if(b)b.innerHTML='<div class="empty-state">Loading classes…</div>';loadAdminTable();};
-window.wcrReloadAdmin=()=>{const b=$('wcrAdminTbl');if(b)b.innerHTML='<div class="empty-state">Loading classes…</div>';loadAdminTable();};
-window.wcrSetAuto=async function(on){
-  const r=await supabaseClient.from('weekly_report_settings').upsert([{key:'auto_send',value:on?'on':'off',updated_at:new Date().toISOString()}],{onConflict:'key'});
-  if(r.error){showToast(saveErr(r.error),'error');const c=$('wcrAuto');if(c)c.checked=!on;return;}
-  autoOn=!!on;showToast(on?'Automatic sending is ON':'Automatic sending is OFF','success');
-};
-async function sendTo(info,silent){
-  const wid=adminWeek,tc=info.tc;if(!tc)return false;
-  let error;
-  if(info.d){
-    ({error}=await supabaseClient.from('weekly_report_dispatch').update({teacher_id:tc.id,teacher_name:tc.name,sent_by:S(currentUser.id),sent_by_name:currentUser.name||'',sent_at:new Date().toISOString(),teacher_seen:false,auto:false}).eq('id',info.d.id));
-  }else{
-    ({error}=await supabaseClient.from('weekly_report_dispatch').upsert([newRow(info.c.id,wid,false)],{onConflict:'class_id,week_id'}));
-  }
-  if(error){showToast(saveErr(error),'error');return false;}
-  return true;
-}
-window.wcrSend=async function(classId){
-  const info=adminInfo.find(x=>sameId(x.c.id,classId));if(!info||!info.tc){showToast('This class has no class teacher assigned.','error');return;}
-  if(!info.scored&&!confirm(info.c.name+' has no scores entered for '+wName(adminWeek)+' yet. Send anyway?'))return;
-  if(await sendTo(info)){showToast((info.d?'Resent to ':'Sent to ')+(info.tc.name||'the class teacher')+' ('+info.c.name+')','success');loadAdminTable();}
-};
-window.wcrSendAll=async function(){
-  const todo=adminInfo.filter(x=>x.tc&&!x.d&&x.scored>0),noT=adminInfo.filter(x=>!x.tc&&x.scored>0).length,noS=adminInfo.filter(x=>x.tc&&!x.d&&!x.scored).length;
-  if(!todo.length){showToast('Nothing new to send for '+wName(adminWeek)+'. Use Resend on a class to remind its teacher.','info');return;}
-  if(!confirm('Send '+wName(adminWeek)+' report cards to '+todo.length+' class teacher'+(todo.length===1?'':'s')+'?'+(noS?'\n\n'+noS+' class(es) skipped: no scores entered yet.':'')+(noT?'\n'+noT+' class(es) skipped: no class teacher assigned.':'')))return;
-  const rows=todo.map(x=>newRow(x.c.id,adminWeek,false)).filter(Boolean);
-  const r=await supabaseClient.from('weekly_report_dispatch').upsert(rows,{onConflict:'class_id,week_id',ignoreDuplicates:true});
-  if(r.error){showToast(saveErr(r.error),'error');return;}
-  showToast('Sent to '+rows.length+' class teacher'+(rows.length===1?'':'s'),'success');loadAdminTable();
-};
-
-/* ---------- REVIEW screen (class teacher writes; admin views) ---------- */
-window.wcrOpen=async function(classId,weekId){
-  const body=$('wcrBody');body.innerHTML='<div class="empty-state">Loading report cards…</div>';
-  const ss=clsStudents(classId),ids=ss.map(s=>s.id);
-  const [am,rm,dl]=await Promise.all([fetchAssess(ids,weekId),fetchRemarks(ids,weekId),fetchDispatch([classId],weekId)]);
-  view={classId:S(classId),weekId:S(weekId),list:ss,assess:am,remarks:rm,dispatch:dl[0]||null,canEdit:!!(isTeacher()&&isMyClass(classId)),sel:null};
-  if(view.canEdit&&view.dispatch&&!view.dispatch.teacher_seen){
-    view.dispatch.teacher_seen=true;
-    supabaseClient.from('weekly_report_dispatch').update({teacher_seen:true,seen_at:new Date().toISOString()}).eq('id',view.dispatch.id).then(()=>badge());
-  }
-  renderReview();
-};
-function counts(){
-  let done=0,sum=0,n=0;
-  view.list.forEach(s=>{
-    if(reviewed(view.remarks.get(S(s.id))))done++;
-    const st=statsOf(view.assess.get(S(s.id)));if(st.n){sum+=st.pct;n++;}
-  });
-  return {done,total:view.list.length,avg:n?sum/n:null,scored:n};
-}
-function renderReview(){
-  const body=$('wcrBody'),v=view,w=wk(v.weekId)||{},tc=teacherOf(v.classId);
-  body.innerHTML='<div class="rg-act"><button class="btn btn-sm" style="background:#eee" onclick="wcrBackSave()"><i class="fas fa-arrow-left"></i> Back</button></div>'
-   +'<h4 class="rg-h" style="margin-top:0">'+esc(cName(v.classId))+' — '+esc(wName(v.weekId))+'</h4>'
-   +'<small style="color:#777">'+(w.start_date||w.end_date?fday(w.start_date)+' – '+fday(w.end_date)+' · ':'')+'Class teacher: <b>'+esc((tc&&tc.name)||'Not assigned')+'</b>'+(v.dispatch?' · Sent '+esc(fdate(v.dispatch.sent_at)):'')+'</small>'
-   +(v.canEdit?'':'<div class="wcr-intro" style="margin-top:12px"><i class="fas fa-lock"></i> View only. Only the assigned class teacher can write observations and recommendations.</div>')
-   +'<div id="wcrHead"></div><div id="wcrTable"></div><div id="wcrDetail"></div>';
-  paintTable();
-}
-function paintTable(){
-  const v=view,c=counts(),pct=c.total?Math.round(c.done/c.total*100):0;
-  $('wcrHead').innerHTML='<div class="wcr-tiles"><div class="wcr-tile"><b>'+c.total+'</b><span>Learners</span></div><div class="wcr-tile"><b>'+(c.avg===null?'—':Math.round(c.avg)+'%')+'</b><span>Class average</span></div><div class="wcr-tile"><b>'+c.done+' / '+c.total+'</b><span>Reviewed</span></div></div><div class="wcr-bar"><i style="width:'+pct+'%"></i></div>';
-  $('wcrTable').innerHTML=v.list.length?'<div class="table-container" style="margin-top:12px"><table class="wcr-tbl"><thead><tr><th style="width:44px">#</th><th>Learner</th><th>Subjects</th><th>Average</th><th>Grade</th><th>Observation &amp; recommendation</th><th></th></tr></thead><tbody>'
-   +v.list.map((s,i)=>{
-     const st=statsOf(v.assess.get(S(s.id))),r=v.remarks.get(S(s.id)),ok=reviewed(r);
-     return '<tr class="wcr-row'+(sameId(v.sel,s.id)?' sel':'')+'" onclick="wcrPick(\''+esc(s.id)+'\')"><td>'+(i+1)+'</td><td><strong>'+esc(s.name)+'</strong></td><td>'+(st.n||'—')+'</td><td>'+(st.n?Math.round(st.pct)+'%':'—')+'</td><td>'+(st.n?'<span class="grade-badge '+st.g.cls+'">'+st.g.grade+'</span>':'—')+'</td><td>'+(ok?'<span class="wcr-chip green"><i class="fas fa-check"></i> Written</span>':'<span class="wcr-chip grey">Pending</span>')+'</td><td><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();wcrPick(\''+esc(s.id)+'\')">'+(v.canEdit?'Open':'View')+'</button></td></tr>';
-   }).join('')+'</tbody></table></div>':empty('user-graduate','No learners in this class','');
-}
-function dirty(){
-  if(!view||!view.canEdit||!view.sel)return false;
-  const o=$('wcrObs'),r=$('wcrRec');if(!o||!r)return false;
-  const p=view.remarks.get(S(view.sel))||{};
-  return o.value.trim()!==S(p.observation).trim()||r.value.trim()!==S(p.recommendation).trim();
-}
-async function saveCurrent(silent){
-  if(!view||!view.canEdit||!view.sel||!dirty())return true;
-  const sid=S(view.sel),o=$('wcrObs'),r=$('wcrRec'),prev=view.remarks.get(sid)||{};
-  const row={student_id:sid,class_id:S(view.classId),week_id:S(view.weekId),observation:o.value.trim()||null,recommendation:r.value.trim()||null,teacher_id:S(currentUser.id),teacher_name:currentUser.name||'',updated_at:new Date().toISOString()};
-  const {error}=await supabaseClient.from('weekly_remarks').upsert([row],{onConflict:'student_id,week_id'});
-  if(error){showToast(saveErr(error),'error');return false;}
-  view.remarks.set(sid,{...prev,...row});
-  if(!silent)showToast('Observation & recommendation saved','success');
-  paintTable();syncStatus();
-  return true;
-}
-async function syncStatus(){
-  const d=view&&view.dispatch;if(!d)return;
-  const c=counts(),status=(c.total&&c.done>=c.total)?'completed':c.done>0?'in_progress':'sent';
-  if(status===d.status)return;
-  const patch={status,completed_at:status==='completed'?new Date().toISOString():null};
-  const r=await supabaseClient.from('weekly_report_dispatch').update(patch).eq('id',d.id);
-  if(!r.error){Object.assign(d,patch);if(status==='completed')showToast('All learners reviewed – this class is complete. Well done!','success');badge();}
-}
-window.wcrBackSave=async function(){if(!(await saveCurrent(true)))return;init();};
-window.wcrPick=async function(id){
-  if(!view)return;
-  if(sameId(view.sel,id))return;
-  if(!(await saveCurrent(true)))return;
-  view.sel=S(id);paintTable();renderDetail();
-};
-function renderDetail(){
-  const box=$('wcrDetail');if(!view||!view.sel){box.innerHTML='';return;}
-  const s=view.list.find(x=>sameId(x.id,view.sel));if(!s){box.innerHTML='';return;}
-  const i=view.list.indexOf(s),r=view.remarks.get(S(s.id))||{},ro=!view.canEdit;
-  box.innerHTML='<div class="wcr-detail" id="wcrPanel"><div class="wcr-dhead"><h4><i class="fas fa-user-graduate"></i> '+esc(s.name)+' <small style="color:#888;font-weight:400">('+(i+1)+' of '+view.list.length+')</small></h4>'
-   +'<div class="rg-act" style="margin:0"><button class="btn btn-sm" style="background:#eee" '+(i===0?'disabled':'')+' onclick="wcrStep(-1)"><i class="fas fa-chevron-left"></i> Prev</button><button class="btn btn-sm" style="background:#eee" '+(i===view.list.length-1?'disabled':'')+' onclick="wcrStep(1)">Next <i class="fas fa-chevron-right"></i></button><button class="btn btn-sm btn-secondary" onclick="wcrPdf()"><i class="fas fa-file-pdf"></i> PDF</button></div></div>'
-   +'<div class="wcr-cardbox" id="wcrCardBox"><div class="empty-state" style="padding:24px">Loading report card…</div></div>'
-   +'<div class="wcr-form"><div class="form-group"><label><i class="fas fa-eye"></i> Observation</label><textarea id="wcrObs" class="comment-box'+(ro?' wcr-ro':'')+'" maxlength="'+MAXLEN+'" '+(ro?'readonly':'')+' placeholder="'+(ro?'No observation written yet.':'What did you observe about this learner this week? (behaviour, effort, participation, progress)')+'"></textarea></div>'
-   +'<div class="form-group" style="margin-top:12px"><label><i class="fas fa-lightbulb"></i> Recommendation</label><textarea id="wcrRec" class="comment-box'+(ro?' wcr-ro':'')+'" maxlength="'+MAXLEN+'" '+(ro?'readonly':'')+' placeholder="'+(ro?'No recommendation written yet.':'What should the learner, parents or teachers do next?')+'"></textarea></div>'
-   +(ro?'':'<div class="wcr-hint">Appears on the learner’s weekly report card. Max '+MAXLEN+' characters each.</div><div class="rg-act" style="margin-top:12px"><button class="btn btn-primary btn-sm" onclick="wcrSave()"><i class="fas fa-save"></i> Save</button><button class="btn btn-primary btn-sm" onclick="wcrSave(true)"><i class="fas fa-forward"></i> Save &amp; next learner</button><button class="btn btn-sm" style="background:#eee" onclick="wcrSuggest()"><i class="fas fa-magic"></i> Draft from scores</button></div>')
-   +'</div></div>';
-  $('wcrObs').value=r.observation||'';$('wcrRec').value=r.recommendation||'';
-  const token=S(s.id);
-  buildWeeklyReportCardHTML(s,view.weekId).then(h=>{const cb=$('wcrCardBox');if(cb&&view&&sameId(view.sel,token))cb.innerHTML=h;})
-   .catch(e=>{const cb=$('wcrCardBox');if(cb)cb.innerHTML='<div class="empty-state" style="padding:24px">Could not load the report card: '+esc(e.message||e)+'</div>';});
-  const p=$('wcrPanel');if(p&&p.scrollIntoView)p.scrollIntoView({behavior:'smooth',block:'start'});
-}
-window.wcrStep=async function(d){
-  if(!view||!view.sel)return;
-  const i=view.list.findIndex(x=>sameId(x.id,view.sel)),n=view.list[i+d];if(!n)return;
-  if(!(await saveCurrent(true)))return;
-  view.sel=S(n.id);paintTable();renderDetail();
-};
-window.wcrSave=async function(next){
-  if(!view||!view.sel)return;
-  if(!(await saveCurrent(!!next)))return;
-  if(next){
-    const i=view.list.findIndex(x=>sameId(x.id,view.sel)),n=view.list[i+1];
-    if(n){view.sel=S(n.id);paintTable();renderDetail();showToast('Saved','success');}
-    else showToast('Saved. That was the last learner.','success');
-  }
-};
-window.wcrSuggest=function(){
-  if(!view||!view.canEdit||!view.sel)return;
-  const st=statsOf(view.assess.get(S(view.sel)));
-  if(!st.n){showToast('No scores have been entered for this learner this week.','info');return;}
-  const o=$('wcrObs'),r=$('wcrRec');
-  if(o.value.trim()&&r.value.trim()){showToast('Both boxes already have text. Clear one to get a draft.','info');return;}
-  const items=st.rows.map(a=>({name:subName(a.subject_id),t:(Number(a.assignment_score)||0)+(Number(a.test_score)||0)})).sort((a,b)=>b.t-a.t);
-  const best=items[0],weak=items[items.length-1],pct=Math.round(st.pct),spread=items.length>1&&best.t!==weak.t;
-  const obs='The learner averaged '+pct+'% this week (Grade '+st.g.grade+' – '+st.g.remark+')'+(spread?', with the strongest result in '+best.name+' ('+fmt(best.t)+'/20) and the weakest in '+weak.name+' ('+fmt(weak.t)+'/20).':'.');
-  const where=spread?', especially in '+weak.name:'';
-  const rec=pct>=85?'Keep up the excellent work. Extend the learner with challenge and enrichment tasks to sustain this standard.'
-    :pct>=70?'Good effort. Regular revision'+where+' will help move the learner into the next grade band.'
-    :pct>=50?'More consistent revision and homework completion are needed'+where+'. Parents/guardians are encouraged to supervise practice at home.'
-    :'Extra support is needed'+where+'. Short daily practice at home and a follow-up conversation with the class teacher are recommended.';
-  if(!o.value.trim())o.value=obs;if(!r.value.trim())r.value=rec;
-  showToast('Draft added – edit it so it sounds like you.','info');
-};
-window.wcrPdf=async function(){
-  if(!view||!view.sel)return;
-  const s=view.list.find(x=>sameId(x.id,view.sel));if(!s)return;
-  if(!(await saveCurrent(true)))return;
-  try{
-    showToast('Creating PDF…','info');
-    const html=await buildWeeklyReportCardHTML(s,view.weekId);
-    await renderSingleReportCardPdf(html,'NGIS_Weekly_Report_'+rcSafeName(s.name,'Student')+'_'+rcSafeName(wName(view.weekId),'Week')+'.pdf');
-  }catch(e){showToast('Could not create the PDF: '+(e.message||e),'error');}
-};
-
-/* ---------- block printed on every weekly report card ---------- */
-window.ngisWeeklyRemarkHtml=async function(studentId,weekId){
-  if(missing||!studentId||!weekId)return '';
-  try{
-    const r=await supabaseClient.from('weekly_remarks').select('observation,recommendation').eq('student_id',S(studentId)).eq('week_id',S(weekId)).limit(1);
-    if(r.error){flagErr(r.error);return '';}
-    const d=r.data&&r.data[0];if(!d)return '';
-    const o=S(d.observation).trim(),c=S(d.recommendation).trim();if(!o&&!c)return '';
-    return '<div class="wr-remark-block">'
-      +(o?'<div class="report-comment" style="border-left-color:#e65100"><h4><i class="fas fa-eye"></i> Class Teacher’s Observation</h4><p>'+nl(o)+'</p></div>':'')
-      +(c?'<div class="report-comment" style="border-left-color:#1565c0"><h4><i class="fas fa-lightbulb"></i> Recommendation</h4><p>'+nl(c)+'</p></div>':'')
-      +'</div>';
-  }catch(e){return '';}
-};
-
-/* ---------- wiring ---------- */
-const _part=window.ngisApplyTeacherPartition;
-window.ngisApplyTeacherPartition=function(){
-  const r=typeof _part==='function'?_part.apply(this,arguments):undefined;
-  try{document.querySelectorAll('.wcr-nav-teacher').forEach(el=>{el.style.display=(isTeacher()&&myClassIds().length)?'flex':'none';});}catch(e){}
-  return r;
-};
-const _prev=window.showSection;
-window.showSection=function(id,nav){
-  if(id==='weeklyReview'&&!(isAdmin()||(isTeacher()&&myClassIds().length))){showToast('Weekly report cards are available to class teachers and administrators.','error');return;}
-  _prev(id,nav);
-  if(id==='weeklyReview'){const t=$('pageTitle');if(t)t.innerHTML='<i class="fas fa-paper-plane"></i> '+(isAdmin()?'Weekly Report Dispatch':'Weekly Report Cards');init();}
-};
-async function tick(){
-  const uid=currentUser?S(currentUser.id)+':'+currentUser.role:null;
-  if(uid!==lastUid){lastUid=uid;ready=false;tickN=0;lastAuto=0;toasted=false;pending=0;autoOn=null;adminWeek='';view=null;missing=false;setBadge(0);dashBanner();}
-  if(!uid||!(isAdmin()||isTeacher()))return;
-  const loaded=isAdmin()?((classes||[]).length&&(weeks||[]).length):(window._ngisOwnClassesLoaded&&(classes||[]).length&&(weeks||[]).length);
-  if(!loaded)return;
-  if(!ready){ready=true;await autoDispatch(true);await badge();tickN=0;return;}
-  if(++tickN>=6){tickN=0;await autoDispatch(false);await badge();}
-}
-setInterval(tick,5000);setTimeout(tick,1500);
-window.addEventListener('focus',()=>{if(ready)badge();});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready)badge();});
-})();
-</script>
-
-<script>
-/* ===== Integrated weekly report-card class-teacher remarks =====
-   Uses weekly_remarks (same table as the Weekly Class Review inbox).
-   This makes the normal Generate Report workflow and the review inbox share
-   the same saved Observation and Recommendation for each learner/week. */
-(function(){
-  const $=id=>document.getElementById(id);
-  const S=v=>String(v??'');
-  function selected(){
-    const studentId=$('reportStudentSelect')?.value||'';
-    const weekId=$('reportWeekSelect')?.value||'';
-    const student=(students||[]).find(s=>sameId(s.id,studentId));
-    return {studentId,weekId,student,classId:student?.class_id||''};
-  }
-  function isAssignedClassTeacher(classId){
-    return !!(currentUser&&currentUser.role==='teacher'&&
-      (classTeachers||[]).some(c=>sameId(c.class_id,classId)&&sameId(c.teacher_id,currentUser.id)));
-  }
-  window.loadReportCardTeacherCommentEditor=async function(studentId,weekId,classId){
-    const editor=$('reportCardTeacherCommentEditor');
-    const obs=$('reportCardTeacherObservation'),rec=$('reportCardTeacherRecommendation');
-    if(!editor||!obs||!rec)return;
-    editor.classList.add('hidden');obs.value='';rec.value='';
-    if(!currentUser||currentUser.role!=='teacher'||!studentId||!weekId||!classId||!isAssignedClassTeacher(classId))return;
-    const {data,error}=await supabaseClient.from('weekly_remarks')
-      .select('observation,recommendation')
-      .eq('student_id',S(studentId)).eq('week_id',S(weekId)).limit(1);
-    if(error){
-      console.error('Unable to load weekly remarks:',error);
-      showToast(/does not exist|schema cache|42P01|PGRST/i.test(error.message||'')
-        ?'Weekly remarks table is missing. Run weekly_report_review.sql in Supabase.'
-        :'Unable to load observations and recommendation: '+error.message,'error');
-      return;
-    }
-    const row=data&&data[0]||{};
-    obs.value=row.observation||'';
-    rec.value=row.recommendation||'';
-    editor.classList.remove('hidden');
-  };
-  window.saveReportCardTeacherComment=async function(){
-    const {studentId,weekId,classId}=selected();
-    const obs=$('reportCardTeacherObservation')?.value.trim()||'';
-    const rec=$('reportCardTeacherRecommendation')?.value.trim()||'';
-    if(!studentId||!weekId||!classId){showToast('Generate a learner report card first.','error');return;}
-    if(!isAssignedClassTeacher(classId)){showToast('Only the assigned class teacher can save these remarks.','error');return;}
-    if(!obs&&!rec){showToast('Enter an observation or recommendation before saving.','error');return;}
-    const row={
-      student_id:S(studentId),class_id:S(classId),week_id:S(weekId),
-      observation:obs||null,recommendation:rec||null,
-      teacher_id:S(currentUser.id),teacher_name:currentUser.name||'',
-      updated_at:new Date().toISOString()
-    };
-    const {error}=await supabaseClient.from('weekly_remarks')
-      .upsert([row],{onConflict:'student_id,week_id'});
-    if(error){
-      showToast(/row-level security|permission denied/i.test(error.message||'')
-        ?'Saving was blocked by Supabase security rules. Run weekly_report_review.sql and check the weekly_remarks policy.'
-        :/does not exist|schema cache|42P01|PGRST/i.test(error.message||'')
-          ?'weekly_remarks table is missing. Run weekly_report_review.sql in Supabase.'
-          :'Error saving remarks: '+error.message,'error');
-      return;
-    }
-    showToast('Observation and recommendation saved successfully.','success');
-    // Rebuild the report card immediately so both remarks are visible on it.
-    if(typeof window.generateReportCard==='function')await window.generateReportCard();
-  };
-  window.loadReportCardTeacherComment=async function(){
-    const x=selected();
-    if(!x.studentId||!x.weekId||!x.classId){showToast('Select a learner and week, then generate the report card.','error');return;}
-    await window.loadReportCardTeacherCommentEditor(x.studentId,x.weekId,x.classId);
-  };
-})();
-</script>
-<script>
-window.addEventListener('unhandledrejection',function(e){try{console.error(e.reason);if(typeof showToast==='function')showToast('Something went wrong: '+((e.reason&&e.reason.message)||'please try again'),'error');}catch(_){}});
-document.addEventListener('DOMContentLoaded',function(){
-  ['loginEmail','loginPassword'].forEach(function(id){
-    var el=document.getElementById(id);
-    if(el)el.addEventListener('keydown',function(ev){if(ev.key==='Enter'){ev.preventDefault();window.login();}});
-  });
-});
 </script>
 </body>
 </html>
