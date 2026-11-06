@@ -770,7 +770,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <p style="margin-top:12px;font-size:0.75rem;color:#888;">Your login is created by the school administrator.</p>
 <p style="margin-top:10px;font-size:0.8rem;color:#888;cursor:pointer;" onclick="showLoginTab('teacher')"><i class="fas fa-arrow-left"></i> Back to Teacher Login</p>
 </div>
-<p style="margin-top:20px;font-size:0.75rem;color:#aaa;"><i class="fas fa-shield-alt"></i> Secured by Supabase Realtime Cloud</p>
+
 <div id="ngisInstallBox" style="margin-top:18px;display:none">
 <button type="button" id="ngisInstallBtn" class="btn btn-primary" style="width:100%;justify-content:center;background:#f4b400;color:#1a1a1a;font-weight:700" onclick="ngisInstallApp()"><i class="fas fa-download"></i> Download / Install NGIS App</button>
 <a id="ngisApkBtn" href="#" style="display:none;margin-top:8px;text-decoration:none;justify-content:center" class="btn btn-secondary" download><i class="fab fa-android"></i> Download Android APK</a>
@@ -813,6 +813,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('incidentForm',this)"><i class="fas fa-file-medical-alt"></i> Incident &amp; Concern Form</div>
 <div class="nav-item" onclick="showSection('dsTeacher',this)"><i class="fas fa-book-open"></i> Today at School</div>
 <div class="nav-item" onclick="showSection('tsEntry',this)"><i class="fas fa-table"></i> Termly Score Entry</div>
+<div class="nav-item" onclick="showSection('caRecord',this)"><i class="fas fa-clipboard-list"></i> General C.A Record</div>
 
 
 
@@ -871,6 +872,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('regBackup',this)"><i class="fas fa-database"></i> Register Backup</div>
 <div class="nav-item" onclick="showSection('backupAll',this)"><i class="fas fa-cloud-download-alt"></i> Full Backup (JSON + CSV)</div>
 <div class="nav-item" onclick="showSection('tsEntry',this)"><i class="fas fa-table"></i> Termly Score Entry</div>
+<div class="nav-item" onclick="showSection('caRecord',this)"><i class="fas fa-clipboard-list"></i> General C.A Record</div>
 <div class="nav-item" onclick="showSection('tsReports',this)"><i class="fas fa-file-pdf"></i> Termly Report Cards</div>
 <div class="nav-item" onclick="showSection('tsBroadsheet',this)"><i class="fas fa-th"></i> Termly Broadsheet</div>
 <div class="nav-item" onclick="showSection('tsAnalysis',this)"><i class="fas fa-chart-pie"></i> Termly Analysis</div>
@@ -1235,6 +1237,19 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="rg-sql" id="regSql"></div>
 </div></div>
 
+<div id="caRecord" class="section hidden"><div class="card">
+<div class="card-header"><h3><i class="fas fa-clipboard-list"></i> General C.A Record</h3></div>
+<div class="form-grid">
+<div class="form-group"><label>Class</label><select id="caClass" onchange="caAutoLoad()"></select></div>
+<div class="form-group"><label>Subject</label><select id="caSubject" onchange="caAutoLoad()"></select></div>
+<div class="form-group"><label>Term</label><select id="caTerm" onchange="caAutoLoad()"></select></div>
+<div class="form-group"><label>Session</label><select id="caSession" onchange="caAutoLoad()"></select></div>
+</div>
+<div class="ts-note"><b>How it works:</b> Test /10 + Take Home Assignment /10 = <b>1st C.A /20</b> &middot; Quiz /5 + Debate /5 + Project /10 = <b>2nd C.A /20</b> &middot; Affective /10 (Attendance, Appearance, Honesty, Punctuality, Relationship with Others, 2 each) + Psychomotor /10 (Note Copying /5, Practical/Project /5) = <b>Proj/Ass /20</b> &middot; Exam /40. When you press <b>Save &amp; Push to Report Card</b>, the record is stored in the database and the totals are sent straight to the termly report card (1st C.A &rarr; Test 1, 2nd C.A &rarr; Test 2, Psychomotor &rarr; Project, Affective &rarr; Assignment). Not used for Senior Secondary classes.</div>
+<input type="file" id="caFile" accept=".xlsx,.xls" style="display:none" onchange="caUpload(this)">
+<div id="caSetup"></div>
+<div id="caWrap"><div class="empty-state">Choose class, subject, term and session to open the record.</div></div>
+</div></div>
 <div id="tsEntry" class="section hidden"><div class="card">
 <div class="card-header"><h3><i class="fas fa-table"></i> Termly Score Entry</h3></div>
 
@@ -1245,7 +1260,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="form-group"><label>Session</label><select id="tsESession" onchange="tsEntryAutoLoad()"></select></div>
 </div>
 
-<div class="ts-note" id="tsOfflineNote"><b>Offline scoresheet:</b> choose Class, Subject, Term &amp; Session, then download the Excel scoresheet. It lists every student with the five score columns (Test 1 /20, Test 2 /20, Project /10, Assignment /10, Exam /40). Fill it in offline, then upload it back here to save all scores at once.</div>
+<div class="ts-note" id="tsOfflineNote"><b>Offline scoresheet:</b> choose Class, Subject, Term &amp; Session, then download the Excel scoresheet. It lists every student with the five score columns (Junior classes: Test 1 /20, Test 2 /20, Project /10, Assignment /10, Exam /40. Senior Secondary classes: Test 1 /10, Test 2 /10, Assignment/Project /10, Exam /70). Fill it in offline, then upload it back here to save all scores at once.</div>
 <div class="ts-btnrow">
 <button class="btn btn-success" onclick="tsSheetDownload()"><i class="fas fa-file-excel"></i> Download Scoresheet</button>
 <button class="btn btn-primary" onclick="document.getElementById('tsSheetFile').click()"><i class="fas fa-upload"></i> Upload Filled Scoresheet</button>
@@ -1297,7 +1312,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <button class="btn btn-danger" onclick="tsPubAll(false)"><i class="fas fa-eye-slash"></i> Unpublish All</button></div>
 <div id="tsPubWrap" class="ts-scroll"></div></div>
 <div class="card"><div class="card-header"><h3><i class="fas fa-laptop-code"></i> Exam CBT Setup</h3></div>
-<div class="ts-note">Mark a CBT quiz as <b>Exam</b> and choose its term/session. When a student submits it, the score is converted to /40 and written straight to that student's report card Exam field. Weekly quizzes keep feeding the weekly Test score as before.</div>
+<div class="ts-note">Mark a CBT quiz as <b>Exam</b> and choose its term/session. When a student submits it, the score is converted to /40 (or /70 for Senior Secondary) and written straight to that student's report card Exam field. Weekly quizzes keep feeding the weekly Test score as before.</div>
 <div class="ts-btnrow"><button class="btn btn-primary" onclick="tsQuizLoad()"><i class="fas fa-sync"></i> Load Quizzes</button></div>
 <div id="tsQuizWrap" class="ts-scroll"></div></div></div>
 
@@ -2131,7 +2146,7 @@ Only the class teacher assigned to this class can save the comment.
 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;"><button class="btn" style="background:#eee;color:#333;" onclick="closeModal('teacherModal')">Cancel</button><button class="btn btn-primary" onclick="saveTeacher()">Save Teacher</button></div>
 </div>
 <div class="modal hidden" id="classTeacherModal">
-<h3><i class="fas fa-users-cog"></i> Assign Class Teacher</h3>
+<h3><i class="fas fa-users-cog"></i> Assign Class to Teacher</h3>
 <div class="form-group"><label>Teacher</label><select id="ctTeacherInput"><option value="">-- Select Teacher --</option></select></div>
 <div class="form-group"><label>Class</label><select id="ctClassInput"><option value="">-- Select Class --</option></select></div>
 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;"><button class="btn" style="background:#eee;color:#333;" onclick="closeModal('classTeacherModal')">Cancel</button><button class="btn btn-primary" onclick="saveClassTeacher()">Assign</button></div>
@@ -2150,7 +2165,7 @@ Only the class teacher assigned to this class can save the comment.
 <div class="form-group"><label>Email</label><input type="text" id="editTeacherEmailInput" inputmode="email" autocomplete="email"></div>
 <div class="form-group"><label>Password</label><input type="text" id="editTeacherPasswordInput" placeholder="Leave blank to keep current"></div>
 <div class="form-group"><label>Subjects (tick all subjects this teacher should handle)</label><div id="editTeacherSubjectCheckboxes" style="max-height:150px;overflow-y:auto;border:2px solid #e0e0e0;border-radius:var(--radius-sm);padding:12px;background:var(--white);"></div></div>
-<div class="form-group"><label>Assigned Classes / Class Teacher (click to tick)</label><div id="editTeacherClassCheckboxes" style="max-height:180px;overflow-y:auto;border:2px solid #e0e0e0;border-radius:var(--radius-sm);padding:12px;background:var(--white);"></div><small style="display:block;color:#777;margin-top:6px">Tick the classes this teacher is assigned to. These assignments control who can enter class-teacher comments.</small></div>
+<div class="form-group"><label>Classes this teacher teaches (the teacher sees only these classes when entering scores)</label><div id="editTeacherClassCheckboxes" style="max-height:180px;overflow-y:auto;border:2px solid #e0e0e0;border-radius:var(--radius-sm);padding:12px;background:var(--white);"></div><small style="display:block;color:#777;margin-top:6px">Tick the classes this teacher is assigned to. These assignments control who can enter class-teacher comments.</small></div>
 <div class="form-group ngis-section-picker" id="editTeacherSections"><label><strong>School Section(s) — tick all that apply</strong></label><div class="ngis-section-checks"><label><input type="checkbox" value="nursery"> Nursery</label><label><input type="checkbox" value="primary"> Primary</label><label><input type="checkbox" value="junior_secondary"> Junior Secondary</label><label><input type="checkbox" value="senior_secondary"> Senior Secondary</label></div><small>Required. This is separate from assigning subjects or class-teacher duties.</small></div>
 <div class="form-group"><label>Role</label><select id="editTeacherRoleInput"><option value="teacher">Teacher</option><option value="admin">Admin</option></select></div>
 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;"><button class="btn" style="background:#eee;color:#333;" onclick="closeModal('editTeacherModal')">Cancel</button><button class="btn btn-primary" onclick="updateTeacher()">Update Teacher</button></div>
@@ -2438,6 +2453,7 @@ function ngisResetMenuSearch(){
  const count=document.getElementById('ngisMenuSearchCount');if(count)count.textContent='';
 }
 async function setupDashboard(){
+window._ngisOwnClassesLoaded=false;
 ngisResetMenuSearch();
 document.getElementById('landingPage').style.display='none';
 document.getElementById('dashboard').style.display='block';
@@ -2493,6 +2509,8 @@ async function ngisRefreshOwnClassTeacherAssignments(){
   const id=String(currentUser.class_id);
   if(!classTeachers.some(x=>String(x.teacher_id)===uid&&String(x.class_id)===id))classTeachers.push({teacher_id:currentUser.id,class_id:currentUser.class_id});
  }
+ window._ngisOwnClassesLoaded=true;
+ try{if(window.ngisFilterTeacherClassSelects)window.ngisFilterTeacherClassSelects();}catch(e){console.warn(e);}
 }
 function ngisHasClassTeacherAssignment(){
  return !!(currentUser?.role==='teacher' && (classTeachers||[]).some(x=>String(x.teacher_id)===String(currentUser.id)));
@@ -5808,16 +5826,36 @@ async function deleteStudent(id){
 async function deleteClass(id){
   if(currentUser?.role!=='admin'){showToast('Only administrators can delete classes.','error');return;}
   const cls=classes.find(c=>String(c.id)===String(id));
-  const count=students.filter(s=>String(s.class_id)===String(id)).length;
-  if(count>0){showToast('Cannot delete '+(cls?.name||'class')+': it still has '+count+' student(s). Move or delete them first.','error');return;}
-  if(!confirm('Delete class '+(cls?.name||'')+'?'))return;
+  if(!cls){showToast('Class not found. Refresh and try again.','error');return;}
+  const name=cls.name||'this class';
+  const pupils=students.filter(s=>String(s.class_id)===String(id));
+  const nTeachers=(classTeachers||[]).filter(x=>String(x.class_id)===String(id)).length;
+  if(pupils.length>0){
+    const typed=prompt('DELETE CLASS: '+name+'\n\nThis class still has '+pupils.length+' student(s). The students will NOT be deleted, but they will be left without a class until you move them (Students / Promote Students).\nTeacher assignments to this class ('+nTeachers+') will be removed.\n\nTo confirm, type the class name exactly:\n'+name);
+    if(typed===null)return;
+    if(String(typed).trim().toLowerCase()!==String(name).trim().toLowerCase()){showToast('Class name did not match. Nothing was deleted.','error');return;}
+  }else{
+    if(!confirm('Delete class "'+name+'"?\n\nThis class has no students. Teacher assignments to it ('+nTeachers+') will be removed.\nThis cannot be undone.'))return;
+  }
+  if(pupils.length>0){
+    const {error:stErr}=await supabaseClient.from('students').update({class_id:null}).eq('class_id',id);
+    if(stErr){showToast('Could not detach the students from '+name+': '+stErr.message+'. Move them to another class first (Promote Students).','error');return;}
+  }
   const {error:ctErr}=await supabaseClient.from('class_teachers').delete().eq('class_id',id);
   if(ctErr)console.warn('Could not clear class teacher assignments:',ctErr.message);
   const {data,error}=await supabaseClient.from('classes').delete().eq('id',id).select();
-  if(error){showToast('Error: '+error.message,'error');return;}
+  if(error){
+    const linked=/foreign key|violates|23503/i.test(error.message+' '+(error.code||''));
+    showToast(linked?'Cannot delete '+name+': it still has linked records (scores, quizzes, assignments...). Details: '+error.message:'Error: '+error.message,'error');
+    if(pupils.length>0){try{await loadStudents();}catch(e){}}
+    return;
+  }
   if(!data||!data.length){showToast('Class was not deleted. Check your Supabase DELETE policy.','error');return;}
-  showToast('Class deleted');
+  showToast('Class "'+name+'" deleted','success');
   await loadClasses(); await loadClassTeachers();
+  try{await loadStudents();}catch(e){}
+  try{if(typeof populateDropdowns==='function')populateDropdowns();}catch(e){}
+  try{if(typeof renderClassesTable==='function')renderClassesTable();}catch(e){}
 }
 
 async function deleteSubject(id){
@@ -6849,9 +6887,15 @@ const $=id=>document.getElementById(id);
 const num=v=>(v===null||v===undefined||v==='')?null:Number(v);
 const n0=v=>Number(v)||0, r2=v=>Math.round(v*100)/100;
 const UPS='student_id,subject_id,term_id,session_id';
+/* Senior Secondary (SS1-3 / Year 10-12): Test 1 /10, Test 2 /10, Assignment/Project /10, Exam /70.
+   Every other class: Test 1 /20, Test 2 /20, Project /10, Assignment /10, Exam /40. */
+const isSeniorName=name=>{const n=String(name||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return /^(SSS|SS[123]|SENIOR|YEAR(10|11|12)(?!\d)|GRADE(10|11|12)(?!\d))/.test(n);};
+const isSenior=id=>{if(id===null||id===undefined||id==='')return false;const c=(typeof classes!=='undefined'?classes:[]).find(x=>sameId(x.id,id));return !!c&&isSeniorName(c.name);};
+const scheme=id=>isSenior(id)?{senior:true,t1:10,t2:10,pr:0,as:10,ex:70}:{senior:false,t1:20,t2:20,pr:10,as:10,ex:40};
+window.ngisIsSeniorClass=isSenior;window.ngisTermScheme=scheme;
 const eff=r=>{const m=num(r.assignment_manual);return Math.min(10,m!==null?m:n0(r.assignment_auto));};
-const t1eff=r=>{const m=num(r.test1_manual);return Math.min(20,m!==null?m:n0(r.test1));};
-const total=r=>r2(t1eff(r)+n0(r.test2)+n0(r.project)+eff(r)+n0(r.exam));
+const t1eff=r=>{const m=num(r.test1_manual);return Math.min(scheme(r.class_id).t1,m!==null?m:n0(r.test1));};
+const total=r=>{const sc=scheme(r.class_id);return r2(t1eff(r)+Math.min(sc.t2,n0(r.test2))+(sc.senior?0:n0(r.project))+eff(r)+Math.min(sc.ex,n0(r.exam)));};
 function grade(p){if(p>=95)return['A+','Excellent'];if(p>=85)return['A','Very Good'];if(p>=80)return['B+','Good'];if(p>=70)return['B','Above Average'];if(p>=60)return['C','Average'];if(p>=50)return['D','Pass'];if(p>=45)return['E','Below Average'];return['F','Fail'];}
 const esc=v=>escapeHtml(v);
 const activeSess=()=>sessions.find(s=>s.is_active)?.id||'';
@@ -6875,7 +6919,7 @@ async function tsSync(studentIds,subjectId,termId,sessionId){
     selectByStudentIds('midterm_assessments','student_id,major_test_score',{subject_id:subjectId,term_id:termId,session_id:sessionId},studentIds),
     wk.size?selectByStudentIds('assessments','student_id,week_id,assignment_score,test_score',{subject_id:subjectId},studentIds):Promise.resolve({data:[]})]);
   const t1={},asg={};
-  (mt.data||[]).forEach(r=>{if(r.major_test_score!==null)t1[r.student_id]=Number(r.major_test_score);});
+  (mt.data||[]).forEach(r=>{if(r.major_test_score!==null){const st=students.find(x=>sameId(x.id,r.student_id));t1[r.student_id]=isSenior(st?.class_id)?r2(Number(r.major_test_score)/2):Number(r.major_test_score);}});
   (as.data||[]).forEach(r=>{if(!wk.has(String(r.week_id)))return;asg[r.student_id]=(asg[r.student_id]||0)+0.1*(n0(r.assignment_score)+n0(r.test_score));});
   const now=new Date().toISOString();
   const rows=studentIds.map(id=>({student_id:id,class_id:students.find(s=>sameId(s.id,id))?.class_id||null,subject_id:subjectId,term_id:termId,session_id:sessionId,
@@ -6917,7 +6961,7 @@ window.submitStudentQuiz=async function(confirmSubmit=true,expired=false){
   clearInterval(cbtTimer);
   let correct=0;const answers={};
   cbtRunner.questions.forEach(q=>{const el=document.querySelector('input[name="q_'+q.id+'"]:checked');const a=el?.value||'';answers[q.id]=a;if(a&&a===q.correct_answer)correct++;});
-  const tot=cbtRunner.questions.length,pct=tot?correct/tot*100:0,mark=r2(pct/100*40),now=new Date().toISOString();
+  const tot=cbtRunner.questions.length,pct=tot?correct/tot*100:0,mark=r2(pct/100*scheme(currentUser.class_id).ex),now=new Date().toISOString();
   const {error}=await supabaseClient.from('quiz_attempts').insert([{quiz_id:quiz.id,student_id:currentUser.id,started_at:new Date(Date.now()-(quiz.duration_minutes*60-cbtSecondsLeft)*1000).toISOString(),submitted_at:now,score:mark,percentage:pct,correct_count:correct,total_questions:tot,status:expired?'expired':'submitted',answers}]);
   if(error){showToast('Could not save exam: '+error.message,'error');startCBTTimer();return;}
   await ensureRef();
@@ -6927,7 +6971,7 @@ window.submitStudentQuiz=async function(confirmSubmit=true,expired=false){
   else{const {error:e}=await supabaseClient.from('term_scores').upsert([{student_id:currentUser.id,class_id:currentUser.class_id,subject_id:quiz.subject_id,term_id:ts.termId,session_id:ts.sessionId,exam:mark,updated_at:now}],{onConflict:UPS});
     if(e)note='Exam saved, but the report card could not be updated: '+tsErr(e);}
   $('studentQuizRunner').classList.add('hidden');const r=$('studentQuizResult');r.classList.remove('hidden');
-  r.innerHTML='<div style="text-align:center;padding:30px"><i class="fas fa-check-circle" style="font-size:3rem;color:var(--primary)"></i><h2 style="margin:12px 0;color:var(--primary)">Exam Submitted</h2><div style="font-size:2rem;font-weight:800">'+mark.toFixed(1)+' / 40</div><p style="margin-top:8px">'+correct+' of '+tot+' correct</p><p style="margin-top:10px;font-size:.85rem;color:#666">'+esc(note)+'</p><button class="btn btn-primary" style="margin-top:18px" onclick="loadStudentQuizzes();document.getElementById(\'studentQuizResult\').classList.add(\'hidden\')">Back to Quizzes</button></div>';
+  r.innerHTML='<div style="text-align:center;padding:30px"><i class="fas fa-check-circle" style="font-size:3rem;color:var(--primary)"></i><h2 style="margin:12px 0;color:var(--primary)">Exam Submitted</h2><div style="font-size:2rem;font-weight:800">'+mark.toFixed(1)+' / '+scheme(currentUser.class_id).ex+'</div><p style="margin-top:8px">'+correct+' of '+tot+' correct</p><p style="margin-top:10px;font-size:.85rem;color:#666">'+esc(note)+'</p><button class="btn btn-primary" style="margin-top:18px" onclick="loadStudentQuizzes();document.getElementById(\'studentQuizResult\').classList.add(\'hidden\')">Back to Quizzes</button></div>';
   cbtRunner=null;loadStudentQuizzes();
 };
 
@@ -6953,7 +6997,7 @@ window.tsEntryAutoLoad=function(){
   });
 };
 window.tsEntryLoad=async function(){
-  const c=$('tsEClass').value,s=$('tsESubject').value,t=$('tsETerm').value,se=$('tsESession').value;
+  const c=$('tsEClass').value,s=$('tsESubject').value,t=$('tsETerm').value,se=$('tsESession').value;const SC=scheme(c);
   if(!c||!s||!t||!se){showToast('Select class, subject, term and session','error');return;}
   const list=students.filter(x=>sameId(x.class_id,c)).sort((a,b)=>String(a.name).localeCompare(b.name));
   if(!list.length){$('tsEntryWrap').innerHTML='<div class="empty-state">No students in this class.</div>';return;}
@@ -6964,14 +7008,14 @@ window.tsEntryLoad=async function(){
   if(error){$('tsEntryWrap').innerHTML='<div class="empty-state">'+esc(tsErr(error))+'</div>';return;}
   const m={};(data||[]).forEach(r=>m[r.student_id]=r);
   const inp=(id,v,max)=>'<input type="number" inputmode="decimal" min="0" max="'+max+'" step="0.1" id="'+id+'" value="'+(v??'')+'" oninput="tsRow(\''+id.split('_')[1]+'\')">';
-  $('tsEntryWrap').innerHTML='<div class="ts-scroll"><table class="ts-grid"><thead><tr><th>Student</th><th>Test 1 /20</th><th>Test 2 /20</th><th>Project /10</th><th>Assignment /10</th><th>Exam /40</th><th>Total /100</th><th>Grade</th></tr></thead><tbody>'+
+  $('tsEntryWrap').innerHTML='<div class="ts-scroll"><table class="ts-grid"><thead><tr><th>Student</th><th>Test 1 /'+SC.t1+'</th><th>Test 2 /'+SC.t2+'</th>'+(SC.senior?'':'<th>Project /10</th>')+'<th>'+(SC.senior?'Assignment/Project':'Assignment')+' /10</th><th>Exam /'+SC.ex+'</th><th>Total /100</th><th>Grade</th></tr></thead><tbody>'+
   list.map(x=>{const r=m[x.id]||{};const a=num(r.assignment_auto);
     return '<tr data-sid="'+x.id+'"><td data-label="Student">'+esc(x.name)+'</td>'+
-    '<td data-label="Test 1 /20"><span>'+inp('t1_'+x.id,r.test1_manual,20)+'<span class="ts-auto" id="auto1_'+x.id+'" data-v="'+(r.test1??'')+'">mid-term: '+(r.test1??'—')+'</span></span></td>'+
-    '<td data-label="Test 2 /20">'+inp('t2_'+x.id,r.test2,20)+'</td>'+
-    '<td data-label="Project /10">'+inp('pr_'+x.id,r.project,10)+'</td>'+
-    '<td data-label="Assignment /10"><span>'+inp('as_'+x.id,r.assignment_manual,10).replace('placeholder','x')+'<span class="ts-auto" id="auto_'+x.id+'" data-v="'+(a??'')+'">auto: '+(a??0)+'</span></span></td>'+
-    '<td data-label="Exam /40">'+inp('ex_'+x.id,r.exam,40)+'</td>'+
+    '<td data-label="Test 1 /'+SC.t1+'"><span>'+inp('t1_'+x.id,(r.test1_manual??r.test1),SC.t1)+'<span class="ts-auto" id="auto1_'+x.id+'" data-v="'+(r.test1??'')+'">from mid-term'+(r.test1!=null?' ('+r.test1+')':'')+'</span></span></td>'+
+    '<td data-label="Test 2 /'+SC.t2+'">'+inp('t2_'+x.id,r.test2,SC.t2)+'</td>'+
+    (SC.senior?'':'<td data-label="Project /10">'+inp('pr_'+x.id,r.project,10)+'</td>')+
+    '<td data-label="'+(SC.senior?'Assignment/Project':'Assignment')+' /10"><span>'+inp('as_'+x.id,(r.assignment_manual??r.assignment_auto),10).replace('placeholder','x')+'<span class="ts-auto" id="auto_'+x.id+'" data-v="'+(a??'')+'">from weekly (10%)'+(a!==null?' ('+a+')':'')+'</span></span></td>'+
+    '<td data-label="Exam /'+SC.ex+'">'+inp('ex_'+x.id,r.exam,SC.ex)+'</td>'+
     '<td data-label="Total /100"><b id="tot_'+x.id+'">0</b></td><td data-label="Grade"><b id="gr_'+x.id+'">-</b></td></tr>';}).join('')+
   '</tbody></table></div><div class="ts-btnrow"><button class="btn btn-primary" onclick="tsEntrySave()"><i class="fas fa-save"></i> Save Scores</button></div>';
   list.forEach(x=>tsRow(x.id));
@@ -6979,16 +7023,18 @@ window.tsEntryLoad=async function(){
 window.tsRow=function(id){
   const v=k=>num($(k+'_'+id)?.value);
   const man=v('as'),auto=num($('auto_'+id)?.dataset.v);
-  const t=r2(Math.min(20,v('t1')!==null?v('t1'):n0(num($('auto1_'+id)?.dataset.v)))+n0(v('t2'))+n0(v('pr'))+Math.min(10,man!==null?man:n0(auto))+n0(v('ex')));
+  const SC=scheme($('tsEClass')?.value);const t=r2(Math.min(SC.t1,v('t1')!==null?v('t1'):n0(num($('auto1_'+id)?.dataset.v)))+n0(v('t2'))+(SC.senior?0:n0(v('pr')))+Math.min(10,man!==null?man:n0(auto))+n0(v('ex')));
   $('tot_'+id).textContent=t;$('gr_'+id).textContent=grade(t)[0];
 };
 window.tsEntrySave=async function(){
-  const c=$('tsEClass').value,s=$('tsESubject').value,t=$('tsETerm').value,se=$('tsESession').value;
+  const c=$('tsEClass').value,s=$('tsESubject').value,t=$('tsETerm').value,se=$('tsESession').value;const SC=scheme(c);
   const rows=[];const now=new Date().toISOString();
   for(const tr of document.querySelectorAll('#tsEntryWrap tr[data-sid]')){
     const id=tr.dataset.sid,nm=tr.cells[0].textContent;
-    const g=(k,max)=>{const raw=$(k+'_'+id).value.trim();if(raw==='')return null;const n=Number(raw);if(!Number.isFinite(n)||n<0||n>max)throw new Error(nm+': value must be between 0 and '+max);return n;};
-    try{rows.push({student_id:id,class_id:c,subject_id:s,term_id:t,session_id:se,test1_manual:g('t1',20),test2:g('t2',20),project:g('pr',10),assignment_manual:g('as',10),exam:g('ex',40),teacher_id:currentUser.id,updated_at:now});}
+    const autov=k=>{const v=$(k+'_'+id)?.dataset.v;return(v===''||v===undefined)?null:Number(v);};
+    const manv=(val,a)=>(val!==null&&a!==null&&Math.abs(val-a)<1e-9)?null:val;
+    const g=(k,max)=>{const el=$(k+'_'+id);if(!el)return null;const raw=el.value.trim();if(raw==='')return null;const n=Number(raw);if(!Number.isFinite(n)||n<0||n>max)throw new Error(nm+': value must be between 0 and '+max);return n;};
+    try{rows.push({student_id:id,class_id:c,subject_id:s,term_id:t,session_id:se,test1_manual:manv(g('t1',SC.t1),autov('auto1')),test2:g('t2',SC.t2),project:SC.senior?null:g('pr',10),assignment_manual:manv(g('as',10),autov('auto')),exam:g('ex',SC.ex),teacher_id:currentUser.id,updated_at:now});}
     catch(e){showToast(e.message,'error');return;}
   }
   for(const part of chunkArray(rows,200)){const {error}=await supabaseClient.from('term_scores').upsert(part,{onConflict:UPS});if(error){showToast(tsErr(error),'error');return;}}
@@ -7001,20 +7047,20 @@ async function classData(classId,termId,sessionId){
   if(error)throw error;return data||[];
 }
 function buildReport(student,all,termId,sessionId,classId){
-  const mine=all.filter(r=>sameId(r.student_id,student.id));
+  const SC=scheme(classId);const mine=all.filter(r=>sameId(r.student_id,student.id));
   const sa={};all.forEach(r=>{(sa[r.subject_id]=sa[r.subject_id]||[]).push(total(r));});
   const term=terms.find(x=>sameId(x.id,termId)),sess=sessions.find(x=>sameId(x.id,sessionId)),cls=classes.find(x=>sameId(x.id,classId));
   let sum=0;
   const body=mine.map(r=>{const t=total(r),g=grade(t);sum+=t;const av=sa[r.subject_id]?r2(sa[r.subject_id].reduce((a,b)=>a+b,0)/sa[r.subject_id].length):'-';
     const c='padding:6px 4px;border:1px solid #ddd;text-align:center;font-size:12px';
-    return '<tr><td style="'+c+';text-align:left">'+esc(subjects.find(s=>sameId(s.id,r.subject_id))?.name||'Subject')+'</td><td style="'+c+'">'+(num(r.test1_manual)!==null||num(r.test1)!==null?t1eff(r):'-')+'</td><td style="'+c+'">'+(r.test2??'-')+'</td><td style="'+c+'">'+(r.project??'-')+'</td><td style="'+c+'">'+r2(eff(r))+'</td><td style="'+c+'">'+(r.exam??'-')+'</td><td style="'+c+';font-weight:700">'+t+'</td><td style="'+c+';font-weight:700">'+g[0]+'</td><td style="'+c+'">'+av+'</td><td style="'+c+';text-align:left">'+g[1]+'</td></tr>';}).join('');
+    return '<tr><td style="'+c+';text-align:left">'+esc(subjects.find(s=>sameId(s.id,r.subject_id))?.name||'Subject')+'</td><td style="'+c+'">'+(num(r.test1_manual)!==null||num(r.test1)!==null?t1eff(r):'-')+'</td><td style="'+c+'">'+(r.test2??'-')+'</td>'+(SC.senior?'':'<td style="'+c+'">'+(r.project??'-')+'</td>')+'<td style="'+c+'">'+r2(eff(r))+'</td><td style="'+c+'">'+(r.exam??'-')+'</td><td style="'+c+';font-weight:700">'+t+'</td><td style="'+c+';font-weight:700">'+g[0]+'</td><td style="'+c+'">'+av+'</td><td style="'+c+';text-align:left">'+g[1]+'</td></tr>';}).join('');
   const n=mine.length,avg=n?r2(sum/n):0,og=grade(avg);
   const th='background:#1a5f2a;color:#fff;padding:7px 4px;font-size:11px;border:1px solid #1a5f2a';
   const rem=avg>=70?'An excellent performance. Keep it up!':avg>=50?'A good effort. More focus will bring better results.':'Needs serious improvement. Extra effort and parental support are advised.';
   return '<div style="background:#fff;color:#222;font-family:Arial,sans-serif;padding:22px;min-width:700px;width:100%;box-sizing:border-box;border-top:8px solid #1a5f2a">'+
   '<div style="text-align:center;border-bottom:2px solid #1a5f2a;padding-bottom:10px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:60px;height:60px;object-fit:contain"><h2 style="margin:4px 0;color:#1a5f2a;font-size:20px">Nigeria-Ghana International School</h2><div style="font-size:12px;color:#666;font-style:italic">"Knowledge &amp; Morality"</div><div style="font-weight:800;margin-top:6px;color:#c41e3a;font-size:14px">TERMLY REPORT CARD</div></div>'+
   '<table style="width:100%;margin:12px 0;font-size:12px"><tr><td><b>Name:</b> '+esc(student.name)+'</td><td><b>Class:</b> '+esc(cls?.name||'')+'</td><td><b>Term:</b> '+esc(term?.name||'')+'</td><td><b>Session:</b> '+esc(sess?.name||'')+'</td></tr><tr><td><b>ID:</b> '+esc(student.student_login_id||'')+'</td><td><b>Class Grade:</b> '+(n?og[0]+' ('+og[1]+')':'-')+'</td><td><b>Total:</b> '+r2(sum)+' / '+(n*100)+'</td><td><b>Average:</b> '+avg+'%</td></tr></table>'+
-  '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="'+th+';text-align:left">Subject</th><th style="'+th+'">Test 1<br>/20</th><th style="'+th+'">Test 2<br>/20</th><th style="'+th+'">Project<br>/10</th><th style="'+th+'">Assign.<br>/10</th><th style="'+th+'">Exam<br>/40</th><th style="'+th+'">Total<br>/100</th><th style="'+th+'">Grade</th><th style="'+th+'">Class<br>Avg</th><th style="'+th+'">Remark</th></tr></thead><tbody>'+(body||'<tr><td colspan="10" style="padding:16px;text-align:center;color:#888">No scores recorded.</td></tr>')+'</tbody></table>'+
+  '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="'+th+';text-align:left">Subject</th><th style="'+th+'">Test 1<br>/'+SC.t1+'</th><th style="'+th+'">Test 2<br>/'+SC.t2+'</th>'+(SC.senior?'':'<th style="'+th+'">Project<br>/10</th>')+'<th style="'+th+'">'+(SC.senior?'Assign./Project':'Assign.')+'<br>/10</th><th style="'+th+'">Exam<br>/'+SC.ex+'</th><th style="'+th+'">Total<br>/100</th><th style="'+th+'">Grade</th><th style="'+th+'">Class<br>Avg</th><th style="'+th+'">Remark</th></tr></thead><tbody>'+(body||'<tr><td colspan="'+(SC.senior?9:10)+'" style="padding:16px;text-align:center;color:#888">No scores recorded.</td></tr>')+'</tbody></table>'+
   '<div style="margin-top:12px;padding:10px;background:#f8faf9;border-left:4px solid #1a5f2a;font-size:12px"><b>Remark:</b> '+rem+'</div>'+
   '<div style="margin-top:10px;font-size:10px;color:#555">Grading: A+ 95-100 | A 85-94 | B+ 80-84 | B 70-79 | C 60-69 | D 50-59 | E 45-49 | F below 45</div>'+
   '<div style="display:flex;justify-content:space-between;margin-top:30px;font-size:11px"><div style="border-top:1px solid #555;width:40%;text-align:center;padding-top:3px">Class Teacher</div><div style="border-top:1px solid #555;width:40%;text-align:center;padding-top:3px">Principal</div></div></div>';
@@ -7081,7 +7127,7 @@ window.tsQuizLoad=async function(){
   if(error){$('tsQuizWrap').innerHTML='<div class="empty-state">'+esc(tsErr(error))+'</div>';return;}
   $('tsQuizWrap').innerHTML='<table><thead><tr><th>Quiz</th><th>Type</th><th>Term</th><th>Session</th><th></th></tr></thead><tbody>'+(data||[]).map(q=>
    '<tr data-qid="'+q.id+'"><td>'+esc(q.title)+'<div style="font-size:.72rem;color:#888">'+esc(q.classes?.name||'')+' • '+esc(q.subjects?.name||'')+' • '+esc(q.weeks?.name||'')+'</div></td>'+
-   '<td><select class="qt"><option value="weekly"'+(q.quiz_type!=='exam'?' selected':'')+'>Weekly</option><option value="exam"'+(q.quiz_type==='exam'?' selected':'')+'>Exam (/40)</option></select></td>'+
+   '<td><select class="qt"><option value="weekly"'+(q.quiz_type!=='exam'?' selected':'')+'>Weekly</option><option value="exam"'+(q.quiz_type==='exam'?' selected':'')+'>Exam (/40; /70 for Senior)</option></select></td>'+
    '<td><select class="qm">'+opts(terms,'—',termLab).replace('value="'+q.term_id+'"','value="'+q.term_id+'" selected')+'</select></td>'+
    '<td><select class="qs">'+opts(sessions,'—',s=>s.name).replace('value="'+(q.session_id||activeSess())+'"','value="'+(q.session_id||activeSess())+'" selected')+'</select></td>'+
    '<td><button class="btn btn-sm btn-primary" onclick="tsQuizSave(this)">Save</button></td></tr>').join('')+'</tbody></table>';
@@ -7116,7 +7162,7 @@ async function studentHtml(){
 window.tsStudentShow=async function(){try{const h=await studentHtml();$('tsSOut').innerHTML=h||'';}catch(e){showToast(tsErr(e),'error');}};
 window.tsStudentPdf=async function(){try{const h=await studentHtml();if(!h){showToast('No published result to download','error');return;}showToast('Preparing PDF…');await makePdf([h],safe(currentUser.name)+'_Report_Card.pdf');}catch(e){showToast(tsErr(e),'error');}};
 
-window.TS={total,grade,r2,n0,opts,esc,ensureRef,tsErr,fillCommon,makePdf};
+window.TS={total,grade,r2,n0,opts,esc,ensureRef,tsErr,fillCommon,makePdf,tsSync};
 /* ---------- Navigation hook ---------- */
 const TITLES={tsEntry:'<i class="fas fa-table"></i> Termly Score Entry',tsReports:'<i class="fas fa-id-card"></i> Termly Report Cards',tsAdmin:'<i class="fas fa-bullhorn"></i> Publish Results & Exam CBT',tsStudent:'<i class="fas fa-graduation-cap"></i> Termly Results'};
 const _ss=window.showSection;
@@ -7144,6 +7190,13 @@ const TS_SHEET_FIELDS=[
   {key:'as',label:'Assignment /10',max:10,col:'assignment_manual'},
   {key:'ex',label:'Exam /40',max:40,col:'exam'}
 ];
+const SENIOR_FIELDS=[
+  {key:'t1',label:'Test 1 /10',max:10,col:'test1_manual'},
+  {key:'t2',label:'Test 2 /10',max:10,col:'test2'},
+  {key:'as',label:'Assignment/Project /10',max:10,col:'assignment_manual'},
+  {key:'ex',label:'Exam /70',max:70,col:'exam'}
+];
+const fieldsFor=c=>(window.ngisIsSeniorClass&&window.ngisIsSeniorClass(c))?SENIOR_FIELDS:TS_SHEET_FIELDS;
 const FIRST=3; // first score column index (A=No, B=Name, C..=scores)
 const colL=i=>XLSX.utils.encode_col(i);
 const safe=t=>String(t||'x').replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'');
@@ -7159,32 +7212,33 @@ const nm=(list,id)=>(list.find(x=>String(x.id)===String(id))||{}).name||'';
 
 window.tsSheetDownload=async function(){
   try{
-    const x=sel();if(!x)return;
+    const x=sel();if(!x)return;const FF=fieldsFor(x.c);
     const list=students.filter(a=>String(a.class_id)===String(x.c)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
     if(!list.length){showToast('No students in this class','error');return;}
     // pre-fill with anything already saved
     const ids=list.map(a=>a.id),saved={};
+    try{if(window.TS&&TS.tsSync)await TS.tsSync(ids,x.s,x.t,x.se);}catch(e){console.warn(e);}
     try{const r=await selectByStudentIds('term_scores','*',{subject_id:x.s,term_id:x.t,session_id:x.se},ids);(r.data||[]).forEach(q=>saved[String(q.student_id)]=q);}catch(e){console.warn(e);}
     const cls=nm(classes,x.c),sub=nm(subjects,x.s),term=nm(terms,x.t),ses=nm(sessions,x.se);
-    const nF=TS_SHEET_FIELDS.length,idCol=FIRST+nF+1; // hidden student-id column after Total
-    const head=['No','Student Name',...TS_SHEET_FIELDS.map(f=>f.label),'Total /'+TS_SHEET_FIELDS.reduce((a,f)=>a+f.max,0),'Student Key (do not edit)'];
+    const nF=FF.length,idCol=FIRST+nF+1; // hidden student-id column after Total
+    const head=['No','Student Name',...FF.map(f=>f.label),'Total /'+FF.reduce((a,f)=>a+f.max,0),'Student Key (do not edit)'];
     const rows=[head];
     list.forEach((st,i)=>{
       const sv=saved[String(st.id)]||{};
       const r=i+2;
-      rows.push([i+1,st.name,...TS_SHEET_FIELDS.map(f=>{const v=sv[f.col];return(v===null||v===undefined)?'':Number(v);}),
+      rows.push([i+1,st.name,...FF.map(f=>{let v=sv[f.col];if(f.col==='test1_manual'&&(v===null||v===undefined))v=sv.test1;if(f.col==='assignment_manual'&&(v===null||v===undefined))v=sv.assignment_auto;return(v===null||v===undefined)?'':Number(v);}),
         {t:'n',f:'SUM('+colL(FIRST-1)+r+':'+colL(FIRST+nF-2)+r+')'},String(st.id)]);
     });
     const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:5},{wch:34},...TS_SHEET_FIELDS.map(()=>({wch:15})),{wch:11},{wch:4,hidden:true}];
+    ws['!cols']=[{wch:5},{wch:34},...FF.map(()=>({wch:15})),{wch:11},{wch:4,hidden:true}];
     ws['!freeze']={xSplit:2,ySplit:1};
     const info=[['NGIS SCORESHEET – DO NOT EDIT THIS SHEET'],
       ['class_id',String(x.c)],['subject_id',String(x.s)],['term_id',String(x.t)],['session_id',String(x.se)],
-      ['Class',cls],['Subject',sub],['Term',term],['Session',ses],['Fields',TS_SHEET_FIELDS.map(f=>f.key).join(',')],
+      ['Class',cls],['Subject',sub],['Term',term],['Session',ses],['Fields',FF.map(f=>f.key).join(',')],
       ['Generated',new Date().toISOString()]];
     const wi=XLSX.utils.aoa_to_sheet(info);wi['!cols']=[{wch:14},{wch:44}];
     const help=[['HOW TO USE THIS SCORESHEET'],
-      ['1. Enter scores only in the five score columns: '+TS_SHEET_FIELDS.map(f=>f.label).join(', ')+'.'],
+      ['1. Enter scores only in the five score columns: '+FF.map(f=>f.label).join(', ')+'.'],
       ['2. Leave a cell empty if there is no score yet. Empty cells will not erase scores already saved.'],
       ['3. Do not change student names, add/delete/reorder rows, rename sheets or edit the hidden Student Key column.'],
       ['4. Scores must be numbers between 0 and the maximum shown in the column heading.'],
@@ -7216,7 +7270,7 @@ window.tsSheetUpload=async function(input){
       if(!mine.map(String).includes(String(s))){showToast('You are not assigned to '+(meta.Subject||'this subject')+'. Upload cancelled.','error');return;}
     }
     const keys=(meta.Fields||'').split(',').filter(Boolean);
-    const fields=keys.map(k=>TS_SHEET_FIELDS.find(f=>f.key===k)).filter(Boolean);
+    const fields=keys.map(k=>fieldsFor(c).find(f=>f.key===k)).filter(Boolean);
     if(!fields.length){showToast('Scoresheet format not recognised','error');return;}
     const grid=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
     const idCol=FIRST+fields.length+1;
@@ -7254,6 +7308,8 @@ window.tsSheetUpload=async function(input){
       const old=ex[String(stu.id)]||{};
       const row={student_id:stu.id,class_id:c,subject_id:s,term_id:t,session_id:se,teacher_id:currentUser.id,updated_at:now};
       TS_SHEET_FIELDS.forEach(f=>{const v=(f.col in vals)?vals[f.col]:undefined;row[f.col]=(v!==null&&v!==undefined)?v:(old[f.col]??null);});
+      if(row.test1_manual!==null&&old.test1!=null&&Math.abs(Number(old.test1)-row.test1_manual)<1e-9)row.test1_manual=null;
+      if(row.assignment_manual!==null&&old.assignment_auto!=null&&Math.abs(Number(old.assignment_auto)-row.assignment_manual)<1e-9)row.assignment_manual=null;
       return row;
     });
     for(const part of chunkArray(rows,200)){
@@ -12104,5 +12160,237 @@ window.saveClass = async function saveClass(){
 };
 </script>
 
+<script>
+/* ===== Teachers see only the classes assigned to them when entering scores / marks / quizzes ===== */
+(function(){
+const IDS=['gradeClassSelect','midTermTeacherClass','tsEClass','caClass','teacherCbtClass','asgClass','reportClassSelect','commentClassSelect','nurseryClassSelect','emtClass'];
+function allowed(){
+  const uid=String(currentUser.id);
+  const set=new Set((classTeachers||[]).filter(x=>String(x.teacher_id)===uid).map(x=>String(x.class_id)));
+  if(currentUser.class_id)set.add(String(currentUser.class_id));
+  return set;
+}
+function active(){return !!(currentUser&&currentUser.role==='teacher'&&window._ngisOwnClassesLoaded);}
+function filterSel(el){
+  if(!el||!active())return;
+  const ok=allowed();
+  [...el.options].forEach(o=>{if(o.value!==''&&!ok.has(String(o.value)))o.remove();});
+  if(!ok.size&&el.options.length&&el.options[0].value==='')el.options[0].textContent='-- No class assigned: contact the administrator --';
+}
+window.ngisFilterTeacherClassSelects=function(){IDS.forEach(id=>filterSel(document.getElementById(id)));};
+const obs=new MutationObserver(muts=>{if(!active())return;const seen=new Set();muts.forEach(m=>{if(m.target&&m.target.tagName==='SELECT'&&!seen.has(m.target)){seen.add(m.target);filterSel(m.target);}});});
+function start(){IDS.forEach(id=>{const el=document.getElementById(id);if(el)obs.observe(el,{childList:true});});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script>
+<style>
+.ca-scroll{overflow:auto;max-height:72vh;border:1px solid #e0e6e2;border-radius:10px}
+.ca-grid{border-collapse:collapse;font-size:.8rem;min-width:1500px}
+.ca-grid th,.ca-grid td{border:1px solid #dfe5e1;padding:4px 5px;text-align:center;white-space:nowrap}
+.ca-grid thead th{background:#1a5f2a;color:#fff;position:sticky;top:0;z-index:2;font-size:.72rem}
+.ca-grid thead tr.ca-grp th{background:#134a20}
+.ca-grid td.ca-name,.ca-grid th.ca-name{position:sticky;left:0;z-index:3;text-align:left;min-width:170px;background:#fff}
+.ca-grid thead th.ca-name{background:#1a5f2a}
+.ca-grid input{width:56px;padding:5px 3px;text-align:center;border:1px solid #cfd8d2;border-radius:6px;font-size:.82rem}
+.ca-grid input.ca-bad{border-color:#c41e3a;background:#fff0f2}
+.ca-grid td.ca-calc{background:#f1f7f2;font-weight:700}
+.ca-grid td.ca-tot{background:#e4f1e7;font-weight:800;color:#1a5f2a}
+</style>
+<script>
+/* ===== GENERAL C.A RECORD: portal entry -> database (ca_records) -> termly report card (term_scores) ===== */
+(function(){
+const $=id=>document.getElementById(id),esc=v=>escapeHtml(v);
+const FIELDS=[
+ {k:'test',l:'Test',m:10,g:1},{k:'takehome',l:'Take Home Assig',m:10,g:1},
+ {k:'quiz',l:'Quiz',m:5,g:2},{k:'debate',l:'Debate',m:5,g:2},{k:'project',l:'Project',m:10,g:2},
+ {k:'attendance',l:'Attendance',m:2,g:3},{k:'appearance',l:'Appearance',m:2,g:3},{k:'honesty',l:'Honesty',m:2,g:3},{k:'punctuality',l:'Punctuality',m:2,g:3},{k:'relationship',l:'Relationship With Others',m:2,g:3},
+ {k:'notecopying',l:'Note Copying',m:5,g:4},{k:'practical',l:'Practical / Project',m:5,g:4}];
+const EXAM_MAX=40;
+const SQL=`create table if not exists ca_records(
+  id uuid primary key default gen_random_uuid(),
+  student_id text not null, class_id text,
+  subject_id text not null, term_id text not null, session_id text not null,
+  test numeric, takehome numeric, quiz numeric, debate numeric, project numeric,
+  attendance numeric, appearance numeric, honesty numeric, punctuality numeric, relationship numeric,
+  notecopying numeric, practical numeric, exam numeric,
+  teacher_id text, updated_at timestamptz default now(),
+  unique(student_id,subject_id,term_id,session_id));
+alter table ca_records enable row level security;
+drop policy if exists "ca_records_all" on ca_records;
+create policy "ca_records_all" on ca_records for all using(true) with check(true);
+notify pgrst, 'reload schema';`;
+const n0=v=>Number(v)||0,r2=v=>Math.round(v*100)/100;
+const num=v=>(v===null||v===undefined||String(v).trim()==='')?null:Number(v);
+const opts=(list,ph,lab)=>'<option value="">'+ph+'</option>'+list.map(x=>'<option value="'+x.id+'">'+esc(lab(x))+'</option>').join('');
+const activeSess=()=>(sessions.find(s=>s.is_active)||{}).id||'';
+const isSenior=c=>!!(window.ngisIsSeniorClass&&window.ngisIsSeniorClass(c));
+async function ensureRef(){if(!terms.length)await loadTerms();if(!sessions.length)await loadSessions();}
+
+window.caInit=async function(){
+  await ensureRef();
+  $('caClass').innerHTML=opts(classes,'-- Choose Class --',c=>c.name);
+  $('caTerm').innerHTML=opts(terms,'-- Choose Term --',t=>t.name);
+  $('caSession').innerHTML=opts(sessions,'-- Choose Session --',s=>s.name);$('caSession').value=activeSess();
+  let subs=subjects;
+  if(currentUser.role==='teacher'){const ids=await getCurrentTeacherSubjectIds();subs=subjects.filter(s=>ids.includes(String(s.id)));}
+  $('caSubject').innerHTML=opts(subs,'-- Choose Subject --',s=>s.name);
+  try{if(window.ngisFilterTeacherClassSelects)window.ngisFilterTeacherClassSelects();}catch(e){}
+};
+let autoKey='',busy=false,queued=false;
+window.caAutoLoad=function(){
+  const c=$('caClass').value,s=$('caSubject').value,t=$('caTerm').value,se=$('caSession').value;
+  if(!c||!s||!t||!se){autoKey='';return;}
+  const key=[c,s,t,se].join('|');if(key===autoKey)return;
+  if(busy){queued=true;return;}
+  autoKey=key;busy=true;
+  Promise.resolve(window.caLoad()).finally(()=>{busy=false;if(queued){queued=false;window.caAutoLoad();}});
+};
+function setupBanner(err){
+  $('caSetup').innerHTML=err?'<div class="ts-note" style="border-left-color:#c41e3a"><b>One-time database setup needed.</b> Run the SQL below once in Supabase &rarr; SQL Editor, then refresh. Details: '+esc(err)+'</div><div class="ts-btnrow"><button class="btn btn-sm btn-primary" onclick="caCopySql()"><i class="fas fa-copy"></i> Copy SQL</button></div><pre style="background:#f4f6f5;padding:10px;border-radius:8px;font-size:.78rem;overflow:auto">'+esc(SQL)+'</pre>':'';
+}
+window.caCopySql=function(){navigator.clipboard.writeText(SQL).then(()=>showToast('SQL copied: paste it in Supabase SQL Editor'),()=>showToast('Select the text and copy it manually','error'));};
+const missingTable=e=>/ca_records|relation|schema cache|42P01|PGRST20[45]/i.test(String(e?.message||'')+' '+String(e?.code||''));
+
+window.caLoad=async function(){
+  const c=$('caClass').value,s=$('caSubject').value,t=$('caTerm').value,se=$('caSession').value;
+  if(!c||!s||!t||!se){showToast('Select class, subject, term and session','error');return;}
+  if(isSenior(c)){$('caWrap').innerHTML='<div class="empty-state"><i class="fas fa-info-circle"></i><h4>Not used for Senior Secondary</h4><p>Senior Secondary classes use Test 1 /10, Test 2 /10, Assignment/Project /10 and Exam /70 in Termly Score Entry.</p></div>';return;}
+  const list=students.filter(x=>sameId(x.class_id,c)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  if(!list.length){$('caWrap').innerHTML='<div class="empty-state">No students in this class.</div>';return;}
+  $('caWrap').innerHTML='<div class="empty-state">Loading…</div>';
+  const ids=list.map(x=>x.id);
+  const {data,error}=await selectByStudentIds('ca_records','*',{subject_id:s,term_id:t,session_id:se},ids);
+  if(error){if(missingTable(error)){setupBanner(error.message);$('caWrap').innerHTML='';}else{$('caWrap').innerHTML='<div class="empty-state">'+esc(error.message)+'</div>';}return;}
+  setupBanner('');
+  const m={};(data||[]).forEach(r=>m[String(r.student_id)]=r);
+  const inp=(k,sid,v,max)=>'<input type="number" inputmode="decimal" min="0" max="'+max+'" step="0.5" id="ca_'+k+'_'+sid+'" value="'+(v??'')+'" oninput="caRow(\''+sid+'\')">';
+  const cell=(f,x,r)=>'<td>'+inp(f.k,x.id,r[f.k],f.m)+'</td>';
+  const head='<thead><tr class="ca-grp"><th class="ca-name" rowspan="2">Student</th><th colspan="5">Cognitive 40%</th><th colspan="5">Affective 10%</th><th colspan="2">Psychomotor 10%</th><th colspan="5">Summary (goes to report card)</th></tr><tr>'+
+   FIELDS.map(f=>'<th>'+f.l+'<br>/'+f.m+'</th>').join('')+'<th>1st C.A<br>/20</th><th>2nd C.A<br>/20</th><th>Proj/Ass<br>/20</th><th>Exam<br>/'+EXAM_MAX+'</th><th>Total<br>/100</th></tr></thead>';
+  const body='<tbody>'+list.map((x,i)=>{const r=m[String(x.id)]||{};
+    return '<tr data-sid="'+x.id+'"><td class="ca-name">'+(i+1)+'. '+esc(x.name)+'</td>'+FIELDS.map(f=>cell(f,x,r)).join('')+
+     '<td class="ca-calc" id="ca_c1_'+x.id+'">0</td><td class="ca-calc" id="ca_c2_'+x.id+'">0</td><td class="ca-calc" id="ca_c3_'+x.id+'">0</td>'+
+     '<td>'+inp('exam',x.id,r.exam,EXAM_MAX)+'</td><td class="ca-tot" id="ca_tot_'+x.id+'">0</td></tr>';}).join('')+'</tbody>';
+  $('caWrap').innerHTML='<div class="ca-scroll"><table class="ca-grid">'+head+body+'</table></div><div class="ts-btnrow"><button class="btn btn-primary" onclick="caSave()"><i class="fas fa-cloud-upload-alt"></i> Save &amp; Push to Report Card</button><button class="btn btn-success" onclick="caDownload()"><i class="fas fa-file-excel"></i> Download Excel Sheet</button><button class="btn btn-sm btn-primary" onclick="document.getElementById(\'caFile\').click()"><i class="fas fa-upload"></i> Upload Filled Sheet</button><button class="btn btn-sm" style="background:#eee;color:#333" onclick="caLoad()"><i class="fas fa-sync"></i> Reload</button></div>';
+  list.forEach(x=>caRow(x.id));
+};
+function sums(sid){
+  const v=k=>num($('ca_'+k+'_'+sid)?.value);
+  const g={1:0,2:0,3:0,4:0},has={1:false,2:false,3:false,4:false};
+  FIELDS.forEach(f=>{const x=v(f.k);if(x!==null){g[f.g]+=x;has[f.g]=true;}});
+  return{g,has,exam:v('exam')};
+}
+window.caRow=function(sid){
+  FIELDS.concat([{k:'exam',m:EXAM_MAX}]).forEach(f=>{const el=$('ca_'+f.k+'_'+sid);if(!el)return;const x=num(el.value);el.classList.toggle('ca-bad',x!==null&&(!Number.isFinite(x)||x<0||x>f.m));});
+  const {g,exam}=sums(sid);
+  const c1=r2(g[1]),c2=r2(g[2]),c3=r2(g[3]+g[4]);
+  $('ca_c1_'+sid).textContent=c1;$('ca_c2_'+sid).textContent=c2;$('ca_c3_'+sid).textContent=c3;
+  $('ca_tot_'+sid).textContent=r2(c1+c2+c3+n0(exam));
+};
+window.caSave=async function(){
+  const c=$('caClass').value,s=$('caSubject').value,t=$('caTerm').value,se=$('caSession').value;
+  if(!c||!s||!t||!se){showToast('Select class, subject, term and session','error');return;}
+  const now=new Date().toISOString(),recs=[],push=[];
+  for(const tr of document.querySelectorAll('#caWrap tr[data-sid]')){
+    const sid=tr.dataset.sid,nm=tr.cells[0].textContent;
+    const rec={student_id:String(sid),class_id:String(c),subject_id:String(s),term_id:String(t),session_id:String(se),teacher_id:String(currentUser.id),updated_at:now};
+    for(const f of FIELDS.concat([{k:'exam',l:'Exam',m:EXAM_MAX}])){
+      const x=num($('ca_'+f.k+'_'+sid).value);
+      if(x!==null&&(!Number.isFinite(x)||x<0||x>f.m)){showToast(nm+': '+f.l+' must be between 0 and '+f.m,'error');return;}
+      rec[f.k]=x;
+    }
+    recs.push(rec);
+    const {g,has,exam}=sums(sid);
+    push.push({sid,c1:has[1]?r2(g[1]):null,c2:has[2]?r2(g[2]):null,aff:has[3]?r2(g[3]):null,psy:has[4]?r2(g[4]):null,exam});
+  }
+  if(!recs.length)return;
+  try{
+    for(const part of chunkArray(recs,200)){
+      const {error}=await supabaseClient.from('ca_records').upsert(part,{onConflict:'student_id,subject_id,term_id,session_id'});
+      if(error){if(missingTable(error))setupBanner(error.message);showToast('Could not save C.A record: '+error.message,'error');return;}
+    }
+    // push the summary to the termly report card, keeping any score a group left blank
+    const ids=push.map(p=>p.sid);
+    const ex={};
+    try{const r=await selectByStudentIds('term_scores','*',{subject_id:s,term_id:t,session_id:se},ids);(r.data||[]).forEach(q=>ex[String(q.student_id)]=q);}catch(e){console.warn(e);}
+    const rows=push.map(p=>{const o=ex[String(p.sid)]||{};
+      return{student_id:p.sid,class_id:c,subject_id:s,term_id:t,session_id:se,teacher_id:currentUser.id,updated_at:now,
+        test1_manual:p.c1!==null?p.c1:(o.test1_manual??null),
+        test2:p.c2!==null?p.c2:(o.test2??null),
+        assignment_manual:p.aff!==null?p.aff:(o.assignment_manual??null),
+        project:p.psy!==null?p.psy:(o.project??null),
+        exam:p.exam!==null?p.exam:(o.exam??null)};});
+    for(const part of chunkArray(rows,200)){
+      const {error}=await supabaseClient.from('term_scores').upsert(part,{onConflict:'student_id,subject_id,term_id,session_id'});
+      if(error){showToast('C.A saved, but the report card could not be updated: '+((window.TS&&TS.tsErr)?TS.tsErr(error):error.message),'error');return;}
+    }
+    showToast('General C.A saved and pushed to the report card for '+rows.length+' students','success');
+    if($('tsEClass')&&$('tsEClass').value===c&&$('tsESubject').value===s&&$('tsETerm').value===t&&$('tsESession').value===se&&window.tsEntryLoad)window.tsEntryLoad();
+  }catch(e){console.error(e);showToast('Could not save: '+(e.message||e),'error');}
+};
+
+const safeN=t=>String(t||'x').replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'');
+const nameOf=(list,id)=>(list.find(x=>sameId(x.id,id))||{}).name||'';
+window.caDownload=function(){
+  try{
+    const c=$('caClass').value,s=$('caSubject').value,t=$('caTerm').value,se=$('caSession').value;
+    const trs=[...document.querySelectorAll('#caWrap tr[data-sid]')];
+    if(!trs.length){showToast('Open a class record first','error');return;}
+    const head=['S/N','Names',...FIELDS.map(f=>f.l+' '+f.m+'Marks'),'Exam '+EXAM_MAX+'Marks','1st C.A 20Marks','2nd C.A 20Marks','Proj/Ass 20Marks','Total 100Marks','Student Key (do not edit)'];
+    const rows=[head];
+    trs.forEach((tr,i)=>{
+      const sid=tr.dataset.sid,r=i+2;
+      const vals=FIELDS.map(f=>{const v=num($('ca_'+f.k+'_'+sid).value);return v===null?'':v;});
+      const ex=num($('ca_exam_'+sid).value);
+      rows.push([i+1,tr.cells[0].textContent.replace(/^\d+\.\s*/,''),...vals,ex===null?'':ex,
+        {t:'n',f:'SUM(C'+r+',D'+r+')'},{t:'n',f:'SUM(E'+r+',F'+r+',G'+r+')'},{t:'n',f:'SUM(H'+r+':N'+r+')'},{t:'n',f:'SUM(P'+r+':S'+r+',O'+r+')'},String(sid)]);
+    });
+    // columns: A S/N, B Names, C..N 12 fields, O Exam, P 1st CA, Q 2nd CA, R Proj/Ass, S Total, T key
+    rows[0][0]='S/N';
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:5},{wch:32},...FIELDS.map(()=>({wch:13})),{wch:11},{wch:11},{wch:11},{wch:12},{wch:12},{hidden:true,wch:4}];
+    const info=[['NGIS GENERAL C.A RECORD - DO NOT EDIT THIS SHEET'],['class_id',String(c)],['subject_id',String(s)],['term_id',String(t)],['session_id',String(se)],['Class',nameOf(classes,c)],['Subject',nameOf(subjects,s)],['Term',nameOf(terms,t)],['Session',nameOf(sessions,se)],['Generated',new Date().toISOString()]];
+    const wi=XLSX.utils.aoa_to_sheet(info);wi['!cols']=[{wch:14},{wch:44}];
+    const help=[['HOW TO USE'],['1. Fill only the mark columns (Test to Practical/Project, and Exam). Leave a cell empty if there is no mark yet.'],['2. 1st C.A = Test + Take Home; 2nd C.A = Quiz + Debate + Project; Proj/Ass = Affective + Psychomotor. They calculate automatically.'],['3. Do not edit names, add/delete/reorder rows, or touch the hidden Student Key column.'],['4. Save the file, then in the portal open General C.A Record, choose the same class/subject/term/session, press Upload Filled Sheet, then Save & Push to Report Card.']];
+    const wh=XLSX.utils.aoa_to_sheet(help);wh['!cols']=[{wch:120}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'CA Record');XLSX.utils.book_append_sheet(wb,wh,'Instructions');XLSX.utils.book_append_sheet(wb,wi,'NGIS_Info');
+    XLSX.writeFile(wb,'NGIS_General_CA_'+safeN(nameOf(classes,c))+'_'+safeN(nameOf(subjects,s))+'_'+safeN(nameOf(terms,t))+'.xlsx');
+  }catch(e){console.error(e);showToast('Could not create the sheet: '+(e.message||e),'error');}
+};
+window.caUpload=async function(input){
+  const file=input.files&&input.files[0];input.value='';if(!file)return;
+  try{
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+    const ws=wb.Sheets['CA Record'],wi=wb.Sheets['NGIS_Info'];
+    if(!ws||!wi){showToast('This is not an NGIS C.A sheet. Upload the file you downloaded from this page.','error');return;}
+    const meta={};XLSX.utils.sheet_to_json(wi,{header:1,defval:''}).forEach(r=>{if(r[0])meta[String(r[0])]=String(r[1]??'');});
+    if(meta.class_id!==$('caClass').value||meta.subject_id!==$('caSubject').value||meta.term_id!==$('caTerm').value||meta.session_id!==$('caSession').value){showToast('This sheet is for '+(meta.Class||'')+' / '+(meta.Subject||'')+' / '+(meta.Term||'')+'. Select the same class, subject, term and session first.','error');return;}
+    const grid=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    const KEY=19,errors=[];let n=0;
+    const cols=FIELDS.concat([{k:'exam',l:'Exam',m:EXAM_MAX}]);
+    for(let i=1;i<grid.length;i++){
+      const r=grid[i];if(!r||!r[KEY])continue;
+      const sid=String(r[KEY]).trim();
+      if(!$('ca_test_'+sid)){errors.push('Row '+(i+1)+' ('+(r[1]||'blank')+'): student not in this class');continue;}
+      const upd={};
+      cols.forEach((f,j)=>{
+        const raw=r[2+j];
+        if(raw===''||raw===null||raw===undefined){upd[f.k]='';return;}
+        const x=Number(String(raw).trim());
+        if(!Number.isFinite(x)||x<0||x>f.m){errors.push('Row '+(i+1)+' ('+(r[1]||'')+'): '+f.l+' must be 0-'+f.m);return;}
+        upd[f.k]=x;
+      });
+      Object.keys(upd).forEach(k=>{$('ca_'+k+'_'+sid).value=upd[k];});
+      caRow(sid);n++;
+    }
+    if(errors.length){alert('Some cells were not accepted:\n\n'+errors.slice(0,15).join('\n')+(errors.length>15?'\n...and '+(errors.length-15)+' more':''));}
+    showToast(n+' students loaded from the sheet. Press Save & Push to Report Card to finish.','success');
+  }catch(e){console.error(e);showToast('Could not read the sheet: '+(e.message||e),'error');}
+};
+const _sx=window.showSection;
+window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('pageTitle');if(pt)pt.innerHTML='<i class="fas fa-clipboard-list"></i> General C.A Record';window.caInit();}};
+})();
+</script>
 </body>
 </html>
