@@ -1245,7 +1245,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="form-group"><label>Term</label><select id="caTerm" onchange="caAutoLoad()"></select></div>
 <div class="form-group"><label>Session</label><select id="caSession" onchange="caAutoLoad()"></select></div>
 </div>
-<div class="ts-note"><b>How it works:</b> Test /10 + Take Home Assignment /10 = <b>1st C.A /20</b> &middot; Quiz /5 + Debate /5 + Project /10 = <b>2nd C.A /20</b> &middot; Affective /10 (Attendance, Appearance, Honesty, Punctuality, Relationship with Others, 2 each) + Psychomotor /10 (Note Copying /5, Practical/Project /5) = <b>Proj/Ass /20</b> &middot; Exam /40. When you press <b>Save &amp; Push to Report Card</b>, the record is stored in the database and the totals are sent straight to the termly report card (1st C.A &rarr; Test 1, 2nd C.A &rarr; Test 2, Psychomotor &rarr; Project, Affective &rarr; Assignment). Not used for Senior Secondary classes.</div>
+<div class="ts-note"><b>How it works:</b> Test /10 + Take Home Assignment /10 = <b>1st C.A /20</b> &middot; Quiz /5 + Debate /5 + Project /10 = <b>2nd C.A /20</b> &middot; Affective /10 (Attendance, Appearance, Honesty, Punctuality, Relationship with Others, 2 each) + Psychomotor /10 (Note Copying /5, Practical/Project /5) = <b>Proj/Ass /20</b> &middot; Exam /40. When you press <b>Save &amp; Push to Report Card</b>, the record is stored in the database and the totals are sent straight to the termly report card (1st C.A &rarr; Test 1, 2nd C.A &rarr; Test 2, Psychomotor &rarr; Project, Affective &rarr; Assignment). <br><b>Senior Secondary classes</b> use the same page with their own format: Test 1 /10 + Test 2 /10 + Assignment/Project /10 + Exam /70, pushed to Test 1, Test 2, Assignment/Project and Exam on the report card.</div>
 <input type="file" id="caFile" accept=".xlsx,.xls" style="display:none" onchange="caUpload(this)">
 <div id="caSetup"></div>
 <div id="caWrap"><div class="empty-state">Choose class, subject, term and session to open the record.</div></div>
@@ -12200,12 +12200,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 /* ===== GENERAL C.A RECORD: portal entry -> database (ca_records) -> termly report card (term_scores) ===== */
 (function(){
 const $=id=>document.getElementById(id),esc=v=>escapeHtml(v);
-const FIELDS=[
+const JF=[
  {k:'test',l:'Test',m:10,g:1},{k:'takehome',l:'Take Home Assig',m:10,g:1},
  {k:'quiz',l:'Quiz',m:5,g:2},{k:'debate',l:'Debate',m:5,g:2},{k:'project',l:'Project',m:10,g:2},
  {k:'attendance',l:'Attendance',m:2,g:3},{k:'appearance',l:'Appearance',m:2,g:3},{k:'honesty',l:'Honesty',m:2,g:3},{k:'punctuality',l:'Punctuality',m:2,g:3},{k:'relationship',l:'Relationship With Others',m:2,g:3},
  {k:'notecopying',l:'Note Copying',m:5,g:4},{k:'practical',l:'Practical / Project',m:5,g:4}];
-const EXAM_MAX=40;
+const SF=[{k:'test',l:'Test 1',m:10,g:1},{k:'test2',l:'Test 2',m:10,g:2},{k:'assignproject',l:'Assignment / Project',m:10,g:3}];
+let CUR={f:JF,exam:40,senior:false};
 const SQL=`create table if not exists ca_records(
   id uuid primary key default gen_random_uuid(),
   student_id text not null, class_id text,
@@ -12213,11 +12214,14 @@ const SQL=`create table if not exists ca_records(
   test numeric, takehome numeric, quiz numeric, debate numeric, project numeric,
   attendance numeric, appearance numeric, honesty numeric, punctuality numeric, relationship numeric,
   notecopying numeric, practical numeric, exam numeric,
+  test2 numeric, assignproject numeric,
   teacher_id text, updated_at timestamptz default now(),
   unique(student_id,subject_id,term_id,session_id));
 alter table ca_records enable row level security;
 drop policy if exists "ca_records_all" on ca_records;
 create policy "ca_records_all" on ca_records for all using(true) with check(true);
+alter table ca_records add column if not exists test2 numeric;
+alter table ca_records add column if not exists assignproject numeric;
 notify pgrst, 'reload schema';`;
 const n0=v=>Number(v)||0,r2=v=>Math.round(v*100)/100;
 const num=v=>(v===null||v===undefined||String(v).trim()==='')?null:Number(v);
@@ -12254,7 +12258,7 @@ const missingTable=e=>/ca_records|relation|schema cache|42P01|PGRST20[45]/i.test
 window.caLoad=async function(){
   const c=$('caClass').value,s=$('caSubject').value,t=$('caTerm').value,se=$('caSession').value;
   if(!c||!s||!t||!se){showToast('Select class, subject, term and session','error');return;}
-  if(isSenior(c)){$('caWrap').innerHTML='<div class="empty-state"><i class="fas fa-info-circle"></i><h4>Not used for Senior Secondary</h4><p>Senior Secondary classes use Test 1 /10, Test 2 /10, Assignment/Project /10 and Exam /70 in Termly Score Entry.</p></div>';return;}
+  const SEN=isSenior(c);CUR=SEN?{f:SF,exam:70,senior:true}:{f:JF,exam:40,senior:false};
   const list=students.filter(x=>sameId(x.class_id,c)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
   if(!list.length){$('caWrap').innerHTML='<div class="empty-state">No students in this class.</div>';return;}
   $('caWrap').innerHTML='<div class="empty-state">Loading…</div>';
@@ -12265,26 +12269,27 @@ window.caLoad=async function(){
   const m={};(data||[]).forEach(r=>m[String(r.student_id)]=r);
   const inp=(k,sid,v,max)=>'<input type="number" inputmode="decimal" min="0" max="'+max+'" step="0.5" id="ca_'+k+'_'+sid+'" value="'+(v??'')+'" oninput="caRow(\''+sid+'\')">';
   const cell=(f,x,r)=>'<td>'+inp(f.k,x.id,r[f.k],f.m)+'</td>';
-  const head='<thead><tr class="ca-grp"><th class="ca-name" rowspan="2">Student</th><th colspan="5">Cognitive 40%</th><th colspan="5">Affective 10%</th><th colspan="2">Psychomotor 10%</th><th colspan="5">Summary (goes to report card)</th></tr><tr>'+
-   FIELDS.map(f=>'<th>'+f.l+'<br>/'+f.m+'</th>').join('')+'<th>1st C.A<br>/20</th><th>2nd C.A<br>/20</th><th>Proj/Ass<br>/20</th><th>Exam<br>/'+EXAM_MAX+'</th><th>Total<br>/100</th></tr></thead>';
+  const head=CUR.senior?'<thead><tr><th class="ca-name">Student</th>'+CUR.f.map(f=>'<th>'+f.l+'<br>/'+f.m+'</th>').join('')+'<th>Exam<br>/'+CUR.exam+'</th><th>Total<br>/100</th></tr></thead>':'<thead><tr class="ca-grp"><th class="ca-name" rowspan="2">Student</th><th colspan="5">Cognitive 40%</th><th colspan="5">Affective 10%</th><th colspan="2">Psychomotor 10%</th><th colspan="5">Summary (goes to report card)</th></tr><tr>'+
+   CUR.f.map(f=>'<th>'+f.l+'<br>/'+f.m+'</th>').join('')+'<th>1st C.A<br>/20</th><th>2nd C.A<br>/20</th><th>Proj/Ass<br>/20</th><th>Exam<br>/'+CUR.exam+'</th><th>Total<br>/100</th></tr></thead>';
+  const calc=x=>CUR.senior?'':'<td class="ca-calc" id="ca_c1_'+x.id+'">0</td><td class="ca-calc" id="ca_c2_'+x.id+'">0</td><td class="ca-calc" id="ca_c3_'+x.id+'">0</td>';
   const body='<tbody>'+list.map((x,i)=>{const r=m[String(x.id)]||{};
-    return '<tr data-sid="'+x.id+'"><td class="ca-name">'+(i+1)+'. '+esc(x.name)+'</td>'+FIELDS.map(f=>cell(f,x,r)).join('')+
-     '<td class="ca-calc" id="ca_c1_'+x.id+'">0</td><td class="ca-calc" id="ca_c2_'+x.id+'">0</td><td class="ca-calc" id="ca_c3_'+x.id+'">0</td>'+
-     '<td>'+inp('exam',x.id,r.exam,EXAM_MAX)+'</td><td class="ca-tot" id="ca_tot_'+x.id+'">0</td></tr>';}).join('')+'</tbody>';
-  $('caWrap').innerHTML='<div class="ca-scroll"><table class="ca-grid">'+head+body+'</table></div><div class="ts-btnrow"><button class="btn btn-primary" onclick="caSave()"><i class="fas fa-cloud-upload-alt"></i> Save &amp; Push to Report Card</button><button class="btn btn-success" onclick="caDownload()"><i class="fas fa-file-excel"></i> Download Excel Sheet</button><button class="btn btn-sm btn-primary" onclick="document.getElementById(\'caFile\').click()"><i class="fas fa-upload"></i> Upload Filled Sheet</button><button class="btn btn-sm" style="background:#eee;color:#333" onclick="caLoad()"><i class="fas fa-sync"></i> Reload</button></div>';
+    return '<tr data-sid="'+x.id+'"><td class="ca-name">'+(i+1)+'. '+esc(x.name)+'</td>'+CUR.f.map(f=>cell(f,x,r)).join('')+
+     calc(x)+
+     '<td>'+inp('exam',x.id,r.exam,CUR.exam)+'</td><td class="ca-tot" id="ca_tot_'+x.id+'">0</td></tr>';}).join('')+'</tbody>';
+  $('caWrap').innerHTML='<div class="ca-scroll"><table class="ca-grid"'+(CUR.senior?' style="min-width:0"':'')+'>'+head+body+'</table></div><div class="ts-btnrow"><button class="btn btn-primary" onclick="caSave()"><i class="fas fa-cloud-upload-alt"></i> Save &amp; Push to Report Card</button><button class="btn btn-success" onclick="caDownload()"><i class="fas fa-file-excel"></i> Download Excel Sheet</button><button class="btn btn-sm btn-primary" onclick="document.getElementById(\'caFile\').click()"><i class="fas fa-upload"></i> Upload Filled Sheet</button><button class="btn btn-sm" style="background:#eee;color:#333" onclick="caLoad()"><i class="fas fa-sync"></i> Reload</button></div>';
   list.forEach(x=>caRow(x.id));
 };
 function sums(sid){
   const v=k=>num($('ca_'+k+'_'+sid)?.value);
   const g={1:0,2:0,3:0,4:0},has={1:false,2:false,3:false,4:false};
-  FIELDS.forEach(f=>{const x=v(f.k);if(x!==null){g[f.g]+=x;has[f.g]=true;}});
+  CUR.f.forEach(f=>{const x=v(f.k);if(x!==null){g[f.g]+=x;has[f.g]=true;}});
   return{g,has,exam:v('exam')};
 }
 window.caRow=function(sid){
-  FIELDS.concat([{k:'exam',m:EXAM_MAX}]).forEach(f=>{const el=$('ca_'+f.k+'_'+sid);if(!el)return;const x=num(el.value);el.classList.toggle('ca-bad',x!==null&&(!Number.isFinite(x)||x<0||x>f.m));});
+  CUR.f.concat([{k:'exam',m:CUR.exam}]).forEach(f=>{const el=$('ca_'+f.k+'_'+sid);if(!el)return;const x=num(el.value);el.classList.toggle('ca-bad',x!==null&&(!Number.isFinite(x)||x<0||x>f.m));});
   const {g,exam}=sums(sid);
   const c1=r2(g[1]),c2=r2(g[2]),c3=r2(g[3]+g[4]);
-  $('ca_c1_'+sid).textContent=c1;$('ca_c2_'+sid).textContent=c2;$('ca_c3_'+sid).textContent=c3;
+  if($('ca_c1_'+sid)){$('ca_c1_'+sid).textContent=c1;$('ca_c2_'+sid).textContent=c2;$('ca_c3_'+sid).textContent=c3;}
   $('ca_tot_'+sid).textContent=r2(c1+c2+c3+n0(exam));
 };
 window.caSave=async function(){
@@ -12294,7 +12299,7 @@ window.caSave=async function(){
   for(const tr of document.querySelectorAll('#caWrap tr[data-sid]')){
     const sid=tr.dataset.sid,nm=tr.cells[0].textContent;
     const rec={student_id:String(sid),class_id:String(c),subject_id:String(s),term_id:String(t),session_id:String(se),teacher_id:String(currentUser.id),updated_at:now};
-    for(const f of FIELDS.concat([{k:'exam',l:'Exam',m:EXAM_MAX}])){
+    for(const f of CUR.f.concat([{k:'exam',l:'Exam',m:CUR.exam}])){
       const x=num($('ca_'+f.k+'_'+sid).value);
       if(x!==null&&(!Number.isFinite(x)||x<0||x>f.m)){showToast(nm+': '+f.l+' must be between 0 and '+f.m,'error');return;}
       rec[f.k]=x;
@@ -12336,22 +12341,23 @@ window.caDownload=function(){
     const c=$('caClass').value,s=$('caSubject').value,t=$('caTerm').value,se=$('caSession').value;
     const trs=[...document.querySelectorAll('#caWrap tr[data-sid]')];
     if(!trs.length){showToast('Open a class record first','error');return;}
-    const head=['S/N','Names',...FIELDS.map(f=>f.l+' '+f.m+'Marks'),'Exam '+EXAM_MAX+'Marks','1st C.A 20Marks','2nd C.A 20Marks','Proj/Ass 20Marks','Total 100Marks','Student Key (do not edit)'];
+    const head=CUR.senior?['S/N','Names',...CUR.f.map(f=>f.l+' '+f.m+'Marks'),'Exam '+CUR.exam+'Marks','Total 100Marks','Student Key (do not edit)']:['S/N','Names',...CUR.f.map(f=>f.l+' '+f.m+'Marks'),'Exam '+CUR.exam+'Marks','1st C.A 20Marks','2nd C.A 20Marks','Proj/Ass 20Marks','Total 100Marks','Student Key (do not edit)'];
     const rows=[head];
     trs.forEach((tr,i)=>{
       const sid=tr.dataset.sid,r=i+2;
-      const vals=FIELDS.map(f=>{const v=num($('ca_'+f.k+'_'+sid).value);return v===null?'':v;});
+      const vals=CUR.f.map(f=>{const v=num($('ca_'+f.k+'_'+sid).value);return v===null?'':v;});
       const ex=num($('ca_exam_'+sid).value);
+      if(CUR.senior){rows.push([i+1,tr.cells[0].textContent.replace(/^\d+\.\s*/,''),...vals,ex===null?'':ex,{t:'n',f:'SUM(C'+r+':F'+r+')'},String(sid)]);return;}
       rows.push([i+1,tr.cells[0].textContent.replace(/^\d+\.\s*/,''),...vals,ex===null?'':ex,
         {t:'n',f:'SUM(C'+r+',D'+r+')'},{t:'n',f:'SUM(E'+r+',F'+r+',G'+r+')'},{t:'n',f:'SUM(H'+r+':N'+r+')'},{t:'n',f:'SUM(P'+r+':S'+r+',O'+r+')'},String(sid)]);
     });
     // columns: A S/N, B Names, C..N 12 fields, O Exam, P 1st CA, Q 2nd CA, R Proj/Ass, S Total, T key
     rows[0][0]='S/N';
     const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:5},{wch:32},...FIELDS.map(()=>({wch:13})),{wch:11},{wch:11},{wch:11},{wch:12},{wch:12},{hidden:true,wch:4}];
+    ws['!cols']=CUR.senior?[{wch:5},{wch:32},...CUR.f.map(()=>({wch:15})),{wch:11},{wch:12},{hidden:true,wch:4}]:[{wch:5},{wch:32},...CUR.f.map(()=>({wch:13})),{wch:11},{wch:11},{wch:11},{wch:12},{wch:12},{hidden:true,wch:4}];
     const info=[['NGIS GENERAL C.A RECORD - DO NOT EDIT THIS SHEET'],['class_id',String(c)],['subject_id',String(s)],['term_id',String(t)],['session_id',String(se)],['Class',nameOf(classes,c)],['Subject',nameOf(subjects,s)],['Term',nameOf(terms,t)],['Session',nameOf(sessions,se)],['Generated',new Date().toISOString()]];
     const wi=XLSX.utils.aoa_to_sheet(info);wi['!cols']=[{wch:14},{wch:44}];
-    const help=[['HOW TO USE'],['1. Fill only the mark columns (Test to Practical/Project, and Exam). Leave a cell empty if there is no mark yet.'],['2. 1st C.A = Test + Take Home; 2nd C.A = Quiz + Debate + Project; Proj/Ass = Affective + Psychomotor. They calculate automatically.'],['3. Do not edit names, add/delete/reorder rows, or touch the hidden Student Key column.'],['4. Save the file, then in the portal open General C.A Record, choose the same class/subject/term/session, press Upload Filled Sheet, then Save & Push to Report Card.']];
+    const help=[['HOW TO USE'],['1. Fill only the mark columns (Test to Practical/Project, and Exam). Leave a cell empty if there is no mark yet.'],[(CUR.senior?'2. Senior Secondary format: Test 1 /10 + Test 2 /10 + Assignment/Project /10 + Exam /70 = 100. The total calculates automatically.':'2. 1st C.A = Test + Take Home; 2nd C.A = Quiz + Debate + Project; Proj/Ass = Affective + Psychomotor. They calculate automatically.')],['3. Do not edit names, add/delete/reorder rows, or touch the hidden Student Key column.'],['4. Save the file, then in the portal open General C.A Record, choose the same class/subject/term/session, press Upload Filled Sheet, then Save & Push to Report Card.']];
     const wh=XLSX.utils.aoa_to_sheet(help);wh['!cols']=[{wch:120}];
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'CA Record');XLSX.utils.book_append_sheet(wb,wh,'Instructions');XLSX.utils.book_append_sheet(wb,wi,'NGIS_Info');
@@ -12367,8 +12373,8 @@ window.caUpload=async function(input){
     const meta={};XLSX.utils.sheet_to_json(wi,{header:1,defval:''}).forEach(r=>{if(r[0])meta[String(r[0])]=String(r[1]??'');});
     if(meta.class_id!==$('caClass').value||meta.subject_id!==$('caSubject').value||meta.term_id!==$('caTerm').value||meta.session_id!==$('caSession').value){showToast('This sheet is for '+(meta.Class||'')+' / '+(meta.Subject||'')+' / '+(meta.Term||'')+'. Select the same class, subject, term and session first.','error');return;}
     const grid=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    const KEY=19,errors=[];let n=0;
-    const cols=FIELDS.concat([{k:'exam',l:'Exam',m:EXAM_MAX}]);
+    const KEY=3+CUR.f.length+(CUR.senior?1:4),errors=[];let n=0;
+    const cols=CUR.f.concat([{k:'exam',l:'Exam',m:CUR.exam}]);
     for(let i=1;i<grid.length;i++){
       const r=grid[i];if(!r||!r[KEY])continue;
       const sid=String(r[KEY]).trim();
