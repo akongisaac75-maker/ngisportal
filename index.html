@@ -800,6 +800,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('enterGrades',this)"><i class="fas fa-edit"></i> Enter Assessment</div>
 <div class="nav-item" onclick="showSection('midTermPortal',this)"><i class="fas fa-clipboard-check"></i> Mid-Term Assessment</div>
 <div class="nav-item" onclick="showSection('viewReports',this)"><i class="fas fa-file-alt"></i> View Reports</div>
+<div class="nav-item ngis-class-reports" style="display:none" onclick="showSection('reportCardSection',this)"><i class="fas fa-id-card"></i> Weekly Report Cards</div>
 <div class="nav-item" onclick="showSection('teacherCBTSubmit',this)"><i class="fas fa-upload"></i> Submit CBT Questions</div>
 <div class="nav-item" onclick="showSection('teacherAssignments',this)"><i class="fas fa-tasks"></i> Assignments</div>
 <div class="nav-item" onclick="showSection('teacherCBTFeedback',this)"><i class="fas fa-chart-line"></i> CBT Student Feedback</div>
@@ -2416,6 +2417,7 @@ function ngisApplyTeacherPartition(){
    const section=match?.[1];
    if(nurseryOnly.has(section))el.style.display=sections.has('nursery')&&hasClass?'flex':'none';
    if(['regMark','regGender','regTerm'].includes(section))el.style.display=hasClass?'flex':'none';
+   if(section==='reportCardSection')el.style.display=hasClass?'flex':'none';
  });
  let banner=document.getElementById('ngisTeacherPartitionBadge');
  if(!banner){banner=document.createElement('div');banner.id='ngisTeacherPartitionBadge';banner.style.cssText='padding:8px 12px;margin:8px 5px;border-radius:9px;background:#eaf5ec;color:#165a29;font-size:12px;font-weight:600';nav.prepend(banner);}
@@ -2515,9 +2517,11 @@ function ngisHasClassTeacherAssignment(){
  return !!(currentUser?.role==='teacher' && (classTeachers||[]).some(x=>String(x.teacher_id)===String(currentUser.id)));
 }
 function ngisTeacherMenuRestricted(sectionId){
- return new Set(['parentFeedback','adminTeacherFeedback','teacherAdminFeedback','reportCardSection','tsReports']).has(sectionId);
+ return new Set(['parentFeedback','adminTeacherFeedback','teacherAdminFeedback','tsReports']).has(sectionId);
 }
+function ngisTeacherMayReport(classId){return !(currentUser&&currentUser.role==='teacher')||isCurrentUserClassTeacher(classId);}
 function showSection(sectionId,navEl){
+if(currentUser?.role==='teacher' && sectionId==='reportCardSection' && !ngisHasClassTeacherAssignment()){showToast('Weekly report cards are available only to assigned class teachers.','error');return;}
 if(currentUser?.role==='teacher' && ngisTeacherMenuRestricted(sectionId)){showToast('This section is not available in the teacher portal.','error');return;}
 if(currentUser?.role==='teacher' && ['regMark','regGender','regTerm','nurseryRegisterSection'].includes(sectionId) && !ngisHasClassTeacherAssignment()){showToast('Registers are available only to assigned class teachers.','error');return;}
 // Termly reports, broadsheet, analysis, cumulative results and staff-facing progress tools are administrator-only.
@@ -3613,6 +3617,7 @@ const studentId=document.getElementById('reportStudentSelect').value;
 const weekId=document.getElementById('reportWeekSelect').value;
 if(!studentId||!weekId){showToast('Select student and week','error');return;}
 const student=students.find(s=>s.id===studentId);
+if(!ngisTeacherMayReport(student?.class_id)){showToast('Only the class teacher can generate weekly report cards for this class','error');return;}
 const week=weeks.find(w=>w.id===weekId);
 const term=week?.term_id?terms.find(t=>t.id===week.term_id):null;
 const session=week?.session_id?sessions.find(s=>s.id===week.session_id):(term?.session_id?sessions.find(s=>s.id===term.session_id):null);
@@ -3751,6 +3756,7 @@ async function downloadSingleWeeklyReport(mode){
   if(!studentId||!weekId){showToast(mode==='student'?'Select a week first':'Select student and week first','error');return;}
   const student=students.find(x=>sameId(x.id,studentId))||(mode==='student'?currentUser:null);
   if(!student){showToast('Student not found','error');return;}
+  if(mode==='teacher'&&!ngisTeacherMayReport(student.class_id)){showToast('Only the class teacher can download weekly report cards for this class','error');return;}
   _singleReportBusy=true;
   try{
     showToast('Preparing report card PDF...','info');
@@ -3797,6 +3803,7 @@ async function downloadAllWeeklyReports(mode){
  const classId=document.getElementById(mode==='admin'?'adminReportClassSelect':'reportClassSelect')?.value;
  const weekId=document.getElementById(mode==='admin'?'adminReportWeekSelect':'reportWeekSelect')?.value;
  if(!classId||!weekId){showToast('Select Class/Arm and Week first','error');return;}
+ if(mode==='teacher'&&!ngisTeacherMayReport(classId)){showToast('Only the class teacher can download this class\'s report cards','error');return;}
  if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF){showToast('PDF library is not loaded. Check your internet connection and try again.','error');return;}
 
  const classStudents=students
