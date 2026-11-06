@@ -764,6 +764,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 .wcr-switch input{width:18px;height:18px;accent-color:var(--primary)}
 @media(max-width:600px){.wcr-list{grid-template-columns:1fr}.wcr-detail{padding:12px}.wcr-dash{flex-wrap:wrap}}
 </style>
+<style>script,style,noscript,template{display:none!important}</style>
 </head>
 
 <!-- MID-TERM MODULE: requires the midterm_assessments table. SQL is supplied separately with this update. -->
@@ -2353,24 +2354,36 @@ function showAdminLogin(){showLoginTab('admin');}
 function showTeacherLogin(){showLoginTab('teacher');}
 
 async function login(){
+const btn=document.querySelector('button[onclick="login()"]');
+try{
 const email=document.getElementById('loginEmail').value.trim();
 const password=document.getElementById('loginPassword').value;
 if(!email||!password){showToast('Please enter email and password','error');return;}
-let{data,error}=await supabaseClient.from('teachers').select('*').eq('email',email).eq('password',password).single();
+if(typeof supabaseClient==='undefined'||!supabaseClient){showToast('Cannot reach the server. Check your internet connection and refresh the page.','error');return;}
+if(btn){btn.disabled=true;btn.dataset.t=btn.innerHTML;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Signing in...';}
+let{data,error}=await supabaseClient.from('teachers').select('*').eq('email',email).eq('password',password).limit(1);
+data=data&&data[0];
 if(error||!data){
   // emails are not case-sensitive: retry ignoring upper/lower case
   const esc=email.replace(/[\\%_]/g,'\\$&');
   const r=await supabaseClient.from('teachers').select('*').ilike('email',esc).eq('password',password).limit(1);
-  data=r.data&&r.data[0];error=r.error||(data?null:true);
+  if(r.error){console.error(r.error);showToast('Login error: '+(r.error.message||'server problem'),'error');return;}
+  data=r.data&&r.data[0];error=data?null:true;
 }
 if(error||!data){showToast('Invalid email or password','error');return;}
 currentUser=data;
-// Load all subjects assigned to this teacher for the mid-term portal.
+try{
 const{data:teacherSubjects,error:teacherSubjectsError}=await supabaseClient.from('teacher_subjects').select('subject_id').eq('teacher_id',data.id);
 currentUser.teacher_subjects=teacherSubjectsError?[]:(teacherSubjects||[]);
-if(teacherSubjectsError) console.warn('Teacher subject assignments unavailable:',teacherSubjectsError.message);
+}catch(e){currentUser.teacher_subjects=[];console.warn('Teacher subject assignments unavailable',e);}
 sessionStorage.setItem('ngis_user',JSON.stringify(currentUser));
 await setupDashboard();
+}catch(e){
+  console.error('Login failed',e);
+  showToast('Login failed: '+(e&&e.message?e.message:'unexpected error')+'. Please refresh and try again.','error');
+}finally{
+  if(btn){btn.disabled=false;if(btn.dataset.t)btn.innerHTML=btn.dataset.t;}
+}
 }
 
 async function adminLogin(){
@@ -2819,7 +2832,7 @@ function downloadAllClassesLoginExcel(){return downloadAllStudentLoginsExcel();}
 function buildLoginWordDocument(title,list){
  const generated=new Date().toLocaleString();
  const rows=makeLoginRows(list).map(r=>'<tr><td>'+r.No+'</td><td>'+escapeHtml(r.Student_Name)+'</td><td>'+escapeHtml(r.Class)+'</td><td><b>'+escapeHtml(r.Login_ID)+'</b></td><td><b>'+escapeHtml(r.Password)+'</b></td><td>'+r.Login_Status+'</td></tr>').join('');
- return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(title)+'</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:22px;margin-bottom:4px}h2{text-align:center;font-size:15px;margin:0 0 8px}p.meta{text-align:center;color:#666;font-size:11px;margin-bottom:22px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1a5f2a;color:#fff;padding:8px;text-align:left}td{border:1px solid #ccc;padding:7px}tr:nth-child(even){background:#f6f8f7}.note{margin-top:18px;padding:10px;border:1px solid #ddd;background:#fafafa;font-size:10px}</style></head><body><h1>NIGERIA-GHANA INTERNATIONAL SCHOOL</h1><h2>'+escapeHtml(title)+'</h2><p class="meta">Generated: '+escapeHtml(generated)+' | Keep student credentials confidential.</p><table><thead><tr><th>No.</th><th>Student Name</th><th>Class</th><th>Login ID</th><th>Password</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table><div class="note"><b>Important:</b> These credentials provide access to the student portal. Distribute them only to the intended student/parent and avoid publishing the file publicly.</div></body></html>';
+ return '<\!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(title)+'</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:22px;margin-bottom:4px}h2{text-align:center;font-size:15px;margin:0 0 8px}p.meta{text-align:center;color:#666;font-size:11px;margin-bottom:22px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1a5f2a;color:#fff;padding:8px;text-align:left}td{border:1px solid #ccc;padding:7px}tr:nth-child(even){background:#f6f8f7}.note{margin-top:18px;padding:10px;border:1px solid #ddd;background:#fafafa;font-size:10px}</style><\/head><body><h1>NIGERIA-GHANA INTERNATIONAL SCHOOL</h1><h2>'+escapeHtml(title)+'</h2><p class="meta">Generated: '+escapeHtml(generated)+' | Keep student credentials confidential.</p><table><thead><tr><th>No.</th><th>Student Name</th><th>Class</th><th>Login ID</th><th>Password</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table><div class="note"><b>Important:</b> These credentials provide access to the student portal. Distribute them only to the intended student/parent and avoid publishing the file publicly.</div><\/body><\/html>';
 }
 function downloadWordFile(filename,title,list){const html=buildLoginWordDocument(title,list);const blob=new Blob([html],{type:'application/msword;charset=utf-8'});const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function downloadAllStudentLoginsWord(){
@@ -4457,7 +4470,7 @@ async function generateMidTermAdminReport(){
 }
 function setupMidTermStudentPortal(){fillMidTermTermSelect('midTermStudentTerm');fillMidTermSessionSelect('midTermStudentSession');}
 async function loadStudentMidTermReport(){const tid=document.getElementById('midTermStudentTerm').value,sidn=document.getElementById('midTermStudentSession').value;if(!tid||!sidn){document.getElementById('midTermStudentReportDisplay').innerHTML='';return;}const st=students.find(s=>sameId(s.id,currentUser?.id))||currentUser;try{const r=await fetchMidTermRecords(st.id,tid,sidn),rm=await fetchMidTermRemark(st.id,tid,sidn),ct=getClassTeacherRecord(st?.class_id),ctt=teachers.find(t=>String(t.id)===String(ct?.teacher_id));document.getElementById('midTermStudentReportDisplay').innerHTML=midTermMultiReportHtml(st,r,terms.find(t=>String(t.id)===String(tid)),sessions.find(x=>String(x.id)===String(sidn)),ctt,rm);}catch(e){showToast('Error loading mid-term report: '+e.message,'error');}}
-function printMidTermReport(id){const el=document.getElementById(id);if(!el||!el.innerHTML.trim()){showToast('Generate a mid-term report first','error');return;}const w=window.open('','_blank','width=1000,height=900');if(!w){showToast('Please allow pop-ups to print the report','error');return;}w.document.write('<!doctype html><html><head><title>MID-TERM ASSESSMENT REPORT CARD</title><style>body{font-family:Arial,sans-serif;background:#fff;margin:0;padding:10mm;color:#222}.midterm-report-card{width:194mm;max-width:194mm;margin:0 auto;padding:8mm;box-sizing:border-box;background:#fff}.report-header{text-align:center;border-bottom:2px solid #1a5f2a;padding-bottom:10px;margin-bottom:15px}.report-header img{width:60px;height:60px;object-fit:contain}.report-header h2{margin:4px 0;color:#1a5f2a}.report-header p{margin:3px 0;color:#666}.midterm-title{font-weight:800;color:#1a5f2a}.report-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#f5f7f6;padding:10px;margin-bottom:10px}.report-meta-item h5{margin:0 0 3px;font-size:10px;color:#777;text-transform:uppercase}.report-meta-item p{margin:0;font-size:13px;font-weight:700}.report-table{width:100%;border-collapse:collapse}.report-table th{background:#1a5f2a;color:#fff;padding:8px;font-size:11px}.report-table td{border:1px solid #ddd;padding:8px;font-size:11px}.report-summary{margin-top:14px}.report-comment{padding:12px;border-left:4px solid #1a5f2a;background:#f8faf9}.report-comment h4{margin:0 0 6px;font-size:11px}.report-comment p{margin:0;font-size:12px;line-height:1.5}.report-signature{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:25px}.signature-line .line{border-bottom:1px solid #555;min-height:24px;padding-bottom:3px}.signature-line p{font-size:10px;text-align:center;margin:4px 0}.grading-scale-info{margin-top:18px;padding:10px;background:#f7f7f7}.grading-scale-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.grading-scale-item{display:flex;justify-content:space-between;font-size:9px;padding:4px;border:1px solid #ddd}.grade-badge{display:inline-block;padding:3px 7px;border-radius:12px;font-weight:700}.grade-a-plus,.grade-a,.grade-b-plus,.grade-b{background:#dff4e5}.grade-c,.grade-d{background:#fff3cd}.grade-e,.grade-f{background:#fde2e1}@page{size:A4;margin:0} @media print{body{padding:0}.midterm-report-card{page-break-after:always}}</style></head><body>'+el.innerHTML+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),500);}
+function printMidTermReport(id){const el=document.getElementById(id);if(!el||!el.innerHTML.trim()){showToast('Generate a mid-term report first','error');return;}const w=window.open('','_blank','width=1000,height=900');if(!w){showToast('Please allow pop-ups to print the report','error');return;}w.document.write('<\!doctype html><html><head><title>MID-TERM ASSESSMENT REPORT CARD</title><style>body{font-family:Arial,sans-serif;background:#fff;margin:0;padding:10mm;color:#222}.midterm-report-card{width:194mm;max-width:194mm;margin:0 auto;padding:8mm;box-sizing:border-box;background:#fff}.report-header{text-align:center;border-bottom:2px solid #1a5f2a;padding-bottom:10px;margin-bottom:15px}.report-header img{width:60px;height:60px;object-fit:contain}.report-header h2{margin:4px 0;color:#1a5f2a}.report-header p{margin:3px 0;color:#666}.midterm-title{font-weight:800;color:#1a5f2a}.report-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#f5f7f6;padding:10px;margin-bottom:10px}.report-meta-item h5{margin:0 0 3px;font-size:10px;color:#777;text-transform:uppercase}.report-meta-item p{margin:0;font-size:13px;font-weight:700}.report-table{width:100%;border-collapse:collapse}.report-table th{background:#1a5f2a;color:#fff;padding:8px;font-size:11px}.report-table td{border:1px solid #ddd;padding:8px;font-size:11px}.report-summary{margin-top:14px}.report-comment{padding:12px;border-left:4px solid #1a5f2a;background:#f8faf9}.report-comment h4{margin:0 0 6px;font-size:11px}.report-comment p{margin:0;font-size:12px;line-height:1.5}.report-signature{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:25px}.signature-line .line{border-bottom:1px solid #555;min-height:24px;padding-bottom:3px}.signature-line p{font-size:10px;text-align:center;margin:4px 0}.grading-scale-info{margin-top:18px;padding:10px;background:#f7f7f7}.grading-scale-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.grading-scale-item{display:flex;justify-content:space-between;font-size:9px;padding:4px;border:1px solid #ddd}.grade-badge{display:inline-block;padding:3px 7px;border-radius:12px;font-weight:700}.grade-a-plus,.grade-a,.grade-b-plus,.grade-b{background:#dff4e5}.grade-c,.grade-d{background:#fff3cd}.grade-e,.grade-f{background:#fde2e1}@page{size:A4;margin:0} @media print{body{padding:0}.midterm-report-card{page-break-after:always}}</style><\/head><body>'+el.innerHTML+'<\/body><\/html>');w.document.close();w.focus();setTimeout(()=>w.print(),500);}
 async function buildMidTermReportCardHTML(student,termId,sessionId){const r=await fetchMidTermRecords(student.id,termId,sessionId),rm=await fetchMidTermRemark(student.id,termId,sessionId),ct=getClassTeacherRecord(student.class_id),ctt=teachers.find(t=>String(t.id)===String(ct?.teacher_id));return midTermMultiReportHtml(student,r,terms.find(t=>String(t.id)===String(termId)),sessions.find(x=>String(x.id)===String(sessionId)),ctt,rm).replace('class="midterm-report-card"','class="midterm-report-card report-card bulk-pdf-card"');}
 
 /* ===== MID-TERM ANALYSIS (admin) ===== */
@@ -4546,7 +4559,7 @@ function printMidTermAnalysis(){
   const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');
   const w=window.open('','_blank','width=1000,height=900');
   if(!w){showToast('Please allow pop-ups to print','error');return;}
-  w.document.write('<!doctype html><html><head><title>Mid-Term Performance Analysis</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>'+css+'@page{size:A4 portrait;margin:10mm}body{background:#fff!important;padding:0!important;display:block!important}.mta-class{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px}.card{box-shadow:none!important}</style></head><body><div style="padding:6mm;font-family:Poppins,Arial,sans-serif"><div style="text-align:center;margin-bottom:10px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:55px;height:55px"><h2 style="color:#1a5f2a;margin:4px 0">Nigeria-Ghana International School</h2></div>'+el.innerHTML+'</div></body></html>');
+  w.document.write('<\!doctype html><html><head><title>Mid-Term Performance Analysis</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>'+css+'@page{size:A4 portrait;margin:10mm}body{background:#fff!important;padding:0!important;display:block!important}.mta-class{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px}.card{box-shadow:none!important}</style><\/head><body><div style="padding:6mm;font-family:Poppins,Arial,sans-serif"><div style="text-align:center;margin-bottom:10px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:55px;height:55px"><h2 style="color:#1a5f2a;margin:4px 0">Nigeria-Ghana International School</h2></div>'+el.innerHTML+'</div><\/body><\/html>');
   w.document.close();w.focus();setTimeout(()=>w.print(),700);
 }
 
@@ -4653,7 +4666,7 @@ function printMidTermBroadsheet(){
   const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');
   const w=window.open('','_blank','width=1200,height=900');
   if(!w){showToast('Please allow pop-ups to print','error');return;}
-  w.document.write('<!doctype html><html><head><title>Mid-Term Broadsheet</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>'+css+'@page{size:A4 landscape;margin:8mm}body{background:#fff!important;padding:0!important;display:block!important;font-family:Poppins,Arial,sans-serif}.card{display:none}.bs-wrap{overflow:visible!important;border:none;margin-bottom:8px}.bs-table{min-width:0!important;width:100%;font-size:8px}.bs-table th{font-size:7px;padding:4px 2px}.bs-table td{padding:3px 2px}.bs-table tr{page-break-inside:avoid}.bs-print-block{page-break-before:always;break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><div style="text-align:center;margin-bottom:6px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:45px;height:45px;vertical-align:middle"> <span style="font-size:15px;font-weight:800;color:#1a5f2a">Nigeria-Ghana International School</span></div>'+el.innerHTML+'</body></html>');
+  w.document.write('<\!doctype html><html><head><title>Mid-Term Broadsheet</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>'+css+'@page{size:A4 landscape;margin:8mm}body{background:#fff!important;padding:0!important;display:block!important;font-family:Poppins,Arial,sans-serif}.card{display:none}.bs-wrap{overflow:visible!important;border:none;margin-bottom:8px}.bs-table{min-width:0!important;width:100%;font-size:8px}.bs-table th{font-size:7px;padding:4px 2px}.bs-table td{padding:3px 2px}.bs-table tr{page-break-inside:avoid}.bs-print-block{page-break-before:always;break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style><\/head><body><div style="text-align:center;margin-bottom:6px"><img src="data:image/png;base64,'+LOGO_B64+'" style="width:45px;height:45px;vertical-align:middle"> <span style="font-size:15px;font-weight:800;color:#1a5f2a">Nigeria-Ghana International School</span></div>'+el.innerHTML+'<\/body><\/html>');
   w.document.close();w.focus();setTimeout(()=>w.print(),900);
 }
 function downloadMidTermBroadsheetXlsx(){
@@ -7405,7 +7418,7 @@ const tile=(l,v,c)=>'<div style="flex:1 1 130px;border:1px solid #e3e6e8;border-
 const sel=(p,needT)=>{const c=$(p+'Class').value,s=$(p+'Session').value,t=needT?$(p+'Term').value:'x';if(!c||!t||!s){showToast('Select class'+(needT?', term':'')+' and session','error');return null;}return{c,t:needT?t:'',s};};
 window.tsPrint=function(id){const el=$(id);if(!el||!el.innerHTML.trim()){showToast('Generate the sheet first','error');return;}
   const w=window.open('','_blank','width=1200,height=900');if(!w){showToast('Please allow pop-ups to print','error');return;}
-  w.document.write('<!doctype html><html><head><title>Print</title><style>@page{size:A4 landscape;margin:8mm}body{margin:0;font-family:Arial,sans-serif}table{border-collapse:collapse}</style></head><body>'+el.innerHTML+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),600);};
+  w.document.write('<\!doctype html><html><head><title>Print</title><style>@page{size:A4 landscape;margin:8mm}body{margin:0;font-family:Arial,sans-serif}table{border-collapse:collapse}</style><\/head><body>'+el.innerHTML+'<\/body><\/html>');w.document.close();w.focus();setTimeout(()=>w.print(),600);};
 window.tsXlsx=function(k){const a=LAST[k];if(!a){showToast('Generate the sheet first','error');return;}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a.aoa),'Sheet1');XLSX.writeFile(wb,a.name+'.xlsx');};
 const empty=(id,m)=>{$(id).innerHTML='<div class="empty-state">'+m+'</div>';};
 
@@ -7732,7 +7745,7 @@ window.regTRender=function(){
 window.regPrint=function(id,title){const el=$(id);if(!el||!el.innerHTML.trim()){showToast('Nothing to print','error');return;}
   const c=$('regClass')&&id==='regGrid'?cName($('regClass').value):cName($('regTClass').value),w=id==='regGrid'?(wObj($('regWeek').value)||{}).name:'';
   const win=window.open('','_blank');if(!win){showToast('Allow pop-ups to print','error');return;}
-  win.document.write('<html><head><title>'+esc(title)+'</title><style>body{font-family:Arial,sans-serif;font-size:11px;margin:14px}table{border-collapse:collapse;width:100%;margin-bottom:12px}th,td{border:1px solid #444;padding:3px 4px;text-align:center}th{background:#ddd}button{border:0;background:none;font-weight:bold;font-size:11px}.rg-x,.rg-g{display:none}.rg-wrap,.rg-tw{overflow:visible;max-height:none}.rg-sum{display:flex;gap:10px;flex-wrap:wrap}.rg-box{border:1px solid #444;padding:6px;min-width:170px}.big{font-size:20px;font-weight:bold}.sname{text-align:left}h2,h3{text-align:center;margin:2px}</style></head><body><h2>Nigeria-Ghana International School</h2><h3>'+esc(title)+'</h3><p style="text-align:center">'+esc(c||'All classes')+(w?' – '+esc(w):'')+'</p>'+el.innerHTML+'</body></html>');
+  win.document.write('<html><head><title>'+esc(title)+'</title><style>body{font-family:Arial,sans-serif;font-size:11px;margin:14px}table{border-collapse:collapse;width:100%;margin-bottom:12px}th,td{border:1px solid #444;padding:3px 4px;text-align:center}th{background:#ddd}button{border:0;background:none;font-weight:bold;font-size:11px}.rg-x,.rg-g{display:none}.rg-wrap,.rg-tw{overflow:visible;max-height:none}.rg-sum{display:flex;gap:10px;flex-wrap:wrap}.rg-box{border:1px solid #444;padding:6px;min-width:170px}.big{font-size:20px;font-weight:bold}.sname{text-align:left}h2,h3{text-align:center;margin:2px}</style><\/head><body><h2>Nigeria-Ghana International School</h2><h3>'+esc(title)+'</h3><p style="text-align:center">'+esc(c||'All classes')+(w?' – '+esc(w):'')+'</p>'+el.innerHTML+'<\/body><\/html>');
   win.document.close();setTimeout(()=>win.print(),400);};
 window.regExcel=function(id,name){const el=$(id),tbs=el?el.querySelectorAll('table'):[];if(!tbs.length||typeof XLSX==='undefined'){showToast('Nothing to export','error');return;}
   const wb=XLSX.utils.book_new();tbs.forEach((t,i)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.table_to_sheet(t),'Sheet'+(i+1)));XLSX.writeFile(wb,name+'.xlsx');};
@@ -7910,7 +7923,7 @@ window.regGPrint=function(){const p=regGPeople();
   if(!p.boys.length&&!p.girls.length){showToast('No students with a gender set for '+p.label,'error');return;}
   const tbl=(t,l)=>'<h2>'+t+' ('+l.length+')</h2><table><thead><tr><th>#</th><th>Student Name</th><th>Class</th></tr></thead><tbody>'+l.map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(s.name)+'</td><td>'+esc(cName(s.class_id))+'</td></tr>').join('')+'</tbody></table>';
   const w=window.open('','_blank');if(!w){showToast('Allow pop-ups to print','error');return;}
-  w.document.write('<!doctype html><html><head><title>Boys and Girls - '+esc(p.label)+'</title><style>body{font-family:Arial,sans-serif;margin:20px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:18px;margin:0 0 4px}.s{text-align:center;color:#555;font-size:12px;margin-bottom:14px}h2{font-size:15px;margin:14px 0 6px;color:#1a5f2a}table{border-collapse:collapse;width:100%;font-size:12px;margin-bottom:10px}th,td{border:1px solid #999;padding:4px 7px;text-align:left}th{background:#e8f3ea}.pb{page-break-before:always}</style></head><body><h1>Nigeria-Ghana International School</h1><div class="s">Student list by gender &ndash; '+esc(p.label)+'</div>'+tbl('Boys',p.boys)+'<div class="pb"></div>'+tbl('Girls',p.girls)+(p.none.length?'<p style="font-size:11px;color:#c0392b">'+p.none.length+' student(s) have no gender set and are not listed.</p>':'')+'<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.write('<\!doctype html><html><head><title>Boys and Girls - '+esc(p.label)+'</title><style>body{font-family:Arial,sans-serif;margin:20px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:18px;margin:0 0 4px}.s{text-align:center;color:#555;font-size:12px;margin-bottom:14px}h2{font-size:15px;margin:14px 0 6px;color:#1a5f2a}table{border-collapse:collapse;width:100%;font-size:12px;margin-bottom:10px}th,td{border:1px solid #999;padding:4px 7px;text-align:left}th{background:#e8f3ea}.pb{page-break-before:always}</style><\/head><body><h1>Nigeria-Ghana International School</h1><div class="s">Student list by gender &ndash; '+esc(p.label)+'</div>'+tbl('Boys',p.boys)+'<div class="pb"></div>'+tbl('Girls',p.girls)+(p.none.length?'<p style="font-size:11px;color:#c0392b">'+p.none.length+' student(s) have no gender set and are not listed.</p>':'')+'<script>window.onload=function(){window.print();}<\/script><\/body><\/html>');
   w.document.close();};
 window.regGImport=function(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{
   const rows=parseCsv(rd.result),H=rows[0].map(x=>norm(x).replace(/[ -]/g,'_')),ix=n=>H.indexOf(n),M=mapper(null);let ok=0,skip=0;
@@ -8620,8 +8633,8 @@ window.lpPrint=function(){
   const p=cur;if(!p)return;
   const w=window.open('','_blank');if(!w){showToast('Allow pop-ups to print','error');return;}
   const fx=f=>planCms(p.id,f).map(c=>'<div style="border-left:3px solid '+(c.author_role==='admin'?'#c41e3a':c.author_role==='hod'?'#e67e22':'#2d8a42')+';background:#f7f7f7;padding:5px 9px;margin:5px 0;font-size:12px"><b>'+esc(c.author_name||'')+' ('+roleName(c)+'):</b> '+nl(c.body)+(c.resolved?' <i>[fixed]</i>':'')+'</div>').join('');
-  w.document.write('<!doctype html><html><head><title>Lesson Plan</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{color:#1a5f2a;font-size:20px;margin:0 0 4px}.m{font-size:12px;color:#444;margin-bottom:14px}.f{border:1px solid #ccc;border-radius:6px;padding:9px 11px;margin-bottom:9px;page-break-inside:avoid}.l{font-weight:700;font-size:11px;color:#1a5f2a;text-transform:uppercase;margin-bottom:3px}.b{font-size:13px;line-height:1.5}</style></head><body><h1>Nigeria-Ghana International School — Lesson Plan</h1><div class="m"><b>'+esc(p.topic||'')+'</b><br>Teacher: '+esc(p.teacher_name||'')+' · Class: '+esc(p.class_name||cName(p.class_id))+' · Subject: '+esc(p.subject_name||'')+' · Week: '+esc(p.week_name||'—')+(p.plan_date?' · Date: '+esc(p.plan_date):'')+(p.duration?' · Duration: '+esc(p.duration):'')+' · Status: '+esc((STATUS[p.status]||[p.status])[0])+(p.hod_checked?' · HOD checked: '+esc(p.hod_checked_by||''):'')+'</div>'+
-    FIELDS.filter(([k])=>k!=='topic').map(([k,l])=>'<div class="f"><div class="l">'+l+'</div><div class="b">'+nl(p[k]||'')+'</div>'+fx(k)+'</div>').join('')+(planCms(p.id,'general').length?'<div class="f"><div class="l">Overall comments</div>'+fx('general')+'</div>':'')+'<script>window.onload=function(){window.print()}<\/script></body></html>');
+  w.document.write('<\!doctype html><html><head><title>Lesson Plan</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{color:#1a5f2a;font-size:20px;margin:0 0 4px}.m{font-size:12px;color:#444;margin-bottom:14px}.f{border:1px solid #ccc;border-radius:6px;padding:9px 11px;margin-bottom:9px;page-break-inside:avoid}.l{font-weight:700;font-size:11px;color:#1a5f2a;text-transform:uppercase;margin-bottom:3px}.b{font-size:13px;line-height:1.5}</style><\/head><body><h1>Nigeria-Ghana International School — Lesson Plan</h1><div class="m"><b>'+esc(p.topic||'')+'</b><br>Teacher: '+esc(p.teacher_name||'')+' · Class: '+esc(p.class_name||cName(p.class_id))+' · Subject: '+esc(p.subject_name||'')+' · Week: '+esc(p.week_name||'—')+(p.plan_date?' · Date: '+esc(p.plan_date):'')+(p.duration?' · Duration: '+esc(p.duration):'')+' · Status: '+esc((STATUS[p.status]||[p.status])[0])+(p.hod_checked?' · HOD checked: '+esc(p.hod_checked_by||''):'')+'</div>'+
+    FIELDS.filter(([k])=>k!=='topic').map(([k,l])=>'<div class="f"><div class="l">'+l+'</div><div class="b">'+nl(p[k]||'')+'</div>'+fx(k)+'</div>').join('')+(planCms(p.id,'general').length?'<div class="f"><div class="l">Overall comments</div>'+fx('general')+'</div>':'')+'<script>window.onload=function(){window.print()}<\/script><\/body><\/html>');
   w.document.close();
 };
 
@@ -9664,13 +9677,13 @@ function nurseryDocWrap(inner,mode){
     '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}';
   if(mode==='doc'){
     return "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Nursery Observation Sheet</title>"+
-      "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->"+
-      "<style>"+pageCss+base+"</style></head><body><div class=Section1>"+inner+"</div></body></html>";
+      "<\!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->"+
+      "<style>"+pageCss+base+"</style><\/head><body><div class=Section1>"+inner+"</div><\/body><\/html>";
   }
   // Browser: on screen show an A4 sheet; when printing/saving PDF the @page margin does the spacing
   const screenCss='@media screen{body{background:#e9ecef}.Section1{width:210mm;min-height:297mm;box-sizing:border-box;margin:8mm auto;padding:'+m+';background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18)}}'+
     '@media print{body{background:#fff}.Section1{width:auto;margin:0;padding:0;box-shadow:none}}';
-  return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Nursery Observation Sheet</title><style>"+pageCss+base+screenCss+"</style></head><body><div class=\"Section1\">"+inner+"</div></body></html>";
+  return "<\!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Nursery Observation Sheet</title><style>"+pageCss+base+screenCss+"</style><\/head><body><div class=\"Section1\">"+inner+"</div><\/body><\/html>";
 }
 function generateNurseryReport(){
   const d=formSheetData(); if(!d)return;
@@ -10095,9 +10108,9 @@ function emtWrap(inner,mode){
   const pageCss='@page{size:A4 portrait;margin:'+m+'}@page Section1{size:210mm 297mm;margin:'+m+' '+m+' '+m+' '+m+';mso-page-orientation:portrait;mso-header-margin:0mm;mso-footer-margin:0mm}div.Section1{page:Section1}';
   const base='html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#1e1e1e}table{border-collapse:collapse}img{border:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}';
   const T='Early Years Mid-Term Report';
-  if(mode==='doc')return "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>"+T+"</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]--><style>"+pageCss+base+"</style></head><body><div class=Section1>"+inner+"</div></body></html>";
+  if(mode==='doc')return "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>"+T+"</title><\!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]--><style>"+pageCss+base+"</style><\/head><body><div class=Section1>"+inner+"</div><\/body><\/html>";
   const screenCss='@media screen{body{background:#e9ecef}.Section1{width:210mm;min-height:297mm;box-sizing:border-box;margin:8mm auto;padding:'+m+';background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18)}}@media print{body{background:#fff}.Section1{width:auto;margin:0;padding:0;box-shadow:none}}';
-  return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>"+T+"</title><style>"+pageCss+base+screenCss+"</style></head><body><div class=\"Section1\">"+inner+"</div></body></html>";
+  return "<\!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>"+T+"</title><style>"+pageCss+base+screenCss+"</style><\/head><body><div class=\"Section1\">"+inner+"</div><\/body><\/html>";
 }
 function emtPreview(){
   const d=emtFormData(); if(!d)return;
@@ -13002,6 +13015,15 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready)bad
     await window.loadReportCardTeacherCommentEditor(x.studentId,x.weekId,x.classId);
   };
 })();
+</script>
+<script>
+window.addEventListener('unhandledrejection',function(e){try{console.error(e.reason);if(typeof showToast==='function')showToast('Something went wrong: '+((e.reason&&e.reason.message)||'please try again'),'error');}catch(_){}});
+document.addEventListener('DOMContentLoaded',function(){
+  ['loginEmail','loginPassword'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.addEventListener('keydown',function(ev){if(ev.key==='Enter'){ev.preventDefault();window.login();}});
+  });
+});
 </script>
 </body>
 </html>
