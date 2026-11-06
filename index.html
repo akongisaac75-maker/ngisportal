@@ -2819,82 +2819,7 @@ function downloadAllClassesLoginExcel(){return downloadAllStudentLoginsExcel();}
 function buildLoginWordDocument(title,list){
  const generated=new Date().toLocaleString();
  const rows=makeLoginRows(list).map(r=>'<tr><td>'+r.No+'</td><td>'+escapeHtml(r.Student_Name)+'</td><td>'+escapeHtml(r.Class)+'</td><td><b>'+escapeHtml(r.Login_ID)+'</b></td><td><b>'+escapeHtml(r.Password)+'</b></td><td>'+r.Login_Status+'</td></tr>').join('');
- return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(title)+'</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:22px;margin-bottom:4px}h2{text-align:center;font-size:15px;margin:0 0 8px}p.meta{text-align:center;color:#666;font-size:11px;margin-bottom:22px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1a5f2a;color:#fff;padding:8px;text-align:left}td{border:1px solid #ccc;padding:7px}tr:nth-child(even){background:#f6f8f7}.note{margin-top:18px;padding:10px;border:1px solid #ddd;background:#fafafa;font-size:10px}</style></head><body><h1>NIGERIA-GHANA INTERNATIONAL SCHOOL</h1><h2>'+escapeHtml(title)+'</h2><p class="meta">Generated: '+escapeHtml(generated)+' | Keep student credentials confidential.</p><table><thead><tr><th>No.</th><th>Student Name</th><th>Class</th><th>Login ID</th><th>Password</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table><div class="note"><b>Important:</b> These credentials provide access to the student portal. Distribute them only to the intended student/parent and avoid publishing the file publicly.</div>
-<script>
-/* ===== Integrated weekly report-card class-teacher remarks =====
-   Uses weekly_remarks (same table as the Weekly Class Review inbox).
-   This makes the normal Generate Report workflow and the review inbox share
-   the same saved Observation and Recommendation for each learner/week. */
-(function(){
-  const $=id=>document.getElementById(id);
-  const S=v=>String(v??'');
-  function selected(){
-    const studentId=$('reportStudentSelect')?.value||'';
-    const weekId=$('reportWeekSelect')?.value||'';
-    const student=(students||[]).find(s=>sameId(s.id,studentId));
-    return {studentId,weekId,student,classId:student?.class_id||''};
-  }
-  function isAssignedClassTeacher(classId){
-    return !!(currentUser&&currentUser.role==='teacher'&&
-      (classTeachers||[]).some(c=>sameId(c.class_id,classId)&&sameId(c.teacher_id,currentUser.id)));
-  }
-  window.loadReportCardTeacherCommentEditor=async function(studentId,weekId,classId){
-    const editor=$('reportCardTeacherCommentEditor');
-    const obs=$('reportCardTeacherObservation'),rec=$('reportCardTeacherRecommendation');
-    if(!editor||!obs||!rec)return;
-    editor.classList.add('hidden');obs.value='';rec.value='';
-    if(!currentUser||currentUser.role!=='teacher'||!studentId||!weekId||!classId||!isAssignedClassTeacher(classId))return;
-    const {data,error}=await supabaseClient.from('weekly_remarks')
-      .select('observation,recommendation')
-      .eq('student_id',S(studentId)).eq('week_id',S(weekId)).limit(1);
-    if(error){
-      console.error('Unable to load weekly remarks:',error);
-      showToast(/does not exist|schema cache|42P01|PGRST/i.test(error.message||'')
-        ?'Weekly remarks table is missing. Run weekly_report_review.sql in Supabase.'
-        :'Unable to load observations and recommendation: '+error.message,'error');
-      return;
-    }
-    const row=data&&data[0]||{};
-    obs.value=row.observation||'';
-    rec.value=row.recommendation||'';
-    editor.classList.remove('hidden');
-  };
-  window.saveReportCardTeacherComment=async function(){
-    const {studentId,weekId,classId}=selected();
-    const obs=$('reportCardTeacherObservation')?.value.trim()||'';
-    const rec=$('reportCardTeacherRecommendation')?.value.trim()||'';
-    if(!studentId||!weekId||!classId){showToast('Generate a learner report card first.','error');return;}
-    if(!isAssignedClassTeacher(classId)){showToast('Only the assigned class teacher can save these remarks.','error');return;}
-    if(!obs&&!rec){showToast('Enter an observation or recommendation before saving.','error');return;}
-    const row={
-      student_id:S(studentId),class_id:S(classId),week_id:S(weekId),
-      observation:obs||null,recommendation:rec||null,
-      teacher_id:S(currentUser.id),teacher_name:currentUser.name||'',
-      updated_at:new Date().toISOString()
-    };
-    const {error}=await supabaseClient.from('weekly_remarks')
-      .upsert([row],{onConflict:'student_id,week_id'});
-    if(error){
-      showToast(/row-level security|permission denied/i.test(error.message||'')
-        ?'Saving was blocked by Supabase security rules. Run weekly_report_review.sql and check the weekly_remarks policy.'
-        :/does not exist|schema cache|42P01|PGRST/i.test(error.message||'')
-          ?'weekly_remarks table is missing. Run weekly_report_review.sql in Supabase.'
-          :'Error saving remarks: '+error.message,'error');
-      return;
-    }
-    showToast('Observation and recommendation saved successfully.','success');
-    // Rebuild the report card immediately so both remarks are visible on it.
-    if(typeof window.generateReportCard==='function')await window.generateReportCard();
-  };
-  window.loadReportCardTeacherComment=async function(){
-    const x=selected();
-    if(!x.studentId||!x.weekId||!x.classId){showToast('Select a learner and week, then generate the report card.','error');return;}
-    await window.loadReportCardTeacherCommentEditor(x.studentId,x.weekId,x.classId);
-  };
-})();
-</script>
-
-</body></html>';
+ return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(title)+'</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#222}h1{text-align:center;color:#1a5f2a;font-size:22px;margin-bottom:4px}h2{text-align:center;font-size:15px;margin:0 0 8px}p.meta{text-align:center;color:#666;font-size:11px;margin-bottom:22px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1a5f2a;color:#fff;padding:8px;text-align:left}td{border:1px solid #ccc;padding:7px}tr:nth-child(even){background:#f6f8f7}.note{margin-top:18px;padding:10px;border:1px solid #ddd;background:#fafafa;font-size:10px}</style></head><body><h1>NIGERIA-GHANA INTERNATIONAL SCHOOL</h1><h2>'+escapeHtml(title)+'</h2><p class="meta">Generated: '+escapeHtml(generated)+' | Keep student credentials confidential.</p><table><thead><tr><th>No.</th><th>Student Name</th><th>Class</th><th>Login ID</th><th>Password</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table><div class="note"><b>Important:</b> These credentials provide access to the student portal. Distribute them only to the intended student/parent and avoid publishing the file publicly.</div></body></html>';
 }
 function downloadWordFile(filename,title,list){const html=buildLoginWordDocument(title,list);const blob=new Blob([html],{type:'application/msword;charset=utf-8'});const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function downloadAllStudentLoginsWord(){
@@ -13002,6 +12927,80 @@ async function tick(){
 setInterval(tick,5000);setTimeout(tick,1500);
 window.addEventListener('focus',()=>{if(ready)badge();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready)badge();});
+})();
+</script>
+
+<script>
+/* ===== Integrated weekly report-card class-teacher remarks =====
+   Uses weekly_remarks (same table as the Weekly Class Review inbox).
+   This makes the normal Generate Report workflow and the review inbox share
+   the same saved Observation and Recommendation for each learner/week. */
+(function(){
+  const $=id=>document.getElementById(id);
+  const S=v=>String(v??'');
+  function selected(){
+    const studentId=$('reportStudentSelect')?.value||'';
+    const weekId=$('reportWeekSelect')?.value||'';
+    const student=(students||[]).find(s=>sameId(s.id,studentId));
+    return {studentId,weekId,student,classId:student?.class_id||''};
+  }
+  function isAssignedClassTeacher(classId){
+    return !!(currentUser&&currentUser.role==='teacher'&&
+      (classTeachers||[]).some(c=>sameId(c.class_id,classId)&&sameId(c.teacher_id,currentUser.id)));
+  }
+  window.loadReportCardTeacherCommentEditor=async function(studentId,weekId,classId){
+    const editor=$('reportCardTeacherCommentEditor');
+    const obs=$('reportCardTeacherObservation'),rec=$('reportCardTeacherRecommendation');
+    if(!editor||!obs||!rec)return;
+    editor.classList.add('hidden');obs.value='';rec.value='';
+    if(!currentUser||currentUser.role!=='teacher'||!studentId||!weekId||!classId||!isAssignedClassTeacher(classId))return;
+    const {data,error}=await supabaseClient.from('weekly_remarks')
+      .select('observation,recommendation')
+      .eq('student_id',S(studentId)).eq('week_id',S(weekId)).limit(1);
+    if(error){
+      console.error('Unable to load weekly remarks:',error);
+      showToast(/does not exist|schema cache|42P01|PGRST/i.test(error.message||'')
+        ?'Weekly remarks table is missing. Run weekly_report_review.sql in Supabase.'
+        :'Unable to load observations and recommendation: '+error.message,'error');
+      return;
+    }
+    const row=data&&data[0]||{};
+    obs.value=row.observation||'';
+    rec.value=row.recommendation||'';
+    editor.classList.remove('hidden');
+  };
+  window.saveReportCardTeacherComment=async function(){
+    const {studentId,weekId,classId}=selected();
+    const obs=$('reportCardTeacherObservation')?.value.trim()||'';
+    const rec=$('reportCardTeacherRecommendation')?.value.trim()||'';
+    if(!studentId||!weekId||!classId){showToast('Generate a learner report card first.','error');return;}
+    if(!isAssignedClassTeacher(classId)){showToast('Only the assigned class teacher can save these remarks.','error');return;}
+    if(!obs&&!rec){showToast('Enter an observation or recommendation before saving.','error');return;}
+    const row={
+      student_id:S(studentId),class_id:S(classId),week_id:S(weekId),
+      observation:obs||null,recommendation:rec||null,
+      teacher_id:S(currentUser.id),teacher_name:currentUser.name||'',
+      updated_at:new Date().toISOString()
+    };
+    const {error}=await supabaseClient.from('weekly_remarks')
+      .upsert([row],{onConflict:'student_id,week_id'});
+    if(error){
+      showToast(/row-level security|permission denied/i.test(error.message||'')
+        ?'Saving was blocked by Supabase security rules. Run weekly_report_review.sql and check the weekly_remarks policy.'
+        :/does not exist|schema cache|42P01|PGRST/i.test(error.message||'')
+          ?'weekly_remarks table is missing. Run weekly_report_review.sql in Supabase.'
+          :'Error saving remarks: '+error.message,'error');
+      return;
+    }
+    showToast('Observation and recommendation saved successfully.','success');
+    // Rebuild the report card immediately so both remarks are visible on it.
+    if(typeof window.generateReportCard==='function')await window.generateReportCard();
+  };
+  window.loadReportCardTeacherComment=async function(){
+    const x=selected();
+    if(!x.studentId||!x.weekId||!x.classId){showToast('Select a learner and week, then generate the report card.','error');return;}
+    await window.loadReportCardTeacherCommentEditor(x.studentId,x.weekId,x.classId);
+  };
 })();
 </script>
 </body>
