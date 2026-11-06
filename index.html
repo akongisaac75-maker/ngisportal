@@ -1916,7 +1916,8 @@ Only the class teacher assigned to this class can save the comment.
 <div id="classTeachersMgmt" class="section hidden">
 <div class="card">
 <div class="card-header"><h3><i class="fas fa-users-cog"></i> Class Teacher Assignments</h3><button class="btn btn-primary btn-sm" onclick="openModal('classTeacherModal')"><i class="fas fa-plus"></i> Assign Teacher</button></div>
-<div class="table-container"><table><thead><tr><th>Teacher</th><th>Class</th><th>Actions</th></tr></thead><tbody id="classTeachersTable"></tbody></table></div>
+<div id="classTeacherNote" style="font-size:.85rem;color:#555;margin:0 0 12px"></div>
+<div class="table-container"><table><thead><tr><th>Class Teacher</th><th>Class</th><th>Actions</th></tr></thead><tbody id="classTeachersTable"></tbody></table></div>
 </div>
 </div>
 
@@ -2417,7 +2418,7 @@ function ngisApplyTeacherPartition(){
    const section=match?.[1];
    if(nurseryOnly.has(section))el.style.display=sections.has('nursery')&&hasClass?'flex':'none';
    if(['regMark','regGender','regTerm'].includes(section))el.style.display=hasClass?'flex':'none';
-   if(section==='reportCardSection')el.style.display=hasClass?'flex':'none';
+   if(section==='reportCardSection')el.style.display=ngisHasDesignatedClass()?'flex':'none';
  });
  let banner=document.getElementById('ngisTeacherPartitionBadge');
  if(!banner){banner=document.createElement('div');banner.id='ngisTeacherPartitionBadge';banner.style.cssText='padding:8px 12px;margin:8px 5px;border-radius:9px;background:#eaf5ec;color:#165a29;font-size:12px;font-weight:600';nav.prepend(banner);}
@@ -2519,9 +2520,17 @@ function ngisHasClassTeacherAssignment(){
 function ngisTeacherMenuRestricted(sectionId){
  return new Set(['parentFeedback','adminTeacherFeedback','teacherAdminFeedback','tsReports']).has(sectionId);
 }
-function ngisTeacherMayReport(classId){return !(currentUser&&currentUser.role==='teacher')||isCurrentUserClassTeacher(classId);}
+/* Designated class teacher = classes.class_teacher_id (ONE teacher per class, a teacher heads ONE class).
+   class_teachers rows only mean "teaches this class" and do NOT grant class-teacher rights. */
+function ngisDesignatedClassIds(){
+  if(!currentUser||currentUser.role!=='teacher')return [];
+  return (classes||[]).filter(c=>c.class_teacher_id!=null&&String(c.class_teacher_id)===String(currentUser.id)).map(c=>String(c.id));
+}
+function ngisIsDesignatedClassTeacher(classId){return classId!=null&&ngisDesignatedClassIds().includes(String(classId));}
+function ngisHasDesignatedClass(){return ngisDesignatedClassIds().length>0;}
+function ngisTeacherMayReport(classId){return !(currentUser&&currentUser.role==='teacher')||ngisIsDesignatedClassTeacher(classId);}
 function showSection(sectionId,navEl){
-if(currentUser?.role==='teacher' && sectionId==='reportCardSection' && !ngisHasClassTeacherAssignment()){showToast('Weekly report cards are available only to assigned class teachers.','error');return;}
+if(currentUser?.role==='teacher' && sectionId==='reportCardSection' && !ngisHasDesignatedClass()){showToast('Weekly report cards and comments are available only to the class teacher of a class.','error');return;}
 if(currentUser?.role==='teacher' && ngisTeacherMenuRestricted(sectionId)){showToast('This section is not available in the teacher portal.','error');return;}
 if(currentUser?.role==='teacher' && ['regMark','regGender','regTerm','nurseryRegisterSection'].includes(sectionId) && !ngisHasClassTeacherAssignment()){showToast('Registers are available only to assigned class teachers.','error');return;}
 // Termly reports, broadsheet, analysis, cumulative results and staff-facing progress tools are administrator-only.
@@ -2939,18 +2948,26 @@ async function loadTeachers(){
 function renderClassTeachersTable(){
   const tbody=document.getElementById('classTeachersTable');
   if(!tbody)return;
-  const rows=Array.isArray(classTeachers)?classTeachers:[];
-  if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="3" class="empty-state"><i class="fas fa-users-slash"></i> No class teacher assignments found.</td></tr>';
+  const list=[...(classes||[])].sort((x,y)=>String(x.name||'').localeCompare(String(y.name||''),undefined,{numeric:true}));
+  const missing=list.length&&!('class_teacher_id' in list[0]);
+  const note=document.getElementById('classTeacherNote');
+  if(note)note.innerHTML=missing
+    ?'<b style="color:#b3261e">One-time setup needed:</b> run <code>class_teacher_setup.sql</code> in the Supabase SQL Editor, then reload. Until then no teacher is treated as a class teacher.'
+    :'Each class has <b>one</b> class teacher, and a teacher can be class teacher of <b>one</b> class only. Only the class teacher can generate weekly report cards and write comments for that class. Teachers who simply teach a class are set under Teachers &rarr; Edit.';
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="3" class="empty-state"><i class="fas fa-users-slash"></i> No classes found.</td></tr>';
     return;
   }
-  tbody.innerHTML=rows.map(ct=>{
-    const teacherName=ct.teachers?.name || teachers.find(t=>String(t.id)===String(ct.teacher_id))?.name || 'Unknown Teacher';
-    const className=ct.classes?.name || classes.find(c=>String(c.id)===String(ct.class_id))?.name || 'Unknown Class';
+  tbody.innerHTML=list.map(c=>{
+    const t=c.class_teacher_id!=null?teachers.find(x=>String(x.id)===String(c.class_teacher_id)):null;
+    const has=c.class_teacher_id!=null&&c.class_teacher_id!=='';
+    const nm=has?escapeHtml(t?.name||'Unknown Teacher'):'<span style="color:#999;font-style:italic">Not assigned</span>';
+    const cid=escapeHtml(String(c.id));
     return '<tr>'+
-      '<td><strong>'+escapeHtml(teacherName)+'</strong></td>'+
-      '<td>'+escapeHtml(className)+'</td>'+
-      '<td><button class="btn btn-sm btn-danger" onclick="deleteClassTeacher(&quot;'+escapeHtml(String(ct.id||""))+'&quot;)"><i class="fas fa-trash"></i> Remove</button></td>'+
+      '<td><strong>'+nm+'</strong></td>'+
+      '<td>'+escapeHtml(c.name||'')+'</td>'+
+      '<td style="white-space:nowrap"><button class="btn btn-sm btn-primary" onclick="editClassTeacher(&quot;'+cid+'&quot;)"><i class="fas fa-edit"></i> '+(has?'Edit':'Assign')+'</button> '+
+      (has?'<button class="btn btn-sm btn-danger" onclick="removeClassTeacher(&quot;'+cid+'&quot;)"><i class="fas fa-trash"></i> Remove</button>':'')+'</td>'+
       '</tr>';
   }).join('');
 }
@@ -2960,6 +2977,11 @@ async function loadClassTeachers(){
     const {data,error}=await supabaseClient.from('class_teachers').select('*').order('id');
     if(error)throw error;
     classTeachers=data||[];
+    try{
+      const cr=await supabaseClient.from('classes').select('*').order('name');
+      if(!cr.error&&cr.data)classes=cr.data;
+      if(!teachers||!teachers.length){const tr=await supabaseClient.from('teachers').select('*');if(!tr.error&&tr.data)teachers=tr.data;}
+    }catch(e){console.warn(e);}
 
     // Load names separately so this page does not depend on Supabase relationship metadata.
     const teacherIds=[...new Set(classTeachers.map(x=>x.teacher_id).filter(Boolean))];
@@ -3448,25 +3470,52 @@ async function deleteTeacher(id){
   showToast('Teacher deleted successfully','success');
   await loadTeachers(); await loadClassTeachers();
 }
+function editClassTeacher(classId){
+  populateDropdowns();
+  openModal('classTeacherModal');
+  const c=classes.find(x=>String(x.id)===String(classId));
+  const tSel=document.getElementById('ctTeacherInput'),cSel=document.getElementById('ctClassInput');
+  if(cSel)cSel.value=String(classId);
+  if(tSel)tSel.value=c&&c.class_teacher_id!=null?String(c.class_teacher_id):'';
+}
 async function saveClassTeacher(){
   const teacherId=document.getElementById('ctTeacherInput').value;
   const classId=document.getElementById('ctClassInput').value;
   if(!teacherId||!classId){showToast('Select teacher and class','error');return;}
-  const existing=(classTeachers||[]).filter(x=>String(x.class_id)===String(classId));
-  if(existing.some(x=>String(x.teacher_id)===String(teacherId))&&existing.length===1){showToast('This teacher is already the class teacher of that class','error');return;}
-  const others=existing.filter(x=>String(x.teacher_id)!==String(teacherId));
-  if(others.length){
-    const curName=teachers.find(t=>String(t.id)===String(others[0].teacher_id))?.name||'another teacher';
-    const clsName=classes.find(c=>String(c.id)===String(classId))?.name||'this class';
-    if(!confirm(clsName+' already has a class teacher ('+curName+'). Replace with the selected teacher?'))return;
+  const cls=classes.find(c=>String(c.id)===String(classId));
+  if(cls&&!('class_teacher_id' in cls)){showToast('Run class_teacher_setup.sql in Supabase first (one-time setup).','error');return;}
+  if(cls&&cls.class_teacher_id!=null&&String(cls.class_teacher_id)===String(teacherId)){showToast('This teacher is already the class teacher of that class','error');return;}
+  const tName=teachers.find(t=>String(t.id)===String(teacherId))?.name||'This teacher';
+  const clsName=cls?.name||'this class';
+  if(cls&&cls.class_teacher_id!=null&&cls.class_teacher_id!==''){
+    const curName=teachers.find(t=>String(t.id)===String(cls.class_teacher_id))?.name||'another teacher';
+    if(!confirm(clsName+' already has a class teacher ('+curName+'). Replace with '+tName+'?'))return;
   }
-  // One class teacher per class: clear all current rows for the class, then insert the new one.
-  const {error:delErr}=await supabaseClient.from('class_teachers').delete().eq('class_id',classId);
-  if(delErr){showToast('Error: '+delErr.message,'error');return;}
-  const{error}=await supabaseClient.from('class_teachers').insert([{teacher_id:teacherId,class_id:classId}]);
-  if(error){showToast('Error: '+error.message,'error');await loadClassTeachers();return;}
-  showToast('Class teacher assigned');
+  const other=classes.find(c=>c.class_teacher_id!=null&&String(c.class_teacher_id)===String(teacherId)&&String(c.id)!==String(classId));
+  if(other){
+    if(!confirm(tName+' is already class teacher of '+other.name+'. A class teacher can head only one class, so they will be moved to '+clsName+'. Continue?'))return;
+    const r0=await supabaseClient.from('classes').update({class_teacher_id:null}).eq('id',other.id).select();
+    if(r0.error){showToast('Error: '+r0.error.message,'error');return;}
+  }
+  const r=await supabaseClient.from('classes').update({class_teacher_id:String(teacherId)}).eq('id',classId).select();
+  if(r.error){showToast('Error: '+r.error.message,'error');await loadClassTeachers();return;}
+  if(!r.data||!r.data.length){showToast('Nothing was saved. Check your Supabase UPDATE policy on classes.','error');return;}
+  // keep normal teaching access to the class as well
+  if(!(classTeachers||[]).some(x=>String(x.teacher_id)===String(teacherId)&&String(x.class_id)===String(classId))){
+    const r2=await supabaseClient.from('class_teachers').insert([{teacher_id:teacherId,class_id:classId}]);
+    if(r2.error)console.warn('class_teachers insert:',r2.error.message);
+  }
+  showToast('Class teacher saved');
   closeModal('classTeacherModal');
+  await loadClassTeachers();
+}
+async function removeClassTeacher(classId){
+  const cls=classes.find(c=>String(c.id)===String(classId));
+  if(!confirm('Remove the class teacher of '+(cls?.name||'this class')+'? They will keep any teaching access but lose report card and comment rights for this class.'))return;
+  const r=await supabaseClient.from('classes').update({class_teacher_id:null}).eq('id',classId).select();
+  if(r.error){showToast('Error: '+r.error.message,'error');return;}
+  if(!r.data||!r.data.length){showToast('Nothing was changed. Check your Supabase UPDATE policy on classes.','error');return;}
+  showToast('Class teacher removed');
   await loadClassTeachers();
 }
 async function deleteClassTeacher(id){
@@ -3653,7 +3702,7 @@ textarea.value='';
 if(!currentUser||currentUser.role!=='teacher'||!studentId||!weekId||!classId)return;
 
 // Only the assigned class teacher can edit comments from the report-card view.
-const ct=classTeachers.find(c=>String(c.class_id)===String(classId)&&String(c.teacher_id)===String(currentUser.id));
+const ct=ngisIsDesignatedClassTeacher(classId);
 if(!ct)return;
 
 const{data,error}=await supabaseClient.from('weekly_comments').select('*').eq('student_id',studentId).eq('week_id',weekId).maybeSingle();
@@ -3671,8 +3720,8 @@ const textarea=document.getElementById('reportCardTeacherCommentText');
 const comment=textarea?.value.trim()||'';
 if(!studentId||!weekId||!classId){showToast('Generate a report card first','error');return;}
 if(!comment){showToast('Enter a class teacher comment','error');return;}
-const ct=classTeachers.find(c=>String(c.class_id)===String(classId)&&String(c.teacher_id)===String(currentUser?.id));
-if(!ct){showToast('Only the assigned class teacher can save this comment','error');return;}
+const ct=ngisIsDesignatedClassTeacher(classId);
+if(!ct){showToast('Only the class teacher of this class can save this comment','error');return;}
 const{error}=await supabaseClient.from('weekly_comments').upsert(
 [{student_id:studentId,week_id:weekId,comment:comment,teacher_id:currentUser.id}],
 {onConflict:'student_id,week_id'}
@@ -4081,8 +4130,8 @@ const studentId=document.getElementById('teacherCommentStudentSelect').value;
 const comment=document.getElementById('teacherCommentText').value.trim();
 if(!classId||!weekId||!studentId||!comment){showToast('Fill all fields','error');return;}
 // Verify current user is class teacher for this class
-const ct=classTeachers.find(c=>String(c.class_id)===String(classId)&&String(c.teacher_id)===String(currentUser.id));
-if(!ct){showToast('You are not assigned as class teacher for this class','error');return;}
+const ct=ngisIsDesignatedClassTeacher(classId);
+if(!ct){showToast('You are not the class teacher of this class','error');return;}
 const{error}=await supabaseClient.from('weekly_comments').upsert([{student_id:studentId,week_id:weekId,comment:comment,teacher_id:currentUser.id}],{onConflict:'student_id,week_id'});
 if(error){showToast('Error: '+error.message,'error');return;}
 showToast('Comment saved successfully');
@@ -12178,7 +12227,7 @@ function allowed(){
 function active(){return !!(currentUser&&currentUser.role==='teacher'&&window._ngisOwnClassesLoaded);}
 function filterSel(el){
   if(!el||!active())return;
-  const ok=allowed();
+  const ok=(el.id==='reportClassSelect')?new Set(ngisDesignatedClassIds()):allowed();
   [...el.options].forEach(o=>{if(o.value!==''&&!ok.has(String(o.value)))o.remove();});
   if(!ok.size&&el.options.length&&el.options[0].value==='')el.options[0].textContent='-- No class assigned: contact the administrator --';
 }
