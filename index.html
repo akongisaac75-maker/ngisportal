@@ -2646,8 +2646,8 @@ if(sectionId==='teacherComments'){
   const el2=document.getElementById('teacherCommentWeekSelect');
   if(el1){
     // Only show classes where this teacher is class teacher
-    const myClassIds=classTeachers.filter(ct=>String(ct.teacher_id)===String(currentUser.id)).map(ct=>ct.class_id);
-    el1.innerHTML='<option value="">-- Choose Class --</option>'+classes.filter(c=>myClassIds.includes(c.id)).map(c=>'<option value="'+c.id+'">'+c.name+'</option>').join('');
+    const myClassIds=ngisDesignatedClassIds();
+    el1.innerHTML='<option value="">-- Choose Class --</option>'+classes.filter(c=>myClassIds.includes(String(c.id))).map(c=>'<option value="'+c.id+'">'+c.name+'</option>').join('');
   }
   if(el2)el2.innerHTML='<option value="">-- Choose Week --</option>'+weeks.map(w=>'<option value="'+w.id+'">'+w.name+'</option>').join('');
 }
@@ -4172,7 +4172,7 @@ async function getCurrentTeacherSubjectIds(force){
   return ids;
 }
 function isCurrentUserClassTeacher(classId){
-  return !!classTeachers.find(x=>String(x.class_id)===String(classId)&&String(x.teacher_id)===String(currentUser?.id));
+  return ngisIsDesignatedClassTeacher(classId);
 }
 async function setupMidTermTeacherPortal(){
   if(!subjects?.length) await loadSubjects();
@@ -5004,7 +5004,7 @@ async function updateStats(){
 
 if(!currentUser)return;
 if(currentUser.role==='teacher'){
-const myClassIds=classTeachers.filter(ct=>String(ct.teacher_id)===String(currentUser.id)).map(ct=>ct.class_id);
+const myClassIds=ngisDesignatedClassIds();
 const myStudents=students.filter(s=>myClassIds.includes(s.class_id));
 document.getElementById('statStudents').textContent=myStudents.length;
 document.getElementById('statWeeks').textContent=weeks.length;
@@ -5856,8 +5856,11 @@ document.getElementById('teacherCbtQuestionFile')?.addEventListener('change',e=>
 /* ===== Fixes: class-teacher lookup + missing delete handlers ===== */
 function getClassTeacherRecord(classId){
   if(classId===undefined||classId===null||classId==='')return undefined;
-  const rows=(classTeachers||[]).filter(x=>String(x.class_id)===String(classId));
-  return rows.length?rows[rows.length-1]:undefined; // newest assignment wins if duplicates exist
+  // The class teacher is the ONE designated teacher (classes.class_teacher_id).
+  // class_teachers rows only mean "teaches this class", so they must never be shown as the class teacher.
+  const cls=(classes||[]).find(c=>String(c.id)===String(classId));
+  if(cls&&cls.class_teacher_id!=null&&cls.class_teacher_id!=='')return {teacher_id:cls.class_teacher_id,class_id:cls.id};
+  return undefined; // shows "Not Assigned"
 }
 
 async function deleteStudent(id){
@@ -12452,5 +12455,161 @@ const _sx=window.showSection;
 window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('pageTitle');if(pt)pt.innerHTML='<i class="fas fa-clipboard-list"></i> General C.A Record';window.caInit();}};
 })();
 </script>
+<script>
+/* ===== NGIS fingerprint / biometric login for staff (WebAuthn, device-bound) ===== */
+(function(){
+  var KEY='ngis_fp_v1', DECLINED='ngis_fp_declined_v1';
+  function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')||[];}catch(e){return [];}}
+  function save(a){try{localStorage.setItem(KEY,JSON.stringify(a));}catch(e){}}
+  function b64(buf){var s='',b=new Uint8Array(buf);for(var i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+  function unb64(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var r=atob(s),b=new Uint8Array(r.length);for(var i=0;i<r.length;i++)b[i]=r.charCodeAt(i);return b;}
+  function rnd(n){return crypto.getRandomValues(new Uint8Array(n));}
+  function supported(){return !!(window.PublicKeyCredential&&navigator.credentials&&window.isSecureContext);}
+  async function platformReady(){
+    if(!supported())return false;
+    try{return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();}catch(e){return false;}
+  }
+  function kindOf(u){return u&&u.role==='management'?'management':'teacher';}
+  function enrolledFor(u){return load().some(function(x){return x.kind===kindOf(u)&&String(x.userId)===String(u.id);});}
+
+  async function enroll(){
+    var u=window.currentUser||currentUser;
+    if(!u||u.role==='student'){showToast('Fingerprint login is for staff accounts only','error');return false;}
+    if(!supported()){showToast('Fingerprint login needs a secure (https) connection and a supported browser','error');return false;}
+    if(!(await platformReady())){showToast('No fingerprint / screen-lock biometric found on this device. Set one up in your phone settings first.','error');return false;}
+    try{
+      var cred=await navigator.credentials.create({publicKey:{
+        challenge:rnd(32),
+        rp:{name:'NGIS Live',id:location.hostname},
+        user:{id:new TextEncoder().encode(kindOf(u)+':'+u.id),name:u.email||String(u.id),displayName:u.name||'Staff'},
+        pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+        authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
+        timeout:60000,attestation:'none'
+      }});
+      var list=load().filter(function(x){return !(x.kind===kindOf(u)&&String(x.userId)===String(u.id));});
+      list.push({credId:b64(cred.rawId),kind:kindOf(u),userId:String(u.id),name:u.name||'',email:u.email||''});
+      save(list);
+      try{localStorage.removeItem(DECLINED+':'+kindOf(u)+':'+u.id);}catch(e){}
+      showToast('Fingerprint login enabled on this device','success');
+      refreshLanding();
+      return true;
+    }catch(e){
+      if(e&&e.name==='NotAllowedError')showToast('Fingerprint setup was cancelled','info');
+      else showToast('Could not set up fingerprint: '+(e&&e.message||e),'error');
+      return false;
+    }
+  }
+
+  async function loginWithFingerprint(){
+    var list=load();
+    if(!list.length){showToast('No fingerprint set up on this device yet. Log in with your password first, then enable it.','info');return;}
+    if(!supported()){showToast('Fingerprint login needs a secure (https) connection','error');return;}
+    try{
+      var a=await navigator.credentials.get({publicKey:{
+        challenge:rnd(32),rpId:location.hostname,userVerification:'required',timeout:60000,
+        allowCredentials:list.map(function(x){return{type:'public-key',id:unb64(x.credId),transports:['internal']};})
+      }});
+      var id=b64(a.rawId),entry=list.find(function(x){return x.credId===id;});
+      if(!entry){showToast('Fingerprint not recognised','error');return;}
+      await finishLogin(entry);
+    }catch(e){
+      if(e&&e.name==='NotAllowedError')showToast('Fingerprint cancelled or not recognised','info');
+      else showToast('Fingerprint login failed: '+(e&&e.message||e),'error');
+    }
+  }
+
+  async function finishLogin(entry){
+    if(entry.kind==='management'){
+      var m=await supabaseClient.from('mgmt_users').select('*').eq('id',entry.userId).maybeSingle();
+      var d=m.data;
+      if(m.error||!d){forget(entry);showToast('This account no longer exists. Fingerprint removed.','error');return;}
+      if(d.active===false){showToast('This account has been disabled. Contact the administrator.','error');return;}
+      currentUser={id:d.id,name:d.name,email:d.email,role:'management',position:d.position||'Management',perms:d.perms||{}};
+      sessionStorage.setItem('ngis_user',JSON.stringify(currentUser));
+      supabaseClient.from('mgmt_users').update({last_login:new Date().toISOString()}).eq('id',d.id).then(function(){});
+      await setupDashboard();
+      return;
+    }
+    var r=await supabaseClient.from('teachers').select('*').eq('id',entry.userId).maybeSingle();
+    var t=r.data;
+    if(r.error||!t){forget(entry);showToast('This account no longer exists. Fingerprint removed.','error');return;}
+    currentUser=t;
+    var ts=await supabaseClient.from('teacher_subjects').select('subject_id').eq('teacher_id',t.id);
+    currentUser.teacher_subjects=ts.error?[]:(ts.data||[]);
+    sessionStorage.setItem('ngis_user',JSON.stringify(currentUser));
+    await setupDashboard();
+  }
+  function forget(entry){save(load().filter(function(x){return x.credId!==entry.credId;}));refreshLanding();}
+
+  function removeThisDevice(){
+    if(!load().length){showToast('No fingerprint is saved on this device','info');return;}
+    if(!confirm('Remove all saved fingerprint logins from this device? You can still log in with your password.'))return;
+    save([]);refreshLanding();showToast('Fingerprint logins removed from this device','success');
+  }
+
+  /* landing page: add a "Login with Fingerprint" button to the Teacher, Admin and Management boxes */
+  function refreshLanding(){
+    platformReady().then(function(ok){
+      var has=ok&&load().length>0;
+      document.querySelectorAll('.ngis-fp-wrap').forEach(function(w){w.style.display=has?'block':'none';});
+    });
+  }
+  function injectLanding(){
+    ['teacherLoginBox','adminLoginBox','managementLoginBox'].forEach(function(id){
+      var box=document.getElementById(id);if(!box||box.querySelector('.ngis-fp-wrap'))return;
+      var w=document.createElement('div');w.className='ngis-fp-wrap';w.style.cssText='display:none;margin-top:12px;text-align:center';
+      w.innerHTML='<div style="font-size:.78rem;color:#888;margin-bottom:8px">— or —</div>'
+        +'<button type="button" class="btn btn-secondary" style="width:100%;justify-content:center;" onclick="ngisFpLogin()"><i class="fas fa-fingerprint"></i> Login with Fingerprint</button>'
+        +'<p style="margin-top:8px;font-size:.72rem;color:#888;cursor:pointer;text-decoration:underline" onclick="ngisFpRemove()">Remove fingerprint from this device</p>';
+      box.appendChild(w);
+    });
+    refreshLanding();
+  }
+
+  /* dashboard: sidebar entry + one-time offer after a password login */
+  function injectNav(){
+    document.querySelectorAll('.nav-item').forEach(function(el){
+      if((el.getAttribute('onclick')||'').indexOf('logout()')===-1)return;
+      if(el.previousElementSibling&&el.previousElementSibling.classList.contains('ngis-fp-nav'))return;
+      var n=document.createElement('div');n.className='nav-item ngis-fp-nav';
+      n.innerHTML='<i class="fas fa-fingerprint"></i> Fingerprint Login';
+      n.onclick=function(){ngisFpEnroll();};
+      el.parentNode.insertBefore(n,el);
+    });
+    document.querySelectorAll('.ngis-fp-nav').forEach(function(n){
+      var u=window.currentUser||currentUser;
+      n.style.display=(u&&u.role&&u.role!=='student')?'flex':'none';
+    });
+  }
+  async function offer(){
+    var u=window.currentUser||currentUser;
+    injectNav();
+    if(!u||u.role==='student'||!u.role)return;
+    if(enrolledFor(u))return;
+    var dk=DECLINED+':'+kindOf(u)+':'+u.id;
+    try{if(localStorage.getItem(dk))return;}catch(e){}
+    if(!(await platformReady()))return;
+    if(confirm('Log in faster next time?\n\nEnable fingerprint login on this device for '+(u.name||'your account')+'.')){await enroll();}
+    else{try{localStorage.setItem(dk,'1');}catch(e){}showToast('You can enable it any time from the menu: Fingerprint Login','info');}
+  }
+
+  window.ngisFpLogin=loginWithFingerprint;
+  window.ngisFpEnroll=enroll;
+  window.ngisFpRemove=removeThisDevice;
+
+  document.addEventListener('DOMContentLoaded',function(){
+    injectLanding();
+    var orig=window.setupDashboard;
+    if(typeof orig==='function'){
+      window.setupDashboard=async function(){
+        var r=await orig.apply(this,arguments);
+        try{setTimeout(offer,600);}catch(e){}
+        return r;
+      };
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
