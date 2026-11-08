@@ -1605,17 +1605,27 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 
 <div id="reportZipSection" class="section hidden"><div class="card">
 <div class="card-header"><h3><i class="fas fa-file-archive"></i> Download Report Cards (ZIP)</h3></div>
-<p style="font-size:.85rem;color:#666;margin-bottom:12px">Creates one ZIP with every student's individual report card as a PDF, organised as <b>Class / Student / report</b>. Only report cards that have data are included.</p>
+<p style="font-size:.85rem;color:#666;margin-bottom:12px">Creates one ZIP with every student's individual report card as a PDF. Download the <b>whole term</b> or just <b>a single week</b>, and choose how the folders are arranged. Only report cards that have data are included.</p>
 <div class="form-grid">
 <div class="form-group"><label>Class</label><select id="rzClass"></select></div>
 <div class="form-group"><label>Session</label><select id="rzSession" onchange="ngisRzTerms()"></select></div>
 <div class="form-group"><label>Term</label><select id="rzTerm" onchange="ngisRzInfo()"></select></div>
 </div>
+<div class="form-grid" style="margin-top:4px">
+<div class="form-group"><label>What to download</label><select id="rzScope" onchange="ngisRzScope()"><option value="term">Whole term</option><option value="week">Single week</option></select></div>
+<div class="form-group" id="rzWeekWrap" style="display:none"><label>Week</label><select id="rzWeek"></select></div>
+<div class="form-group"><label>Folder arrangement</label><select id="rzLayout">
+<option value="cs">Class / Student / report</option>
+<option value="cws">Class / Week / Student</option>
+<option value="wcs">Week / Class / Student</option>
+<option value="tcs">Report type / Class / Student</option>
+</select></div>
+</div>
 <div style="display:flex;flex-direction:column;gap:8px;margin:6px 0 12px">
-<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzWeekly" checked> Weekly assessment report cards (every week in the term)</label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzWeekly" checked> <span id="rzWeeklyTxt">Weekly assessment report cards (every week in the term)</span></label>
 <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzMid" checked> Mid-term report cards</label>
 <label id="rzTermlyWrap" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzTermly" checked> Termly report cards (administrators &amp; management only)</label>
-<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzOthers" checked> Others: Early Years mid-term reports and Nursery observation sheets (saved as printable .html files)</label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzOthers" checked> <span id="rzOthersTxt">Others: Early Years mid-term reports and Nursery observation sheets (saved as printable .html files)</span></label>
 </div>
 <div id="rzInfo" style="font-size:.8rem;color:#888;margin-bottom:12px"></div>
 <button class="btn btn-primary" onclick="ngisRzRun()"><i class="fas fa-download"></i> Download ZIP</button>
@@ -10613,7 +10623,7 @@ window.ngisOtherReportFiles=async function(classId,sessionId,weekIds){
       let p='Early Years Mid-Term/'+safeN(d.studentName)+'.html',n=1;
       while(used.has(p.toLowerCase())){n++;p='Early Years Mid-Term/'+safeN(d.studentName)+' ('+n+').html';}
       used.add(p.toLowerCase());
-      out.push({path:p,html:emtWrap(emtHtml(d),'print')});
+      out.push({path:p,html:emtWrap(emtHtml(d),'print'),kind:'ey',student:safeN(d.studentName)});
     });
   }catch(e){console.warn('Early years reports:',e);}
   try{
@@ -10629,7 +10639,7 @@ window.ngisOtherReportFiles=async function(classId,sessionId,weekIds){
       let p='Nursery Observations/'+safeN(f.student)+'/'+safeN(f.week)+'.html',n=1;
       while(used.has(p.toLowerCase())){n++;p='Nursery Observations/'+safeN(f.student)+'/'+safeN(f.week)+' ('+n+').html';}
       used.add(p.toLowerCase());
-      out.push({path:p,html:f.html});
+      out.push({path:p,html:f.html,kind:'nu',student:safeN(f.student),weekId:g.weekId,weekLabel:safeN(f.week)});
     });
   }catch(e){console.warn('Nursery observations:',e);}
   return out;
@@ -13061,6 +13071,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
       if(act)ss.value=act.id;
     }
     rzTerms();
+    rzScope();
     var tw=$('rzTermlyWrap');if(tw)tw.style.display=isAdminU()?'flex':'none';
   }
   function rzTerms(){
@@ -13077,6 +13088,13 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     var t=$('rzTerm')?$('rzTerm').value:'';
     var n=(weeks||[]).filter(function(w){return sameId(w.term_id,t);}).length;
     el.textContent=n+' week'+(n===1?'':'s')+' found in the selected term for weekly report cards.';
+    var ws=$('rzWeek');
+    if(ws){
+      var prevW=ws.value;
+      var tws=(weeks||[]).filter(function(w){return sameId(w.term_id,t);});
+      ws.innerHTML=tws.length?tws.map(function(w){return '<option value="'+w.id+'">'+escapeHtml(w.name)+'</option>';}).join(''):'<option value="">No weeks in this term</option>';
+      if(prevW&&tws.some(function(w){return String(w.id)===String(prevW);}))ws.value=prevW;
+    }
   }
 
   async function pagedIn(table,cols,col,ids,extra){
@@ -13130,19 +13148,40 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     if(!isAdminU()&&!isTeacherU()){showToast('Only administrators and class teachers can use this','error');return;}
     if(typeof JSZip==='undefined'||typeof html2canvas==='undefined'||!(window.jspdf&&window.jspdf.jsPDF)){showToast('A required library did not load. Check your internet connection and refresh.','error');return;}
     var cv=$('rzClass').value,sessionId=$('rzSession').value,termId=$('rzTerm').value;
-    var wantW=$('rzWeekly').checked,wantM=$('rzMid').checked,wantT=isAdminU()&&$('rzTermly').checked,wantO=$('rzOthers').checked;
+    var weekMode=!!($('rzScope')&&$('rzScope').value==='week'),selWeekId=$('rzWeek')?$('rzWeek').value:'';
+    var layout=$('rzLayout')?$('rzLayout').value:'cs';
+    var wantW=weekMode||$('rzWeekly').checked,wantM=!weekMode&&$('rzMid').checked,wantT=!weekMode&&isAdminU()&&$('rzTermly').checked,wantO=$('rzOthers').checked;
+    if(weekMode&&!selWeekId){showToast('Choose a week','error');return;}
+    // Builds the path of one file inside the ZIP root for the chosen folder arrangement.
+    function P(kind,cName,sName,wName,ext){
+      var C=fsafe(cName,'Class'),S=fsafe(sName,'Student'),W=fsafe(wName,'Week');
+      var lbl={w:'Weekly',m:'Mid-Term',t:'Termly',ey:'Early Years Mid-Term',nu:'Nursery Observations'}[kind];
+      var weekLevel=(kind==='w'||kind==='nu'),dir=weekLevel?W:'Whole Term';
+      if(layout==='cws')return C+'/'+dir+'/'+S+' - '+lbl+'.'+ext;
+      if(layout==='wcs')return dir+'/'+C+'/'+S+' - '+lbl+'.'+ext;
+      if(layout==='tcs'){
+        var T={w:'Weekly Report Cards',m:'Mid-Term Report Cards',t:'Termly Report Cards',ey:'Early Years Mid-Term',nu:'Nursery Observations'}[kind];
+        return weekLevel?T+'/'+C+'/'+S+'/'+W+'.'+ext:T+'/'+C+'/'+S+'.'+ext;
+      }
+      if(kind==='w')return C+'/'+S+'/Weekly - '+W+'.'+ext;
+      if(kind==='m')return C+'/'+S+'/Mid-Term.'+ext;
+      if(kind==='t')return C+'/'+S+'/Termly.'+ext;
+      if(kind==='ey')return C+'/Early Years Mid-Term/'+S+'.'+ext;
+      return C+'/Nursery Observations/'+S+'/'+W+'.'+ext;
+    }
     if(!cv){showToast('Choose a class','error');return;}
     if(!sessionId||!termId){showToast('Choose a session and term','error');return;}
     if(!(wantW||wantM||wantT||wantO)){showToast('Tick at least one type of report card','error');return;}
     if(typeof ngisFpVerify==='function'&&!(await ngisFpVerify('download the report card ZIP')))return;
     var cls=cv==='__all'?myClassList():myClassList().filter(function(c){return sameId(c.id,cv);});
     if(!cls.length){showToast('No class available','error');return;}
-    var termWeeks=(weeks||[]).filter(function(w){return sameId(w.term_id,termId);});
+    var termWeeks=(weeks||[]).filter(function(w){return sameId(w.term_id,termId)&&(!weekMode||String(w.id)===String(selWeekId));});
+    if(weekMode&&!termWeeks.length){showToast('That week is not in the selected term','error');return;}
     var term=(terms||[]).find(function(t){return sameId(t.id,termId);}),session=(sessions||[]).find(function(s){return sameId(s.id,sessionId);});
 
     busy=true;cancel=false;
     var ov=overlay(),msg=function(t){var e=$('rzMsg');if(e)e.textContent=t;},bar=function(p){var e=$('rzBar');if(e)e.style.width=Math.min(100,Math.round(p))+'%';};
-    var zip=new JSZip(),used=new Set(),count=0,failed=0,root='NGIS_Report_Cards_'+fsafe(session&&session.name,'Session')+'_'+fsafe(term&&term.name,'Term');
+    var zip=new JSZip(),used=new Set(),count=0,failed=0,root='NGIS_Report_Cards_'+fsafe(session&&session.name,'Session')+'_'+fsafe(term&&term.name,'Term')+(weekMode?'_'+fsafe(termWeeks[0].name,'Week'):'');
     function add(path,data){var p=path,n=1;while(used.has(p.toLowerCase())){n++;p=path.replace(/(\.[a-z]+)$/i,' ('+n+')$1');}used.add(p.toLowerCase());zip.file(root+'/'+p,data);count++;}
     try{
       // ---- plan the work first so the progress bar is meaningful ----
@@ -13155,7 +13194,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
         msg('Checking '+c.name+'…');
         var hasW={},hasM={};
         if(wantW&&termWeeks.length){
-          var wk=await pagedIn('assessments','student_id,week_id','student_id',ids);
+          var wk=await pagedIn('assessments','student_id,week_id','student_id',ids,weekMode?function(q){return q.eq('week_id',selWeekId);}:undefined);
           wk.forEach(function(r){hasW[String(r.student_id)+'|'+String(r.week_id)]=1;});
         }
         if(wantM){
@@ -13165,10 +13204,9 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
         var termly=null;
         if(wantT){try{termly=await ngisTermlyCards(c.id,termId,sessionId);}catch(e){console.warn('Termly data:',e);}}
         list.forEach(function(s){
-          var folder=fsafe(c.name,'Class')+'/'+fsafe(s.name,'Student');
-          if(wantW)termWeeks.forEach(function(w){if(hasW[String(s.id)+'|'+String(w.id)])jobs.push({k:'w',s:s,w:w,c:c,path:folder+'/Weekly - '+fsafe(w.name,'Week')+'.pdf'});});
-          if(wantM&&hasM[String(s.id)])jobs.push({k:'m',s:s,c:c,path:folder+'/Mid-Term.pdf'});
-          if(termly&&termly.list.some(function(x){return sameId(x.id,s.id);}))jobs.push({k:'t',s:s,c:c,termly:termly,path:folder+'/Termly.pdf'});
+          if(wantW)termWeeks.forEach(function(w){if(hasW[String(s.id)+'|'+String(w.id)])jobs.push({k:'w',s:s,w:w,c:c,path:P('w',c.name,s.name,w.name,'pdf')});});
+          if(wantM&&hasM[String(s.id)])jobs.push({k:'m',s:s,c:c,path:P('m',c.name,s.name,'','pdf')});
+          if(termly&&termly.list.some(function(x){return sameId(x.id,s.id);}))jobs.push({k:'t',s:s,c:c,termly:termly,path:P('t',c.name,s.name,'','pdf')});
         });
         if(wantO)jobs.push({k:'o',c:c});
         if(cancel)throw new Error('__cancel');
@@ -13195,7 +13233,13 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
           }else if(j.k==='o'){
             msg(j.c.name+' • Early years / nursery reports…');
             var files=(typeof ngisOtherReportFiles==='function')?await ngisOtherReportFiles(j.c.id,sessionId,termWeeks.map(function(w){return w.id;})):[];
-            files.forEach(function(f){add(fsafe(j.c.name,'Class')+'/'+f.path,'\ufeff'+f.html);});
+            files.forEach(function(f){
+              if(weekMode&&f.kind==='ey')return; // term-wide, not part of a single week
+              if(!f.kind){add(fsafe(j.c.name,'Class')+'/'+f.path,'\ufeff'+f.html);return;}
+              var wkRow=f.weekId!=null?termWeeks.find(function(w){return sameId(w.id,f.weekId);}):null;
+              var wn=layout==='cs'?(f.weekLabel||(wkRow&&wkRow.name)):((wkRow&&wkRow.name)||f.weekLabel);
+              add(P(f.kind,j.c.name,f.student,wn,'html'),'\ufeff'+f.html);
+            });
           }
         }catch(e){if(e&&e.message==='__cancel')throw e;failed++;console.warn('Skipped a report card:',e);}
       }
@@ -13214,7 +13258,24 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
 
   window.ngisRzRun=run;
   window.ngisRzCancel=function(){cancel=true;};
-  window.ngisRzTerms=rzTerms;window.ngisRzInfo=rzInfo;
+  function rzScope(){
+    var wk=!!($('rzScope')&&$('rzScope').value==='week');
+    var wrap=$('rzWeekWrap');if(wrap)wrap.style.display=wk?'':'none';
+    // Mid-term, termly and Early Years reports belong to the whole term, so they are switched off for a single week.
+    ['rzMid','rzTermly'].forEach(function(id){
+      var e=$(id);if(!e)return;
+      if(wk){if(!e.disabled)e.dataset.prev=e.checked?'1':'0';e.checked=false;e.disabled=true;}
+      else if(e.disabled){e.disabled=false;e.checked=(e.dataset.prev!=='0');}
+    });
+    var w=$('rzWeekly');
+    if(w){
+      if(wk){if(!w.disabled)w.dataset.prev=w.checked?'1':'0';w.checked=true;w.disabled=true;}
+      else if(w.disabled){w.disabled=false;w.checked=(w.dataset.prev!=='0');}
+    }
+    var wt=$('rzWeeklyTxt');if(wt)wt.textContent=wk?'Weekly assessment report cards (the selected week only)':'Weekly assessment report cards (every week in the term)';
+    var ot=$('rzOthersTxt');if(ot)ot.textContent=wk?'Others: Nursery observation sheets for the selected week (saved as printable .html files). Early Years mid-term reports are term-wide, so they are left out.':'Others: Early Years mid-term reports and Nursery observation sheets (saved as printable .html files)';
+  }
+  window.ngisRzTerms=rzTerms;window.ngisRzInfo=rzInfo;window.ngisRzScope=rzScope;
 
   document.addEventListener('DOMContentLoaded',function(){
     var o=window.showSection;
