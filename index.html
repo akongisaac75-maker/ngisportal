@@ -1615,7 +1615,9 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="form-group"><label>What to download</label><select id="rzScope" onchange="ngisRzScope()"><option value="term">Whole term</option><option value="week">Single week</option></select></div>
 <div class="form-group" id="rzWeekWrap" style="display:none"><label>Week</label><select id="rzWeek"></select></div>
 <div class="form-group"><label>Folder arrangement</label><select id="rzLayout">
-<option value="cs">Class / Student / report</option>
+<option value="arm" selected>One folder per class arm (all students' PDFs together)</option>
+<option value="flat">One folder: all files together (best for WhatsApp)</option>
+<option value="cs">Class / Student folder / report (a folder for each student)</option>
 <option value="cws">Class / Week / Student</option>
 <option value="wcs">Week / Class / Student</option>
 <option value="tcs">Report type / Class / Student</option>
@@ -1628,7 +1630,11 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzOthers" checked> <span id="rzOthersTxt">Others: Early Years mid-term reports and Nursery observation sheets (saved as printable .html files)</span></label>
 </div>
 <div id="rzInfo" style="font-size:.8rem;color:#888;margin-bottom:12px"></div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
 <button class="btn btn-primary" onclick="ngisRzRun()"><i class="fas fa-download"></i> Download ZIP</button>
+<button class="btn btn-success" onclick="ngisRzRun('flat')" title="Uses the class, session, term and week chosen above"><i class="fab fa-whatsapp"></i> One-click: single folder ZIP for WhatsApp</button>
+</div>
+<p style="font-size:.78rem;color:#888;margin:8px 0 0">The one-click button puts every report card in <b>one folder</b> inside one ZIP, with no student sub-folders. Each file name says who it is for, e.g. <i>Primary 1 - Ada Obi - Weekly - Week 2.pdf</i>.</p>
 <p style="font-size:.78rem;color:#888;margin-top:12px">Tip: for a whole school, download one class at a time. A large ZIP is built inside your browser and needs time and memory.</p>
 </div></div>
 
@@ -13143,20 +13149,28 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     document.body.appendChild(o);return o;
   }
 
-  async function run(){
+  async function run(forceLayout){
     if(busy)return;
     if(!isAdminU()&&!isTeacherU()){showToast('Only administrators and class teachers can use this','error');return;}
     if(typeof JSZip==='undefined'||typeof html2canvas==='undefined'||!(window.jspdf&&window.jspdf.jsPDF)){showToast('A required library did not load. Check your internet connection and refresh.','error');return;}
     var cv=$('rzClass').value,sessionId=$('rzSession').value,termId=$('rzTerm').value;
     var weekMode=!!($('rzScope')&&$('rzScope').value==='week'),selWeekId=$('rzWeek')?$('rzWeek').value:'';
-    var layout=$('rzLayout')?$('rzLayout').value:'cs';
+    var layout=(forceLayout==='flat')?'flat':($('rzLayout')?$('rzLayout').value:'cs');
     var wantW=weekMode||$('rzWeekly').checked,wantM=!weekMode&&$('rzMid').checked,wantT=!weekMode&&isAdminU()&&$('rzTermly').checked,wantO=$('rzOthers').checked;
     if(weekMode&&!selWeekId){showToast('Choose a week','error');return;}
     // Builds the path of one file inside the ZIP root for the chosen folder arrangement.
+    // One class arm (e.g. "Primary 1 A") = one folder holding every student's report cards, no student sub-folders.
+    // Downloading a single class arm gives just that folder in the ZIP; "All classes" gives one folder per arm.
+    var singleArm=(layout==='arm'&&cv!=='__all');
     function P(kind,cName,sName,wName,ext){
       var C=fsafe(cName,'Class'),S=fsafe(sName,'Student'),W=fsafe(wName,'Week');
       var lbl={w:'Weekly',m:'Mid-Term',t:'Termly',ey:'Early Years Mid-Term',nu:'Nursery Observations'}[kind];
       var weekLevel=(kind==='w'||kind==='nu'),dir=weekLevel?W:'Whole Term';
+      if(layout==='arm'){
+        var fol=singleArm?C+' - '+fsafe(term&&term.name,'Term')+(weekMode&&termWeeks.length?' - '+fsafe(termWeeks[0].name,'Week'):''):C;
+        return fol+'/'+S+' - '+(kind==='w'?'Weekly - '+W:kind==='nu'?'Nursery Observations - '+W:lbl)+'.'+ext;
+      }
+      if(layout==='flat')return C+' - '+S+' - '+(kind==='w'?'Weekly - '+W:kind==='nu'?'Nursery Observations - '+W:lbl)+'.'+ext;
       if(layout==='cws')return C+'/'+dir+'/'+S+' - '+lbl+'.'+ext;
       if(layout==='wcs')return dir+'/'+C+'/'+S+' - '+lbl+'.'+ext;
       if(layout==='tcs'){
@@ -13182,7 +13196,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     busy=true;cancel=false;
     var ov=overlay(),msg=function(t){var e=$('rzMsg');if(e)e.textContent=t;},bar=function(p){var e=$('rzBar');if(e)e.style.width=Math.min(100,Math.round(p))+'%';};
     var zip=new JSZip(),used=new Set(),count=0,failed=0,root='NGIS_Report_Cards_'+fsafe(session&&session.name,'Session')+'_'+fsafe(term&&term.name,'Term')+(weekMode?'_'+fsafe(termWeeks[0].name,'Week'):'');
-    function add(path,data){var p=path,n=1;while(used.has(p.toLowerCase())){n++;p=path.replace(/(\.[a-z]+)$/i,' ('+n+')$1');}used.add(p.toLowerCase());zip.file(root+'/'+p,data);count++;}
+    function add(path,data){var p=path,n=1;while(used.has(p.toLowerCase())){n++;p=path.replace(/(\.[a-z]+)$/i,' ('+n+')$1');}used.add(p.toLowerCase());zip.file((singleArm?'':root+'/')+p,data);count++;}
     try{
       // ---- plan the work first so the progress bar is meaningful ----
       var jobs=[];
@@ -13249,7 +13263,8 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
       var a=document.createElement('a');a.href=URL.createObjectURL(blob);
       a.download=root+(cv==='__all'?'_All_Classes':'_'+fsafe(cls[0].name,'Class'))+'_'+new Date().toISOString().slice(0,10)+'.zip';
       document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},10000);
-      showToast('ZIP downloaded with '+count+' file'+(count===1?'':'s')+(failed?' ('+failed+' skipped)':''),'success');
+      var mb=blob.size/1048576;
+      showToast('ZIP downloaded with '+count+' file'+(count===1?'':'s')+' ('+(mb>=1?mb.toFixed(1)+' MB':Math.max(1,Math.round(blob.size/1024))+' KB')+')'+(failed?' ('+failed+' skipped)':''),'success');
     }catch(e){
       if(e&&e.message==='__cancel')showToast('ZIP cancelled','info');
       else{console.error(e);showToast('Could not create the ZIP: '+(e&&e.message||e),'error');}
