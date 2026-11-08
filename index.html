@@ -15,6 +15,261 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="NGIS LIVE">
 <title>NGIS LIVE PORTAL - Nigeria-Ghana International School</title>
+<script id="ngis-offline-layer">
+/* ===== NGIS offline layer: runs BEFORE the Supabase client is created =====
+   - Remembers what the app reads, so pages open with no network.
+   - Keeps score / attendance saves made offline in a queue on the device and sends them when the network returns.
+   - Never creates duplicates: queued rows are matched to existing server rows before they are sent. */
+(function(){
+  'use strict';
+  var SB_REST='https://illlwxizsmfaqnwpbjdt.supabase.co/rest/v1/';
+  var origFetch=window.fetch.bind(window);
+  var FORCE_KEY='ngis_force_offline';
+  var WRITE_OK=['assessments','midterm_assessments','midterm_remarks','register_attendance','register_week_meta','weekly_comments','term_scores','weekly_topics','daily_story_student','ca_records'];
+  var NK={assessments:['student_id','subject_id','week_id'],midterm_assessments:['student_id','subject_id','term_id','session_id'],term_scores:['student_id','subject_id','term_id','session_id'],
+          register_attendance:['student_id','week_id'],weekly_comments:['student_id','week_id'],midterm_remarks:['student_id','term_id','session_id']};
+  var NO_CACHE=/^(mgmt_users|teacher_applications)$/;
+  var SECRET=/pass|pwd|^pin$/i;
+
+  /* ---------- tiny IndexedDB helper ---------- */
+  var dbp=null;
+  function idb(){
+    if(dbp)return dbp;
+    dbp=new Promise(function(res,rej){
+      if(!window.indexedDB){rej(new Error('no idb'));return;}
+      var r=indexedDB.open('ngis_offline_v1',1);
+      r.onupgradeneeded=function(){var d=r.result;d.createObjectStore('cache',{keyPath:'k'});d.createObjectStore('queue',{keyPath:'id',autoIncrement:true});};
+      r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};
+    });
+    return dbp;
+  }
+  function tx(store,mode,fn){
+    return idb().then(function(d){return new Promise(function(res,rej){
+      var t=d.transaction(store,mode),s=t.objectStore(store),out=fn(s);
+      t.oncomplete=function(){res(out&&typeof out==='object'&&'result' in out?out.result:out);};
+      t.onerror=t.onabort=function(){rej(t.error);};
+    });});
+  }
+  var cacheGet=function(k){return tx('cache','readonly',function(s){return s.get(k);}).catch(function(){return null;});};
+  var cachePut=function(e){return tx('cache','readwrite',function(s){return s.put(e);});};
+  var cacheAll=function(){return tx('cache','readonly',function(s){return s.getAll();}).catch(function(){return [];});};
+  var qAll=function(){return tx('queue','readonly',function(s){return s.getAll();}).catch(function(){return [];});};
+  var qAdd=function(it){return tx('queue','readwrite',function(s){return s.add(it);});};
+  var qPut=function(it){return tx('queue','readwrite',function(s){return s.put(it);});};
+  var qDel=function(id){return tx('queue','readwrite',function(s){return s.delete(id);});};
+
+  /* ---------- state ---------- */
+  var S={forced:false,queued:0,failed:0,syncing:false,usedCache:false};
+  try{S.forced=localStorage.getItem(FORCE_KEY)==='1';}catch(e){}
+  function isOffline(){return S.forced||navigator.onLine===false;}
+  function emit(){try{window.dispatchEvent(new CustomEvent('ngis-offline-state',{detail:S}));}catch(e){}}
+  async function refreshCounts(){
+    var all=await qAll();
+    S.queued=all.filter(function(x){return !x.failed;}).length;
+    S.failed=all.filter(function(x){return x.failed;}).length;
+    emit();
+  }
+
+  function hdrs(init,input){
+    var h={},src=(init&&init.headers)||(input&&input.headers);
+    if(!src)return h;
+    try{new Headers(src).forEach(function(v,k){h[k.toLowerCase()]=v;});}catch(e){}
+    return h;
+  }
+  function strip(t){
+    try{
+      var o=JSON.parse(t);
+      (function walk(x){
+        if(Array.isArray(x))x.forEach(walk);
+        else if(x&&typeof x==='object'){Object.keys(x).forEach(function(k){if(SECRET.test(k))x[k]=null;else walk(x[k]);});}
+      })(o);
+      return JSON.stringify(o);
+    }catch(e){return t;}
+  }
+  function mk(c){
+    return new Response(c.method==='HEAD'?null:c.body,{status:c.status,headers:{'content-type':c.ct||'application/json','content-range':c.cr||'','x-ngis-cache':'1'}});
+  }
+  function jsonRes(obj,status,extra){
+    var h={'content-type':'application/json'};if(extra)for(var k in extra)h[k]=extra[k];
+    return new Response(JSON.stringify(obj),{status:status,headers:h});
+  }
+
+  function cacheOK(){ // never keep data on the device for parent/student logins (often shared phones)
+    try{var u=JSON.parse(sessionStorage.getItem('ngis_user')||'null');return !(u&&u.role==='student');}catch(e){return true;}
+  }
+  var puts=0;
+  async function prune(){
+    var all=await cacheAll();
+    if(all.length<=700)return;
+    all.sort(function(a,b){return a.t-b.t;});
+    var drop=all.slice(0,all.length-600);
+    for(var i=0;i<drop.length;i++){await tx('cache','readwrite',function(s){return s.delete(drop[i].k);});}
+  }
+
+  /* ---------- reads ---------- */
+  async function handleRead(input,init,url,method,h,table){
+    var key=method+' '+url+'|'+(h.range||'')+'|'+(h.prefer||'')+'|'+(h.accept||'');
+    var cacheable=!NO_CACHE.test(table)&&!/password|passwd/i.test(url)&&cacheOK();
+    if(isOffline()){
+      var c=cacheable?await cacheGet(key):null;
+      if(c){S.usedCache=true;emit();c.method=method;return mk(c);}
+      if(WRITE_OK.indexOf(table)>-1){ // a lookup for score/attendance rows: treat as "none saved yet". Queued rows are matched to real rows on sync.
+        return jsonRes(/pgrst\.object/.test(h.accept||'')?null:[],200,{'content-range':'*/0'});
+      }
+      return jsonRes({message:'You are offline and this page was not opened on this device while online. Open it once with internet, then it will work offline.',code:'OFFLINE'},503);
+    }
+    try{
+      var res=await origFetch(input,init);
+      if(cacheable&&(res.status===200||res.status===206)){
+        var cl=res.clone(),ct=res.headers.get('content-type')||'application/json',cr=res.headers.get('content-range')||'';
+        cl.text().then(function(t){
+          return cachePut({k:key,t:Date.now(),status:res.status,ct:ct,cr:cr,body:method==='HEAD'?'':strip(t),table:table,url:url}).then(function(){if(++puts%60===0)prune();});
+        }).catch(function(){});
+      }
+      return res;
+    }catch(e){
+      if(e&&e.name==='AbortError')throw e;
+      var c2=cacheable?await cacheGet(key):null;
+      if(c2){S.usedCache=true;emit();c2.method=method;return mk(c2);}
+      throw e;
+    }
+  }
+
+  /* ---------- writes ---------- */
+  function rowsOf(body){try{var b=JSON.parse(body);return Array.isArray(b)?b:[b];}catch(e){return [];}}
+  async function patchCache(table,rows,method,url){
+    try{
+      var all=await cacheAll(),nk=NK[table]||[];
+      var idFilter=null;
+      if(method==='PATCH'){var m=/[?&]id=eq\.([^&]+)/.exec(url);if(m)idFilter=decodeURIComponent(m[1]);}
+      for(var i=0;i<all.length;i++){
+        var e=all[i];
+        if(e.table!==table||!/^GET/.test(e.k)||e.status!==200||!e.body)continue;
+        if(/select=[^&]*\(/.test(e.url))continue;                   // joined queries: leave alone
+        var arr;try{arr=JSON.parse(e.body);}catch(x){continue;}
+        if(!Array.isArray(arr))continue;
+        var qs=new URLSearchParams(e.url.split('?')[1]||''),filters=[],skip=false;
+        qs.forEach(function(v,k){
+          if(['select','order','limit','offset','on_conflict','columns'].indexOf(k)>-1)return;
+          if(v.indexOf('eq.')===0)filters.push([k,'eq',v.slice(3)]);
+          else if(v.indexOf('in.(')===0)filters.push([k,'in',v.slice(4,-1).split(',').map(function(z){return z.replace(/^"|"$/g,'');})]);
+          else skip=true;
+        });
+        if(skip)continue;
+        var changed=false;
+        rows.forEach(function(row){
+          var idx=-1;
+          if(idFilter!==null)idx=arr.findIndex(function(r){return String(r.id)===idFilter;});
+          else if(row.id!==undefined)idx=arr.findIndex(function(r){return String(r.id)===String(row.id);});
+          else if(nk.length)idx=arr.findIndex(function(r){return nk.every(function(k){return String(r[k])===String(row[k]);});});
+          if(idx>-1){Object.assign(arr[idx],row);changed=true;return;}
+          if(method==='PATCH')return;
+          var ok=filters.every(function(f){var v=row[f[0]];if(v===undefined)return false;return f[1]==='eq'?String(v)===f[2]:f[2].indexOf(String(v))>-1;});
+          if(ok){arr.push(Object.assign({},row));changed=true;}
+        });
+        if(changed){e.body=JSON.stringify(arr);await cachePut(e);}
+      }
+    }catch(x){console.warn('offline cache patch',x);}
+  }
+  async function queueWrite(url,method,h,body,table){
+    var keep={};['apikey','authorization','content-type','prefer','accept','accept-profile','content-profile'].forEach(function(k){if(h[k])keep[k]=h[k];});
+    await qAdd({ts:Date.now(),url:url,method:method,headers:keep,body:body||null,table:table,failed:false});
+    var rows=rowsOf(body);
+    await patchCache(table,rows,method,url);
+    await refreshCounts();
+    var want=/return=representation/.test(h.prefer||''),status=method==='POST'?201:200;
+    if(want){
+      if(/pgrst\.object/.test(h.accept||''))return jsonRes(rows[0]||{},status);
+      return jsonRes(rows,status);
+    }
+    return new Response(null,{status:method==='POST'?201:204});
+  }
+  async function handleWrite(input,init,url,method,h,table){
+    var queueable=WRITE_OK.indexOf(table)>-1&&(method==='POST'||method==='PATCH'||method==='PUT');
+    var body=init&&typeof init.body==='string'?init.body:null;
+    if(!isOffline()){
+      try{return await origFetch(input,init);}
+      catch(e){
+        if(e&&e.name==='AbortError')throw e;
+        if(!queueable)throw e;
+        return queueWrite(url,method,h,body,table);
+      }
+    }
+    if(!queueable)throw new TypeError('You are offline. This action needs an internet connection.');
+    return queueWrite(url,method,h,body,table);
+  }
+
+  window.fetch=function(input,init){
+    var url=typeof input==='string'?input:(input&&input.url)||'';
+    if(url.indexOf(SB_REST)!==0)return origFetch(input,init);
+    if(typeof input!=='string'&&!init)return origFetch(input,init);
+    var method=((init&&init.method)||(input&&input.method)||'GET').toUpperCase();
+    var table=url.slice(SB_REST.length).split('?')[0];
+    var h=hdrs(init,input);
+    return (method==='GET'||method==='HEAD')?handleRead(input,init,url,method,h,table):handleWrite(input,init,url,method,h,table);
+  };
+
+  /* ---------- sync ---------- */
+  async function sendOne(it){
+    var base={method:'',headers:it.headers};
+    var nk=NK[it.table];
+    var isUpsert=/resolution=(merge|ignore)-duplicates/.test((it.headers.prefer||''));
+    if(it.method==='POST'&&nk&&!isUpsert){
+      var rows=rowsOf(it.body),done=0;
+      for(var i=0;i<rows.length;i++){
+        var row=rows[i];
+        var q=nk.map(function(k){return k+'=eq.'+encodeURIComponent(row[k]);}).join('&');
+        var f=await origFetch(SB_REST+it.table+'?select=id&limit=1&'+q,{method:'GET',headers:{apikey:it.headers.apikey,authorization:it.headers.authorization,accept:'application/json'}});
+        if(!f.ok)return {ok:false,net:false,msg:'lookup '+f.status};
+        var found=await f.json(),r;
+        if(found&&found.length){
+          var upd=Object.assign({},row);delete upd.id;
+          r=await origFetch(SB_REST+it.table+'?id=eq.'+found[0].id,{method:'PATCH',headers:Object.assign({},it.headers,{prefer:'return=minimal'}),body:JSON.stringify(upd)});
+        }else{
+          r=await origFetch(SB_REST+it.table,{method:'POST',headers:Object.assign({},it.headers,{prefer:'return=minimal'}),body:JSON.stringify([row])});
+        }
+        if(!r.ok&&r.status!==409){var t=await r.text();return {ok:false,net:false,msg:r.status+' '+t.slice(0,160)};}
+        done++;
+      }
+      return {ok:true};
+    }
+    var res=await origFetch(it.url,{method:it.method,headers:it.headers,body:it.body});
+    if(res.ok||res.status===409)return {ok:true};
+    var tt=await res.text();
+    return {ok:false,net:false,msg:res.status+' '+tt.slice(0,160)};
+  }
+  async function sync(){
+    if(S.syncing||isOffline())return {sent:0,failed:0};
+    S.syncing=true;emit();
+    var sent=0,failed=0;
+    try{
+      var items=(await qAll()).filter(function(x){return !x.failed;}).sort(function(a,b){return a.id-b.id;});
+      for(var i=0;i<items.length;i++){
+        var it=items[i],r;
+        try{r=await sendOne(it);}catch(e){break;}        // network dropped again: stop, keep the rest
+        if(r.ok){await qDel(it.id);sent++;}
+        else{it.failed=true;it.error=r.msg;await qPut(it);failed++;}
+      }
+    }finally{S.syncing=false;await refreshCounts();}
+    try{window.dispatchEvent(new CustomEvent('ngis-sync-done',{detail:{sent:sent,failed:failed}}));}catch(e){}
+    return {sent:sent,failed:failed};
+  }
+
+  window.NGISOffline={
+    state:S,isOffline:isOffline,sync:sync,refresh:refreshCounts,
+    setForced:function(v){S.forced=!!v;try{localStorage.setItem(FORCE_KEY,v?'1':'0');}catch(e){}emit();if(!v)setTimeout(sync,300);},
+    clearCache:async function(){var all=await cacheAll();for(var i=0;i<all.length;i++){(function(k){tx('cache','readwrite',function(st){return st.delete(k);});})(all[i].k);}
+      try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('ngis_fp_snap_')===0)localStorage.removeItem(k);});}catch(e){}},
+    failedItems:function(){return qAll().then(function(a){return a.filter(function(x){return x.failed;});});},
+    discardFailed:async function(){var a=await qAll();for(var i=0;i<a.length;i++)if(a[i].failed)await qDel(a[i].id);await refreshCounts();},
+    retryFailed:async function(){var a=await qAll();for(var i=0;i<a.length;i++)if(a[i].failed){a[i].failed=false;await qPut(a[i]);}await refreshCounts();return sync();}
+  };
+  window.addEventListener('online',function(){emit();if(!S.forced)setTimeout(sync,800);});
+  window.addEventListener('offline',emit);
+  window.addEventListener('load',function(){refreshCounts().then(function(){if(!isOffline()&&S.queued)sync();});});
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
@@ -723,6 +978,17 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 .ngis-link-row .nl-name{min-width:110px;font-weight:700}
 .ngis-link-row input{flex:1;min-width:220px;padding:9px 10px;border:2px solid #e0e0e0;border-radius:8px;font-size:.82rem;background:#f8f9fa}
 </style>
+<style id="ngis-nav-all-devices">
+@media(min-width:1025px){
+  .mobile-menu-btn{display:flex!important;position:fixed;top:12px;left:292px;width:44px;height:44px;align-items:center;justify-content:center;border:0;border-radius:12px;background:var(--dark);color:#fff;font-size:1.1rem;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:1100;cursor:pointer;transition:left .3s}
+  .main-content{padding-top:64px;transition:margin-left .3s}
+  .sidebar{transition:transform .3s,visibility .3s}
+  body.ngis-side-collapsed .sidebar{transform:translateX(-105%);visibility:hidden;pointer-events:none}
+  body.ngis-side-collapsed .main-content{margin-left:0}
+  body.ngis-side-collapsed .mobile-menu-btn{left:12px}
+}
+@media print{.mobile-menu-btn{display:none!important}}
+</style>
 </head>
 
 <!-- MID-TERM MODULE: requires the midterm_assessments table. SQL is supplied separately with this update. -->
@@ -801,6 +1067,8 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('midTermPortal',this)"><i class="fas fa-clipboard-check"></i> Mid-Term Assessment</div>
 <div class="nav-item" onclick="showSection('viewReports',this)"><i class="fas fa-file-alt"></i> View Reports</div>
 <div class="nav-item ngis-class-reports" style="display:none" onclick="showSection('reportCardSection',this)"><i class="fas fa-id-card"></i> Weekly Report Cards</div>
+<div class="nav-item ngis-class-reports" style="display:none" onclick="showSection('reportZipSection',this)"><i class="fas fa-file-archive"></i> Download Report Cards (ZIP)</div>
+<div class="nav-item ngis-class-reports" style="display:none" onclick="showSection('notifyCenter',this)"><i class="fas fa-bell"></i> Parent Notifications</div>
 <div class="nav-item" onclick="showSection('teacherCBTSubmit',this)"><i class="fas fa-upload"></i> Submit CBT Questions</div>
 <div class="nav-item" onclick="showSection('teacherAssignments',this)"><i class="fas fa-tasks"></i> Assignments</div>
 <div class="nav-item" onclick="showSection('teacherCBTFeedback',this)"><i class="fas fa-chart-line"></i> CBT Student Feedback</div>
@@ -875,6 +1143,8 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('tsEntry',this)"><i class="fas fa-table"></i> Termly Score Entry</div>
 <div class="nav-item" onclick="showSection('caRecord',this)"><i class="fas fa-clipboard-list"></i> General C.A Record</div>
 <div class="nav-item" onclick="showSection('tsReports',this)"><i class="fas fa-file-pdf"></i> Termly Report Cards</div>
+<div class="nav-item" onclick="showSection('reportZipSection',this)"><i class="fas fa-file-archive"></i> Download All Report Cards (ZIP)</div>
+<div class="nav-item" onclick="showSection('notifyCenter',this)"><i class="fas fa-bell"></i> Parent Notifications</div>
 <div class="nav-item" onclick="showSection('tsBroadsheet',this)"><i class="fas fa-th"></i> Termly Broadsheet</div>
 <div class="nav-item" onclick="showSection('tsAnalysis',this)"><i class="fas fa-chart-pie"></i> Termly Analysis</div>
 <div class="nav-item" onclick="showSection('tsCumulative',this)"><i class="fas fa-layer-group"></i> Session Cumulative</div>
@@ -1281,6 +1551,76 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <button class="btn btn-accent" onclick="tsRClassPdf()"><i class="fas fa-layer-group"></i> Whole Class PDF</button></div>
 <div id="tsRStatus" style="margin-bottom:10px"></div></div>
 <div id="tsROut" class="ts-scroll"></div></div>
+
+<div id="notifyCenter" class="section hidden"><div class="card">
+<div class="card-header"><h3><i class="fas fa-bell"></i> Parent Notifications</h3></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+<button class="btn btn-primary btn-sm" id="ntfTabBtnSend" onclick="ntfTab('Send')"><i class="fas fa-paper-plane"></i> Send alert</button>
+<button class="btn btn-secondary btn-sm" id="ntfTabBtnContacts" onclick="ntfTab('Contacts')"><i class="fas fa-address-book"></i> Parent contacts</button>
+<button class="btn btn-secondary btn-sm" id="ntfTabBtnBoard" onclick="ntfTab('Board')"><i class="fas fa-thumbtack"></i> Notice board</button>
+<button class="btn btn-secondary btn-sm" id="ntfTabBtnLog" onclick="ntfTab('Log')"><i class="fas fa-history"></i> History</button>
+</div>
+<div id="ntfSetupWarn" style="display:none;background:#fff6e5;border:1px solid #f0c36d;border-radius:10px;padding:12px;margin-bottom:14px;font-size:.84rem"></div>
+
+<div id="ntfTabSend">
+<div class="form-grid">
+<div class="form-group"><label>What do you want to tell parents?</label><select id="ntfType" onchange="ntfTypeChange()">
+<option value="absent">Child is absent</option><option value="results">Results published</option><option value="fees">Fees due reminder</option><option value="notice">School announcement</option></select></div>
+<div class="form-group"><label>Class</label><select id="ntfClass"></select></div>
+<div class="form-group ntf-f-absent"><label>Week</label><select id="ntfWeek"></select></div>
+<div class="form-group ntf-f-absent"><label>Day</label><select id="ntfDay"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option></select></div>
+<div class="form-group ntf-f-results"><label>Term</label><select id="ntfTerm"></select></div>
+<div class="form-group ntf-f-results"><label>Session</label><select id="ntfSession"></select></div>
+<div class="form-group ntf-f-fees"><label>Amount due (optional)</label><input type="text" id="ntfAmount" placeholder="e.g. ₦150,000"></div>
+<div class="form-group ntf-f-fees"><label>Due date (optional)</label><input type="text" id="ntfDue" placeholder="e.g. 15 Dec 2026"></div>
+<div class="form-group ntf-f-fees"><label>Who gets it?</label><select id="ntfFeeWho"><option value="blocked">Students flagged for fees (Fees &amp; Result Access)</option><option value="all">Everyone in the class</option></select></div>
+</div>
+<div class="form-group"><label>Message (you can edit it; {parent} {student} {class} are filled in for each family)</label><textarea id="ntfMsg" rows="5" style="width:100%"></textarea></div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 12px;font-size:.88rem">
+<label><input type="checkbox" id="ntfChWa" checked> WhatsApp</label><label><input type="checkbox" id="ntfChSms" checked> SMS</label><label><input type="checkbox" id="ntfChEmail" checked> Email</label><label><input type="checkbox" id="ntfChBoard"> Also post on the parent notice board</label></div>
+<button class="btn btn-primary" onclick="ntfPrepare()"><i class="fas fa-users"></i> Prepare recipients</button>
+<div id="ntfRecips" style="margin-top:16px"></div>
+</div>
+
+<div id="ntfTabContacts" style="display:none">
+<p style="font-size:.84rem;color:#666;margin-bottom:10px">Save each family's WhatsApp/SMS number and email once. Nigerian numbers can be typed as 0803… ; other countries use +233… style.</p>
+<div class="form-grid"><div class="form-group"><label>Class</label><select id="ntfCClass" onchange="ntfContactsLoad()"></select></div></div>
+<div id="ntfContactsWrap" class="table-container"></div>
+</div>
+
+<div id="ntfTabBoard" style="display:none">
+<div class="form-grid">
+<div class="form-group"><label>Title</label><input type="text" id="ntfBTitle" placeholder="e.g. Mid-term break"></div>
+<div class="form-group"><label>Show to</label><select id="ntfBAud"><option value="parents">Parents (student portal)</option><option value="staff">Staff</option><option value="all">Everyone</option></select></div>
+<div class="form-group"><label>Class</label><select id="ntfBClass"></select></div>
+<div class="form-group"><label>Hide after (optional)</label><input type="date" id="ntfBExp"></div>
+</div>
+<div class="form-group"><label>Notice</label><textarea id="ntfBBody" rows="4" style="width:100%"></textarea></div>
+<button class="btn btn-primary" onclick="ntfPostBoard()"><i class="fas fa-thumbtack"></i> Post notice</button>
+<div id="ntfBoardList" style="margin-top:16px"></div>
+</div>
+
+<div id="ntfTabLog" style="display:none"><div id="ntfLogWrap" class="table-container"></div></div>
+</div></div>
+
+<div id="reportZipSection" class="section hidden"><div class="card">
+<div class="card-header"><h3><i class="fas fa-file-archive"></i> Download Report Cards (ZIP)</h3></div>
+<p style="font-size:.85rem;color:#666;margin-bottom:12px">Creates one ZIP with every student's individual report card as a PDF, organised as <b>Class / Student / report</b>. Only report cards that have data are included.</p>
+<div class="form-grid">
+<div class="form-group"><label>Class</label><select id="rzClass"></select></div>
+<div class="form-group"><label>Session</label><select id="rzSession" onchange="ngisRzTerms()"></select></div>
+<div class="form-group"><label>Term</label><select id="rzTerm" onchange="ngisRzInfo()"></select></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin:6px 0 12px">
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzWeekly" checked> Weekly assessment report cards (every week in the term)</label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzMid" checked> Mid-term report cards</label>
+<label id="rzTermlyWrap" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzTermly" checked> Termly report cards (administrators &amp; management only)</label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rzOthers" checked> Others: Early Years mid-term reports and Nursery observation sheets (saved as printable .html files)</label>
+</div>
+<div id="rzInfo" style="font-size:.8rem;color:#888;margin-bottom:12px"></div>
+<button class="btn btn-primary" onclick="ngisRzRun()"><i class="fas fa-download"></i> Download ZIP</button>
+<p style="font-size:.78rem;color:#888;margin-top:12px">Tip: for a whole school, download one class at a time. A large ZIP is built inside your browser and needs time and memory.</p>
+</div></div>
 
 <div id="rbAdmin" class="section hidden">
 <div class="card"><div class="card-header"><h3><i class="fas fa-user-lock"></i> Fees &amp; Result Access</h3><span class="cbt-badge">Admin only</span></div>
@@ -7138,6 +7478,11 @@ async function makePdf(items,filename){
 }
 const safe=s=>String(s||'report').replace(/[^a-z0-9]+/gi,'_');
 
+window.ngisTermlyCards=async function(classId,termId,sessionId){
+  const all=await classData(classId,termId,sessionId);
+  const list=students.filter(x=>sameId(x.class_id,classId)&&all.some(r=>sameId(r.student_id,x.id))).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  return {list,html:st=>buildReport(st,all,termId,sessionId,classId)};
+};
 window.tsRStudents=function(){const c=$('tsRClass').value;$('tsRStudent').innerHTML=opts(students.filter(s=>sameId(s.class_id,c)).sort((a,b)=>String(a.name).localeCompare(b.name)),'-- Choose Student --',s=>s.name);};
 function rSel(){const c=$('tsRClass').value,t=$('tsRTerm').value,se=$('tsRSession').value;if(!c||!t||!se){showToast('Select class, term and session','error');return null;}return{c,t,se};}
 async function pubState(c,t,se){const {data}=await supabaseClient.from('result_publications').select('is_published').eq('class_id',c).eq('term_id',t).eq('session_id',se).maybeSingle();return !!data?.is_published;}
@@ -7176,7 +7521,7 @@ async function setPub(ids,val){
   const rows=ids.map(c=>({class_id:c,term_id:t,session_id:se,is_published:val,published_at:val?new Date().toISOString():null,published_by:currentUser.id}));
   const {error}=await supabaseClient.from('result_publications').upsert(rows,{onConflict:'class_id,term_id,session_id'});
   if(error){showToast(tsErr(error),'error');return;}
-  showToast(val?'Results published to parents':'Results hidden from parents');tsPubLoad();
+  showToast(val?'Results published to parents':'Results hidden from parents');tsPubLoad();if(val&&window.ngisAfterPublish)window.ngisAfterPublish(ids,t,se);
 }
 window.tsPub=(c,v)=>{if(!$('tsPTerm').value||!$('tsPSession').value)return;if(v&&!confirm('Publish results for this class? Parents will be able to view and download them.'))return;setPub([c],v);};
 window.tsPubAll=v=>{if(!$('tsPTerm').value||!$('tsPSession').value){showToast('Select term and session','error');return;}if(!confirm((v?'Publish':'Unpublish')+' results for ALL classes?'))return;setPub(classes.map(c=>c.id),v);};
@@ -10258,6 +10603,37 @@ async function emtDownloadZip(){
 }
 
 
+window.ngisOtherReportFiles=async function(classId,sessionId,weekIds){
+  const out=[],used=new Set();
+  const safeN=emtFileSafe;
+  try{
+    await emtLoad();
+    emtReports.filter(r=>sameId(r.class_id,classId)&&emtSessionMatches(r.session_id,sessionId)).forEach(r=>{
+      const d=emtRecData(r);
+      let p='Early Years Mid-Term/'+safeN(d.studentName)+'.html',n=1;
+      while(used.has(p.toLowerCase())){n++;p='Early Years Mid-Term/'+safeN(d.studentName)+' ('+n+').html';}
+      used.add(p.toLowerCase());
+      out.push({path:p,html:emtWrap(emtHtml(d),'print')});
+    });
+  }catch(e){console.warn('Early years reports:',e);}
+  try{
+    await loadNurseryObservations();
+    const map=new Map();
+    nurseryObservations.filter(o=>sameId(o.class_id,classId)&&(!weekIds||!weekIds.length||weekIds.some(w=>sameId(w,o.week_id)))).forEach(o=>{
+      const k=o.week_id+'|'+o.student_id;
+      if(!map.has(k))map.set(k,{classId:o.class_id,weekId:o.week_id,studentId:o.student_id,records:[]});
+      map.get(k).records.push(o);
+    });
+    map.forEach(g=>{
+      const f=nurserySheetFile(g,'html');
+      let p='Nursery Observations/'+safeN(f.student)+'/'+safeN(f.week)+'.html',n=1;
+      while(used.has(p.toLowerCase())){n++;p='Nursery Observations/'+safeN(f.student)+'/'+safeN(f.week)+' ('+n+').html';}
+      used.add(p.toLowerCase());
+      out.push({path:p,html:f.html});
+    });
+  }catch(e){console.warn('Nursery observations:',e);}
+  return out;
+};
 Object.assign(window,{buildNurseryPdfBytes,buildSheetData,clearNurserySheet,crc32,deleteAllNurseryData,deleteNurseryObservation,downloadNurseryPdf,downloadNurseryZip,emtBuild,emtClassChange,emtClear,emtDelete,emtDownloadPdf,emtDownloadZip,emtExportWord,emtFileSafe,emtFillStudents,emtFmtDate,emtFormData,emtHtml,emtLoad,emtLoadSheet,emtOpen,emtPdfBytes,emtPopulate,emtPreview,emtReadRatings,emtRecData,emtRenderForm,emtRenderTable,emtSave,emtSel,emtTeacherFor,emtTick,emtUpdateZipInfo,emtWrap,emtWriteRatings,emtZipRecords,ensurePdfLib,exportNurseryReport,formSheetData,generateNurseryReport,groupToSheetData,loadNurseryObservations,loadNurserySheet,loadNurseryStudents,loadScriptOnce,makeZip,monBadge,monChips,monCompute,monDefaultWeek,monSortedWeeks,monToday,monWeeksToDate,nCanManageSubjects,nInsertSubject,nurseryAddStandardSubjects,nurseryAddSubject,nurseryCloseSubject,nurseryDeleteSubject,nurseryDocWrap,nurseryOpenSubject,nurserySelection,nurserySheetFile,nurserySheetHtml,nurseryZipGroups,onNurseryTick,openObsMonitor,populateNurseryControls,populateObsMonitorControls,promoteNurseryLearners,readNurseryRows,refreshNurseryUI,registerNurseryLearner,renderNurseryObservationsTable,renderNurseryRegister,renderNurserySheetForm,renderNurserySubjectsAdmin,renderObsMonitor,saveNurseryEdit,saveNurserySheet,setMonTab,sheetSubjects,subjectBlockHtml,suggestNextClass,toggleNurseryAll,updateNurseryField,updateNurseryLevel,updateZipInfo,writeNurseryRows});
 
 /* ===== hooks into the Register app (wrap, never replace) ===== */
@@ -10539,6 +10915,8 @@ function navItems(){
       ['midTermAnalysis','Mid-Term Student Analysis','fa-chart-line'],
       ['midTermBroadsheet','Mid-Term Broadsheet','fa-table'],
       ['allReports','Weekly Assessment & Analysis','fa-calendar-week'],
+      ['reportZipSection','Download Report Cards (ZIP)','fa-file-archive'],
+      ['notifyCenter','Parent Notifications','fa-bell'],
       ['tsBroadsheet','Termly Broadsheet','fa-th'],
       ['tsAnalysis','Termly Student Analysis','fa-chart-pie'],
       ['tsCumulative','All-Term Broadsheets','fa-layer-group'],
@@ -12459,6 +12837,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
 /* ===== NGIS fingerprint / biometric login for staff (WebAuthn, device-bound) ===== */
 (function(){
   var KEY='ngis_fp_v1', DECLINED='ngis_fp_declined_v1';
+  var ss=function(){try{return window.sessionStorage;}catch(e){return null;}};
   function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')||[];}catch(e){return [];}}
   function save(a){try{localStorage.setItem(KEY,JSON.stringify(a));}catch(e){}}
   function b64(buf){var s='',b=new Uint8Array(buf);for(var i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
@@ -12488,8 +12867,8 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
       }});
       var list=load().filter(function(x){return !(x.kind===kindOf(u)&&String(x.userId)===String(u.id));});
       list.push({credId:b64(cred.rawId),kind:kindOf(u),userId:String(u.id),name:u.name||'',email:u.email||''});
-      save(list);
-      try{localStorage.removeItem(DECLINED+':'+kindOf(u)+':'+u.id);}catch(e){}
+      save(list);saveSnap(u);
+      try{ss().removeItem(DECLINED+':'+kindOf(u)+':'+u.id);}catch(e){}
       showToast('Fingerprint login enabled on this device','success');
       refreshLanding();
       return true;
@@ -12518,10 +12897,30 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     }
   }
 
+  function snapKey(e){return 'ngis_fp_snap_'+e.kind+':'+e.userId;}
+  function saveSnap(u){
+    try{
+      var o=JSON.parse(JSON.stringify(u));
+      Object.keys(o).forEach(function(k){if(/pass|pwd/i.test(k))delete o[k];});
+      localStorage.setItem('ngis_fp_snap_'+kindOf(u)+':'+u.id,JSON.stringify({u:o,t:Date.now()}));
+    }catch(e){}
+  }
+  function netDown(){return !!(window.NGISOffline&&NGISOffline.isOffline());}
+  async function offlineEnter(entry){
+    var raw=null;try{raw=JSON.parse(localStorage.getItem(snapKey(entry))||'null');}catch(e){}
+    if(!raw||!raw.u||Date.now()-raw.t>30*86400000){showToast('To use fingerprint offline, log in with internet at least once on this device first (valid for 30 days).','error');return false;}
+    currentUser=raw.u;
+    sessionStorage.setItem('ngis_user',JSON.stringify(currentUser));
+    await setupDashboard();
+    showToast('Signed in offline. Your saves will sync when you are back online.','info');
+    return true;
+  }
   async function finishLogin(entry){
+    if(netDown()){await offlineEnter(entry);return;}
     if(entry.kind==='management'){
       var m=await supabaseClient.from('mgmt_users').select('*').eq('id',entry.userId).maybeSingle();
       var d=m.data;
+      if(m.error&&/fetch|network/i.test(String(m.error.message||''))){await offlineEnter(entry);return;}
       if(m.error||!d){forget(entry);showToast('This account no longer exists. Fingerprint removed.','error');return;}
       if(d.active===false){showToast('This account has been disabled. Contact the administrator.','error');return;}
       currentUser={id:d.id,name:d.name,email:d.email,role:'management',position:d.position||'Management',perms:d.perms||{}};
@@ -12532,6 +12931,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     }
     var r=await supabaseClient.from('teachers').select('*').eq('id',entry.userId).maybeSingle();
     var t=r.data;
+    if(r.error&&/fetch|network/i.test(String(r.error.message||''))){await offlineEnter(entry);return;}
     if(r.error||!t){forget(entry);showToast('This account no longer exists. Fingerprint removed.','error');return;}
     currentUser=t;
     var ts=await supabaseClient.from('teacher_subjects').select('subject_id').eq('teacher_id',t.id);
@@ -12585,20 +12985,41 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     var u=window.currentUser||currentUser;
     injectNav();
     if(!u||u.role==='student'||!u.role)return;
-    if(enrolledFor(u))return;
+    if(enrolledFor(u)){saveSnap(u);return;}
     var dk=DECLINED+':'+kindOf(u)+':'+u.id;
-    try{if(localStorage.getItem(dk))return;}catch(e){}
+    try{if(ss().getItem(dk))return;}catch(e){}
     if(!(await platformReady()))return;
     if(confirm('Log in faster next time?\n\nEnable fingerprint login on this device for '+(u.name||'your account')+'.')){await enroll();}
-    else{try{localStorage.setItem(dk,'1');}catch(e){}showToast('You can enable it any time from the menu: Fingerprint Login','info');}
+    else{try{ss().setItem(dk,'1');}catch(e){}showToast('You can enable it any time from the menu: Fingerprint Login','info');}
   }
 
+
+  /* Ask the signed-in staff member for their fingerprint before a sensitive action (e.g. the report card ZIP). */
+  async function verify(reason){
+    var u=window.currentUser||currentUser;
+    if(!u||u.role==='student')return true;
+    if(!supported()||!(await platformReady()))return true;
+    var mine=load().filter(function(x){return x.kind===kindOf(u)&&String(x.userId)===String(u.id);});
+    if(!mine.length){
+      if(confirm('Fingerprint is not set up for you on this device.\n\nSet it up now? Your fingerprint will then confirm downloads like this.\n\nPress Cancel to continue without it.')){return await enroll();}
+      return true;
+    }
+    try{
+      showToast('Touch the fingerprint sensor to '+(reason||'continue'),'info');
+      var a=await navigator.credentials.get({publicKey:{challenge:rnd(32),rpId:location.hostname,userVerification:'required',timeout:60000,
+        allowCredentials:mine.map(function(x){return{type:'public-key',id:unb64(x.credId),transports:['internal']};})}});
+      return !!a;
+    }catch(e){showToast('Fingerprint not confirmed. Download cancelled.','error');return false;}
+  }
+  window.ngisFpVerify=verify;
   window.ngisFpLogin=loginWithFingerprint;
   window.ngisFpEnroll=enroll;
   window.ngisFpRemove=removeThisDevice;
 
   document.addEventListener('DOMContentLoaded',function(){
     injectLanding();
+    var sb=document.getElementById('sidebar');
+    if(sb&&window.MutationObserver){var tm=null;new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(injectNav,150);}).observe(sb,{childList:true,subtree:true});}
     var orig=window.setupDashboard;
     if(typeof orig==='function'){
       window.setupDashboard=async function(){
@@ -12606,6 +13027,626 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
         try{setTimeout(offer,600);}catch(e){}
         return r;
       };
+    }
+  });
+})();
+</script>
+
+<script>
+/* ===== Download ALL individual report cards as one ZIP (weekly, mid-term, termly, early years) ===== */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var busy=false,cancel=false;
+  var isAdminU=function(){return currentUser&&(currentUser.role==='admin'||currentUser.role==='management');};
+  var isTeacherU=function(){return currentUser&&currentUser.role==='teacher';};
+  var fsafe=function(s,f){return String(s||f||'x').replace(/[\\\/:*?"<>|\r\n]+/g,'-').replace(/\s+/g,' ').trim().slice(0,70)||(f||'x');};
+  var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
+
+  function myClassList(){
+    if(isAdminU())return (classes||[]).slice();
+    if(isTeacherU()){var ids=ngisDesignatedClassIds();return (classes||[]).filter(function(c){return ids.indexOf(String(c.id))>-1;});}
+    return [];
+  }
+  function fill(){
+    var cl=myClassList();
+    var sel=$('rzClass');
+    if(sel){
+      sel.innerHTML=(isAdminU()?'<option value="__all">All classes</option>':'')+cl.map(function(c){return '<option value="'+c.id+'">'+escapeHtml(c.name)+'</option>';}).join('');
+      if(!cl.length)sel.innerHTML='<option value="">No class assigned to you</option>';
+    }
+    var ss=$('rzSession');
+    if(ss){
+      var act=(sessions||[]).find(function(s){return s.is_active;});
+      ss.innerHTML=(sessions||[]).map(function(s){return '<option value="'+s.id+'">'+escapeHtml(s.name)+'</option>';}).join('');
+      if(act)ss.value=act.id;
+    }
+    rzTerms();
+    var tw=$('rzTermlyWrap');if(tw)tw.style.display=isAdminU()?'flex':'none';
+  }
+  function rzTerms(){
+    var sid=$('rzSession')?$('rzSession').value:'';
+    var list=(terms||[]).filter(function(t){return !t.session_id||!sid||sameId(t.session_id,sid);});
+    if(!list.length)list=(terms||[]).slice();
+    var tt=$('rzTerm');if(!tt)return;
+    tt.innerHTML=list.map(function(t){return '<option value="'+t.id+'">'+escapeHtml(t.name)+'</option>';}).join('');
+    var cur=list.find(function(t){return t.is_active||t.is_current;});if(cur)tt.value=cur.id;
+    rzInfo();
+  }
+  function rzInfo(){
+    var el=$('rzInfo');if(!el)return;
+    var t=$('rzTerm')?$('rzTerm').value:'';
+    var n=(weeks||[]).filter(function(w){return sameId(w.term_id,t);}).length;
+    el.textContent=n+' week'+(n===1?'':'s')+' found in the selected term for weekly report cards.';
+  }
+
+  async function pagedIn(table,cols,col,ids,extra){
+    var out=[];
+    for(var i=0;i<ids.length;i+=100){
+      var chunk=ids.slice(i,i+100),from=0;
+      while(true){
+        var q=supabaseClient.from(table).select(cols).in(col,chunk);
+        if(extra)q=extra(q);
+        var r=await q.range(from,from+999);
+        if(r.error)throw r.error;
+        out=out.concat(r.data||[]);
+        if(!r.data||r.data.length<1000)break;
+        from+=1000;
+      }
+    }
+    return out;
+  }
+
+  async function htmlToPdf(html,widthCss){
+    var host=document.createElement('div');
+    host.style.cssText='position:fixed;left:-10000px;top:0;width:'+widthCss+';background:#fff;z-index:-1;padding:0;margin:0';
+    host.innerHTML=html;document.body.appendChild(host);
+    try{
+      var card=host.querySelector('.bulk-pdf-card')||host.firstElementChild;
+      if(!card)throw new Error('Empty report card');
+      await new Promise(function(r){requestAnimationFrame(function(){requestAnimationFrame(r);});});
+      var canvas=await html2canvas(card,{scale:2.2,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,width:card.scrollWidth,height:card.scrollHeight,windowWidth:Math.max(document.documentElement.clientWidth,900)});
+      var pageW=210,pageH=297,m=6,uw=pageW-2*m,uh=pageH-2*m;
+      var rw=canvas.width/2.2,rh=canvas.height/2.2,k=Math.min(uw/rw,uh/rh),iw=rw*k,ih=rh*k;
+      var pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',m+(uw-iw)/2,m+(uh-ih)/2,iw,ih,undefined,'FAST');
+      return pdf.output('arraybuffer');
+    }finally{host.remove();}
+  }
+
+  function overlay(){
+    var o=document.createElement('div');
+    o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center';
+    o.innerHTML='<div style="background:#fff;padding:26px 30px;border-radius:14px;width:min(380px,90vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+      +'<div style="font-weight:700;color:#1a5f2a;margin-bottom:10px"><i class="fas fa-file-archive"></i> Creating ZIP of report cards</div>'
+      +'<div id="rzMsg" style="font-size:.85rem;color:#444;margin-bottom:10px;min-height:2.4em">Starting…</div>'
+      +'<div style="height:10px;background:#e5efe7;border-radius:6px;overflow:hidden"><div id="rzBar" style="height:100%;width:0;background:#1a5f2a;transition:width .2s"></div></div>'
+      +'<button type="button" class="btn btn-secondary btn-sm" style="margin-top:14px" onclick="ngisRzCancel()">Cancel</button>'
+      +'<div style="font-size:.72rem;color:#888;margin-top:8px">Keep this tab open until the download starts.</div></div>';
+    document.body.appendChild(o);return o;
+  }
+
+  async function run(){
+    if(busy)return;
+    if(!isAdminU()&&!isTeacherU()){showToast('Only administrators and class teachers can use this','error');return;}
+    if(typeof JSZip==='undefined'||typeof html2canvas==='undefined'||!(window.jspdf&&window.jspdf.jsPDF)){showToast('A required library did not load. Check your internet connection and refresh.','error');return;}
+    var cv=$('rzClass').value,sessionId=$('rzSession').value,termId=$('rzTerm').value;
+    var wantW=$('rzWeekly').checked,wantM=$('rzMid').checked,wantT=isAdminU()&&$('rzTermly').checked,wantO=$('rzOthers').checked;
+    if(!cv){showToast('Choose a class','error');return;}
+    if(!sessionId||!termId){showToast('Choose a session and term','error');return;}
+    if(!(wantW||wantM||wantT||wantO)){showToast('Tick at least one type of report card','error');return;}
+    if(typeof ngisFpVerify==='function'&&!(await ngisFpVerify('download the report card ZIP')))return;
+    var cls=cv==='__all'?myClassList():myClassList().filter(function(c){return sameId(c.id,cv);});
+    if(!cls.length){showToast('No class available','error');return;}
+    var termWeeks=(weeks||[]).filter(function(w){return sameId(w.term_id,termId);});
+    var term=(terms||[]).find(function(t){return sameId(t.id,termId);}),session=(sessions||[]).find(function(s){return sameId(s.id,sessionId);});
+
+    busy=true;cancel=false;
+    var ov=overlay(),msg=function(t){var e=$('rzMsg');if(e)e.textContent=t;},bar=function(p){var e=$('rzBar');if(e)e.style.width=Math.min(100,Math.round(p))+'%';};
+    var zip=new JSZip(),used=new Set(),count=0,failed=0,root='NGIS_Report_Cards_'+fsafe(session&&session.name,'Session')+'_'+fsafe(term&&term.name,'Term');
+    function add(path,data){var p=path,n=1;while(used.has(p.toLowerCase())){n++;p=path.replace(/(\.[a-z]+)$/i,' ('+n+')$1');}used.add(p.toLowerCase());zip.file(root+'/'+p,data);count++;}
+    try{
+      // ---- plan the work first so the progress bar is meaningful ----
+      var jobs=[];
+      for(var ci=0;ci<cls.length;ci++){
+        var c=cls[ci];
+        var list=(students||[]).filter(function(s){return sameId(s.class_id,c.id);}).sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+        if(!list.length)continue;
+        var ids=list.map(function(s){return s.id;});
+        msg('Checking '+c.name+'…');
+        var hasW={},hasM={};
+        if(wantW&&termWeeks.length){
+          var wk=await pagedIn('assessments','student_id,week_id','student_id',ids);
+          wk.forEach(function(r){hasW[String(r.student_id)+'|'+String(r.week_id)]=1;});
+        }
+        if(wantM){
+          var mr=await pagedIn('midterm_assessments','student_id','student_id',ids,function(q){return q.eq('term_id',termId).eq('session_id',sessionId);});
+          mr.forEach(function(r){hasM[String(r.student_id)]=1;});
+        }
+        var termly=null;
+        if(wantT){try{termly=await ngisTermlyCards(c.id,termId,sessionId);}catch(e){console.warn('Termly data:',e);}}
+        list.forEach(function(s){
+          var folder=fsafe(c.name,'Class')+'/'+fsafe(s.name,'Student');
+          if(wantW)termWeeks.forEach(function(w){if(hasW[String(s.id)+'|'+String(w.id)])jobs.push({k:'w',s:s,w:w,c:c,path:folder+'/Weekly - '+fsafe(w.name,'Week')+'.pdf'});});
+          if(wantM&&hasM[String(s.id)])jobs.push({k:'m',s:s,c:c,path:folder+'/Mid-Term.pdf'});
+          if(termly&&termly.list.some(function(x){return sameId(x.id,s.id);}))jobs.push({k:'t',s:s,c:c,termly:termly,path:folder+'/Termly.pdf'});
+        });
+        if(wantO)jobs.push({k:'o',c:c});
+        if(cancel)throw new Error('__cancel');
+      }
+      if(!jobs.length){showToast('No report cards found for this selection yet','error');return;}
+      var pdfCount=jobs.filter(function(j){return j.k!=='o';}).length;
+      if(pdfCount>500&&!confirm('This will create about '+pdfCount+' PDF report cards and may take a long time and a lot of memory. Tip: choose one class at a time. Continue?'))return;
+      // ---- build ----
+      for(var i=0;i<jobs.length;i++){
+        if(cancel)throw new Error('__cancel');
+        var j=jobs[i];
+        bar(i/jobs.length*100);
+        await sleep(0);
+        try{
+          if(j.k==='w'){
+            msg(j.c.name+' • '+j.s.name+' • '+j.w.name+'  ('+(i+1)+'/'+jobs.length+')');
+            add(j.path,await htmlToPdf(await buildWeeklyReportCardHTML(j.s,j.w.id),'194mm'));
+          }else if(j.k==='m'){
+            msg(j.c.name+' • '+j.s.name+' • Mid-term  ('+(i+1)+'/'+jobs.length+')');
+            add(j.path,await htmlToPdf(await buildMidTermReportCardHTML(j.s,termId,sessionId),'194mm'));
+          }else if(j.k==='t'){
+            msg(j.c.name+' • '+j.s.name+' • Termly  ('+(i+1)+'/'+jobs.length+')');
+            add(j.path,await htmlToPdf(j.termly.html(j.s),'794px'));
+          }else if(j.k==='o'){
+            msg(j.c.name+' • Early years / nursery reports…');
+            var files=(typeof ngisOtherReportFiles==='function')?await ngisOtherReportFiles(j.c.id,sessionId,termWeeks.map(function(w){return w.id;})):[];
+            files.forEach(function(f){add(fsafe(j.c.name,'Class')+'/'+f.path,'\ufeff'+f.html);});
+          }
+        }catch(e){if(e&&e.message==='__cancel')throw e;failed++;console.warn('Skipped a report card:',e);}
+      }
+      if(!count){showToast('No report cards could be created','error');return;}
+      msg('Packing '+count+' file(s) into the ZIP…');bar(98);
+      var blob=await zip.generateAsync({type:'blob',compression:'STORE'},function(m){bar(98+m.percent/50);});
+      var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=root+(cv==='__all'?'_All_Classes':'_'+fsafe(cls[0].name,'Class'))+'_'+new Date().toISOString().slice(0,10)+'.zip';
+      document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},10000);
+      showToast('ZIP downloaded with '+count+' file'+(count===1?'':'s')+(failed?' ('+failed+' skipped)':''),'success');
+    }catch(e){
+      if(e&&e.message==='__cancel')showToast('ZIP cancelled','info');
+      else{console.error(e);showToast('Could not create the ZIP: '+(e&&e.message||e),'error');}
+    }finally{busy=false;ov.remove();}
+  }
+
+  window.ngisRzRun=run;
+  window.ngisRzCancel=function(){cancel=true;};
+  window.ngisRzTerms=rzTerms;window.ngisRzInfo=rzInfo;
+
+  document.addEventListener('DOMContentLoaded',function(){
+    var o=window.showSection;
+    if(typeof o==='function'){
+      window.showSection=function(id,navEl){
+        if(id==='reportZipSection'&&currentUser){
+          if(!isAdminU()&&!(isTeacherU()&&ngisHasDesignatedClass())){showToast('Only administrators and class teachers can download report card ZIPs.','error');return;}
+        }
+        var r=o.apply(this,arguments);
+        if(id==='reportZipSection'){var t=$('pageTitle');if(t)t.innerHTML='<i class="fas fa-file-archive"></i> Download Report Cards (ZIP)';fill();}
+        return r;
+      };
+    }
+  });
+})();
+</script>
+
+<script>
+/* Navigation button on every device: phones/tablets slide the menu in, desktops collapse/expand it. */
+(function(){
+  var KEY='ngis_side_collapsed';
+  function desktop(){return window.innerWidth>1024;}
+  function icon(open){var b=document.getElementById('mobileMenuBtn');if(!b)return;
+    b.innerHTML=open?'<i class="fas fa-times"></i>':'<i class="fas fa-bars"></i>';
+    b.setAttribute('aria-expanded',String(open));b.setAttribute('aria-label',open?'Close navigation':'Open navigation');}
+  function applyDesktop(){
+    var c=false;try{c=localStorage.getItem(KEY)==='1';}catch(e){}
+    document.body.classList.toggle('ngis-side-collapsed',desktop()&&c);
+    if(desktop())icon(!c);
+  }
+  var mobileToggle=window.toggleMobileSidebar;
+  window.toggleMobileSidebar=function(){
+    if(!desktop())return mobileToggle.apply(this,arguments);
+    var c=!document.body.classList.contains('ngis-side-collapsed');
+    document.body.classList.toggle('ngis-side-collapsed',c);
+    try{localStorage.setItem(KEY,c?'1':'0');}catch(e){}
+    icon(!c);
+  };
+  var mobileClose=window.closeMobileSidebar;
+  window.closeMobileSidebar=function(){
+    if(desktop()){applyDesktop();return;}
+    document.body.classList.remove('ngis-side-collapsed');
+    return mobileClose.apply(this,arguments);
+  };
+  window.addEventListener('resize',applyDesktop);
+  document.addEventListener('DOMContentLoaded',applyDesktop);
+})();
+</script>
+<script id="ngis-offline-ui">
+/* Network status button + sync panel (bottom-left on every device, shown after login). */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var css=document.createElement('style');
+  css.textContent='#ngisNetPill{position:fixed;left:12px;bottom:12px;z-index:6000;display:none;align-items:center;gap:8px;padding:9px 14px;border:0;border-radius:24px;background:#16213e;color:#fff;font:600 .78rem Poppins,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer}'
+   +'#ngisNetPill .d{width:10px;height:10px;border-radius:50%;background:#27ae60}#ngisNetPill.off .d{background:#e67e22}#ngisNetPill.bad .d{background:#e74c3c}'
+   +'#ngisNetPanel{position:fixed;left:12px;bottom:60px;z-index:6001;width:min(340px,calc(100vw - 24px));background:#fff;color:#222;border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.35);padding:16px;display:none;font:.84rem Poppins,Arial,sans-serif}'
+   +'#ngisNetPanel h4{margin:0 0 6px;color:#1a5f2a}#ngisNetPanel p{margin:6px 0;color:#555;line-height:1.45}#ngisNetPanel .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}'
+   +'@media print{#ngisNetPill,#ngisNetPanel{display:none!important}}';
+  document.head.appendChild(css);
+  var pill=document.createElement('button');pill.id='ngisNetPill';pill.type='button';pill.className='no-print';
+  var panel=document.createElement('div');panel.id='ngisNetPanel';panel.className='no-print';
+  document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(pill);document.body.appendChild(panel);render();});
+  function dashOn(){var d=$('dashboard');return d&&getComputedStyle(d).display!=='none';}
+  function render(){
+    var O=window.NGISOffline;if(!O)return;
+    var s=O.state,off=O.isOffline();
+    pill.style.display=dashOn()?'flex':'none';
+    pill.className='no-print'+(s.failed?' bad':off?' off':'');
+    var txt=s.syncing?'Syncing…':off?(s.forced?'Working offline':'No internet')+(s.queued?' • '+s.queued+' waiting':''):(s.queued?s.queued+' waiting to sync':'Online');
+    if(s.failed)txt+=' • '+s.failed+' problem'+(s.failed>1?'s':'');
+    pill.innerHTML='<span class="d"></span>'+txt;
+    if(panel.style.display==='block')fillPanel();
+  }
+  async function fillPanel(){
+    var O=window.NGISOffline,s=O.state,off=O.isOffline();
+    var failed=s.failed?await O.failedItems():[];
+    panel.innerHTML='<h4><i class="fas fa-wifi"></i> '+(off?(s.forced?'Working offline':'You are offline'):'You are online')+'</h4>'
+     +'<p>'+(off?'Scores and attendance you save are kept safely on this device and sent automatically when you are back online.':'Everything is saving straight to the school database.')+'</p>'
+     +'<p><b>'+s.queued+'</b> change'+(s.queued===1?'':'s')+' waiting to sync'+(s.failed?', <b style="color:#c0392b">'+s.failed+' could not be sent</b>':'')+'.</p>'
+     +(failed.length?'<p style="font-size:.74rem;color:#c0392b">'+failed.slice(0,3).map(function(f){return escapeHtml(f.table+': '+(f.error||'error'));}).join('<br>')+'</p>':'')
+     +'<div class="row">'
+     +(off?'':'<button class="btn btn-secondary btn-sm" onclick="ngisNetForce(true)"><i class="fas fa-plane"></i> Work offline (poor network)</button>')
+     +(s.forced?'<button class="btn btn-primary btn-sm" onclick="ngisNetForce(false)"><i class="fas fa-wifi"></i> Go back online</button>':'')
+     +(!off&&s.queued?'<button class="btn btn-primary btn-sm" onclick="ngisNetSync()"><i class="fas fa-sync"></i> Sync now</button>':'')
+     +(!off?'<button class="btn btn-secondary btn-sm" onclick="ngisNetRefresh()"><i class="fas fa-download"></i> Refresh offline copy</button>':'')
+     +(s.failed?'<button class="btn btn-accent btn-sm" onclick="ngisNetRetry()">Retry</button><button class="btn btn-danger btn-sm" onclick="ngisNetDiscard()">Discard</button>':'')
+     +'<button class="btn btn-secondary btn-sm" onclick="ngisNetClear()"><i class="fas fa-eraser"></i> Clear offline data</button>'
+     +'<button class="btn btn-secondary btn-sm" onclick="ngisNetClose()">Close</button></div>'
+     +'<p style="font-size:.72rem;color:#888">Tip: to use a page offline, open it once while online first (for example Enter Assessment for your class, week and subject).</p>';
+  }
+  pill.addEventListener('click',function(){panel.style.display=panel.style.display==='block'?'none':'block';if(panel.style.display==='block')fillPanel();});
+  window.ngisNetClear=async function(){if(!confirm('Remove the saved school data from this device? (Use this on a shared computer.) Changes still waiting to sync are kept.'))return;await NGISOffline.clearCache();showToast('Offline data cleared from this device','success');};
+  window.ngisNetClose=function(){panel.style.display='none';};
+  window.ngisNetForce=function(v){NGISOffline.setForced(v);showToast(v?'Working offline. Your saves will wait on this device.':'Back online. Syncing…','info');};
+  window.ngisNetSync=async function(){var r=await NGISOffline.sync();if(r.sent)showToast(r.sent+' change'+(r.sent===1?'':'s')+' synced','success');if(r.failed)showToast(r.failed+' change(s) could not be sent','error');};
+  window.ngisNetRetry=async function(){var r=await NGISOffline.retryFailed();if(r&&r.sent)showToast(r.sent+' synced','success');};
+  window.ngisNetDiscard=async function(){if(confirm('Discard the changes that could not be sent? They will be lost.'))await NGISOffline.discardFailed();};
+  window.ngisNetRefresh=async function(){
+    try{showToast('Refreshing the offline copy…','info');if(typeof loadAllData==='function')await loadAllData();showToast('Offline copy is up to date','success');}
+    catch(e){showToast('Could not refresh: '+(e.message||e),'error');}
+  };
+  window.addEventListener('ngis-offline-state',render);
+  window.addEventListener('ngis-sync-done',function(e){var d=e.detail||{};if(d.sent)showToast('Back online: '+d.sent+' saved change'+(d.sent===1?'':'s')+' sent to the school database','success');if(d.failed)showToast(d.failed+' change(s) could not be sent. Open the network button for details.','error');});
+  setInterval(render,2000);
+})();
+</script>
+
+<script id="ngis-notify-module">
+/* ===== Parent notifications: WhatsApp / SMS / email alerts + parent notice board ===== */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var SCHOOL='Nigeria-Ghana International School';
+  var DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var S={rows:[],type:'absent',msg:'',classIds:[],sent:{},meta:{}};
+  var SQL_URL='notifications_setup.sql';
+  var isAdm=function(){return currentUser&&(currentUser.role==='admin'||currentUser.role==='management');};
+  var isTch=function(){return currentUser&&currentUser.role==='teacher';};
+  var esc=function(v){return escapeHtml(v);};
+  var TPL={
+    absent:'Dear {parent}, {student} ({class}) was marked absent from school on {day} ({when}). If you have not already told us the reason, please contact the school office. Thank you. - '+SCHOOL,
+    results:'Dear {parent}, the {term} {session} results for {student} ({class}) are now ready. Please log in to the NGIS portal to view and download the report card. - '+SCHOOL,
+    fees:'Dear {parent}, this is a kind reminder that school fees{amount} for {student} ({class}) are due{due}. Please make payment or contact the school bursar. Thank you. - '+SCHOOL,
+    notice:'Dear {parent}, '
+  };
+
+  function myClasses(){
+    if(isAdm())return (classes||[]).slice();
+    if(isTch()){var ids=ngisDesignatedClassIds();return (classes||[]).filter(function(c){return ids.indexOf(String(c.id))>-1;});}
+    return [];
+  }
+  function classOpts(withAll){
+    var cl=myClasses();
+    if(!cl.length)return '<option value="">No class available</option>';
+    return (withAll&&isAdm()?'<option value="__all">All classes</option>':'')+cl.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('');
+  }
+  function phoneIntl(p){
+    var d=String(p||'').replace(/[^\d+]/g,'');if(!d)return '';
+    if(d.charAt(0)==='+')d=d.slice(1);else if(d.indexOf('00')===0)d=d.slice(2);else if(d.charAt(0)==='0')d='234'+d.slice(1);else if(d.length===10)d='234'+d;
+    d=d.replace(/\D/g,'');return d.length>=11?d:'';
+  }
+  var fillTpl=function(t,ctx){return String(t).replace(/\{(\w+)\}/g,function(_,k){return ctx[k]!==undefined?ctx[k]:'{'+k+'}';});};
+  var hasParentCols=function(){return (students||[]).some(function(s){return 'parent_phone' in s||'parent_email' in s;});};
+
+  function init(){
+    $('ntfClass').innerHTML=classOpts(true);$('ntfCClass').innerHTML=classOpts(false);$('ntfBClass').innerHTML=(isAdm()?'<option value="">All classes</option>':'')+classOpts(false).replace('<option value="">No class available</option>','');
+    if(isTch()){$('ntfBAud').value='parents';$('ntfBAud').disabled=true;}
+    $('ntfWeek').innerHTML=(weeks||[]).map(function(w){return '<option value="'+w.id+'">'+esc(w.name)+'</option>';}).join('');
+    $('ntfTerm').innerHTML=(terms||[]).map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join('');
+    var act=(sessions||[]).find(function(s){return s.is_active;});
+    $('ntfSession').innerHTML=(sessions||[]).map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>';}).join('');
+    if(act)$('ntfSession').value=act.id;
+    var d=new Date().getDay();if(d>=1&&d<=5)$('ntfDay').value=String(d-1);
+    // class teachers can only send absence alerts and announcements for their class
+    var opts=$('ntfType').options;
+    for(var i=0;i<opts.length;i++){var restricted=isTch()&&(opts[i].value==='results'||opts[i].value==='fees');opts[i].disabled=restricted;opts[i].hidden=restricted;}
+    ntfTypeChange();
+    var warn=$('ntfSetupWarn');
+    if(!hasParentCols()){
+      warn.style.display='block';
+      warn.innerHTML='<b>One-time setup needed.</b> Run <code>notifications_setup.sql</code> (included with the app files) in the Supabase SQL Editor. It adds the parent phone/email fields, the notice board and the history log. Then refresh this page.';
+    }else warn.style.display='none';
+    ntfTab('Send');
+  }
+  function tab(name){
+    ['Send','Contacts','Board','Log'].forEach(function(n){
+      $('ntfTab'+n).style.display=n===name?'block':'none';
+      $('ntfTabBtn'+n).className='btn btn-sm '+(n===name?'btn-primary':'btn-secondary');
+    });
+    if(name==='Contacts')contactsLoad();
+    if(name==='Board')boardLoad();
+    if(name==='Log')logLoad();
+  }
+  function typeChange(){
+    var t=$('ntfType').value;S.type=t;
+    ['absent','results','fees'].forEach(function(k){document.querySelectorAll('.ntf-f-'+k).forEach(function(e){e.style.display=k===t?'':'none';});});
+    $('ntfMsg').value=TPL[t];
+    $('ntfChBoard').checked=(t==='notice');
+  }
+
+  /* ---------- recipients ---------- */
+  async function absentStudents(classIds,weekId,day){
+    var out={},from=0,rows=[];
+    while(true){
+      var r=await supabaseClient.from('register_attendance').select('student_id,class_id,marks').eq('week_id',weekId).range(from,from+999);
+      if(r.error)throw r.error;rows=rows.concat(r.data||[]);
+      if(!r.data||r.data.length<1000)break;from+=1000;
+    }
+    rows.forEach(function(x){
+      var m=String(x.marks||'');var am=m.charAt(day*2)==='A',pm=m.charAt(day*2+1)==='A';
+      if(am||pm)out[String(x.student_id)]=am&&pm?'whole day':am?'morning':'afternoon';
+    });
+    return out;
+  }
+  async function prepare(){
+    if(!hasParentCols()){showToast('Run notifications_setup.sql in Supabase first (see the yellow box).','error');return;}
+    var cv=$('ntfClass').value;if(!cv){showToast('Choose a class','error');return;}
+    var cl=cv==='__all'?myClasses():myClasses().filter(function(c){return sameId(c.id,cv);});
+    var ids=cl.map(function(c){return String(c.id);});
+    var t=$('ntfType').value,msg=$('ntfMsg').value.trim();
+    if(!msg){showToast('Write the message first','error');return;}
+    var list=(students||[]).filter(function(s){return ids.indexOf(String(s.class_id))>-1;}).sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+    var extra={};var meta={};
+    try{
+      if(t==='absent'){
+        var wk=$('ntfWeek').value;if(!wk){showToast('Choose a week','error');return;}
+        var day=parseInt($('ntfDay').value,10);
+        var ab=await absentStudents(ids,wk,day);
+        list=list.filter(function(s){return ab[String(s.id)];});
+        meta.day=DAYS[day];list.forEach(function(s){extra[s.id]={when:ab[String(s.id)]};});
+        if(!list.length){$('ntfRecips').innerHTML='<div class="empty-state">No absences are marked for '+DAYS[day]+' in the register for this selection.</div>';return;}
+      }else if(t==='fees'&&$('ntfFeeWho').value==='blocked'){
+        var rb=await supabaseClient.from('result_blocks').select('student_id,is_blocked');
+        if(rb.error)throw rb.error;
+        var bl={};(rb.data||[]).forEach(function(r){if(r.is_blocked)bl[String(r.student_id)]=1;});
+        list=list.filter(function(s){return bl[String(s.id)];});
+        if(!list.length){$('ntfRecips').innerHTML='<div class="empty-state">No students in this selection are flagged for fees.</div>';return;}
+      }
+    }catch(e){showToast('Could not load recipients: '+(e.message||e),'error');return;}
+    var term=(terms||[]).find(function(x){return sameId(x.id,$('ntfTerm').value);}),sess=(sessions||[]).find(function(x){return sameId(x.id,$('ntfSession').value);});
+    var amount=$('ntfAmount').value.trim(),due=$('ntfDue').value.trim();
+    S.rows=list.map(function(s){
+      var cls=(classes||[]).find(function(c){return sameId(c.id,s.class_id);});
+      var ctx=Object.assign({parent:s.parent_name||'Parent/Guardian',student:s.name||'your child',class:cls?cls.name:'',day:meta.day||'',when:(extra[s.id]||{}).when||'',term:term?term.name:'',session:sess?sess.name:'',
+        amount:amount?' ('+amount+')':'',due:due?' by '+due:''},{});
+      var text=fillTpl(msg,ctx);
+      return {id:s.id,name:s.name,cls:cls?cls.name:'',parent:s.parent_name||'',phone:phoneIntl(s.parent_phone),rawPhone:s.parent_phone||'',email:(s.parent_email||'').trim(),text:text,subject:SCHOOL+(t==='absent'?' - Absence alert':t==='results'?' - Results ready':t==='fees'?' - Fees reminder':' - Notice')};
+    });
+    S.sent={};S.meta={type:t,classIds:ids};
+    render();
+  }
+  function render(){
+    var wa=$('ntfChWa').checked,sms=$('ntfChSms').checked,em=$('ntfChEmail').checked;
+    var rows=S.rows;
+    var noContact=rows.filter(function(r){return !r.phone&&!r.email;}).length;
+    var h='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center"><b>'+rows.length+' famil'+(rows.length===1?'y':'ies')+'</b>'
+      +(noContact?'<span style="color:#c0392b;font-size:.82rem">'+noContact+' without a phone or email (add them in Parent contacts)</span>':'')
+      +'</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+      +(wa?'<button class="btn btn-success btn-sm" onclick="ntfNext(\'wa\')"><i class="fab fa-whatsapp"></i> Open next WhatsApp</button>':'')
+      +'<button class="btn btn-accent btn-sm" onclick="ntfQueue()"><i class="fas fa-server"></i> Send automatically (server)</button>'
+      +'<button class="btn btn-secondary btn-sm" onclick="ntfPostFromSend()"><i class="fas fa-thumbtack"></i> Post on notice board</button></div>'
+      +'<div class="table-container"><table><thead><tr><th>Student</th><th>Parent</th><th>Send</th><th>Done</th></tr></thead><tbody>'
+      +rows.map(function(r,i){
+        var enc=encodeURIComponent(r.text);
+        var btns=[];
+        if(wa&&r.phone)btns.push('<a class="btn btn-success btn-sm" target="_blank" rel="noopener" href="https://wa.me/'+r.phone+'?text='+enc+'" onclick="ntfMark('+i+',\'whatsapp\')"><i class="fab fa-whatsapp"></i></a>');
+        if(sms&&r.phone)btns.push('<a class="btn btn-primary btn-sm" href="sms:+'+r.phone+'?&body='+enc+'" onclick="ntfMark('+i+',\'sms\')"><i class="fas fa-sms"></i></a>');
+        if(em&&r.email)btns.push('<a class="btn btn-secondary btn-sm" href="mailto:'+esc(r.email)+'?subject='+encodeURIComponent(r.subject)+'&body='+enc+'" onclick="ntfMark('+i+',\'email\')"><i class="fas fa-envelope"></i></a>');
+        return '<tr><td>'+esc(r.name)+'<br><small style="color:#888">'+esc(r.cls)+'</small></td><td>'+esc(r.parent||'-')+'<br><small style="color:#888">'+esc(r.rawPhone||'no phone')+(r.email?' • '+esc(r.email):'')+'</small></td>'
+          +'<td style="white-space:nowrap">'+(btns.length?btns.join(' '):'<small style="color:#c0392b">No contact</small>')+'</td><td id="ntfDone'+i+'">'+(S.sent[i]?'<span style="color:#27ae60">&#10003; '+S.sent[i]+'</span>':'')+'</td></tr>';
+      }).join('')+'</tbody></table></div>'
+      +'<p style="font-size:.76rem;color:#888;margin-top:10px">WhatsApp, SMS and email open on <b>your phone or computer</b> with the message ready; you tap send. Use "Send automatically" only after the server sender has been set up (see NOTIFICATIONS_SETUP.md).</p>';
+    $('ntfRecips').innerHTML=h;
+  }
+  async function logRows(rows){
+    try{
+      var r=await supabaseClient.from('notification_log').insert(rows);
+      if(r.error)console.warn('notification_log:',r.error.message);
+    }catch(e){console.warn(e);}
+  }
+  function mark(i,ch){
+    var r=S.rows[i];if(!r)return;
+    S.sent[i]=(S.sent[i]?S.sent[i]+', ':'')+ch;
+    var c=$('ntfDone'+i);if(c)c.innerHTML='<span style="color:#27ae60">&#10003; '+S.sent[i]+'</span>';
+    logRows([{kind:S.meta.type,channel:ch,student_id:String(r.id),recipient:ch==='email'?r.email:r.phone,message:r.text,status:'opened',created_by:String(currentUser.id)}]);
+  }
+  function next(ch){
+    for(var i=0;i<S.rows.length;i++){
+      var r=S.rows[i];if(S.sent[i]||!r.phone)continue;
+      window.open('https://wa.me/'+r.phone+'?text='+encodeURIComponent(r.text),'_blank');mark(i,'whatsapp');return;
+    }
+    showToast('Everyone with a phone number has been opened','info');
+  }
+  async function queue(){
+    var chans=[];if($('ntfChWa').checked)chans.push('whatsapp');if($('ntfChSms').checked)chans.push('sms');if($('ntfChEmail').checked)chans.push('email');
+    if(!chans.length){showToast('Tick at least one channel','error');return;}
+    var rows=[];
+    S.rows.forEach(function(r){chans.forEach(function(c){
+      var to=c==='email'?r.email:r.phone;if(!to)return;
+      rows.push({kind:S.meta.type,channel:c,student_id:String(r.id),recipient:to,subject:r.subject,message:r.text,status:'queued',created_by:String(currentUser.id)});
+    });});
+    if(!rows.length){showToast('No contacts to send to','error');return;}
+    if(!confirm('Queue '+rows.length+' message(s) for automatic sending?'))return;
+    var ins=await supabaseClient.from('notification_log').insert(rows);
+    if(ins.error){showToast('Could not queue: '+ins.error.message,'error');return;}
+    try{
+      var f=await supabaseClient.functions.invoke('send-notifications');
+      if(f.error)throw f.error;
+      showToast('Sending started. See History for the result.','success');
+    }catch(e){
+      showToast('Queued, but the server sender is not set up yet. Use the WhatsApp/SMS/email buttons instead, or follow NOTIFICATIONS_SETUP.md.','info');
+    }
+  }
+  async function postFromSend(){
+    if(!S.rows.length)return;
+    var sample=S.rows[0].text.replace(S.rows[0].name,'your child');
+    var title={absent:'Absence notice',results:'Results are ready',fees:'Fees reminder',notice:'School notice'}[S.meta.type];
+    var cls=S.meta.classIds.length===1?S.meta.classIds[0]:null;
+    var generic=$('ntfMsg').value.replace(/\{parent\}/g,'Parent/Guardian').replace(/\{student\}/g,'your child').replace(/\{(\w+)\}/g,function(m,k){return {class:'',day:'',when:'',term:'',session:'',amount:'',due:''}[k]!==undefined?'':m;});
+    if(S.meta.type==='absent'){showToast('Absence alerts are private to each family, so they are not posted on the notice board.','info');return;}
+    await postBoardRow(title,generic.replace(/\s{2,}/g,' ').trim(),'parents',cls,null);
+  }
+
+  /* ---------- parent contacts ---------- */
+  function contactsLoad(){
+    var cv=$('ntfCClass').value;var w=$('ntfContactsWrap');
+    if(!cv){w.innerHTML='<div class="empty-state">No class available</div>';return;}
+    var list=(students||[]).filter(function(s){return sameId(s.class_id,cv);}).sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+    if(!list.length){w.innerHTML='<div class="empty-state">No students in this class</div>';return;}
+    var inp='width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:.84rem';
+    w.innerHTML='<table><thead><tr><th>Student</th><th>Parent / guardian</th><th>WhatsApp / phone</th><th>Email</th></tr></thead><tbody>'
+      +list.map(function(s){return '<tr data-id="'+s.id+'"><td>'+esc(s.name)+'</td>'
+        +'<td><input style="'+inp+'" data-f="parent_name" value="'+esc(s.parent_name||'')+'"></td>'
+        +'<td><input style="'+inp+'" data-f="parent_phone" inputmode="tel" value="'+esc(s.parent_phone||'')+'"></td>'
+        +'<td><input style="'+inp+'" data-f="parent_email" inputmode="email" value="'+esc(s.parent_email||'')+'"></td></tr>';}).join('')
+      +'</tbody></table><div style="margin-top:12px"><button class="btn btn-primary" onclick="ntfContactsSave()"><i class="fas fa-save"></i> Save contacts</button></div>';
+  }
+  async function contactsSave(){
+    var trs=[].slice.call(document.querySelectorAll('#ntfContactsWrap tbody tr')),changes=[];
+    trs.forEach(function(tr){
+      var id=tr.getAttribute('data-id'),s=(students||[]).find(function(x){return sameId(x.id,id);});if(!s)return;
+      var v={};tr.querySelectorAll('input').forEach(function(i){v[i.getAttribute('data-f')]=i.value.trim();});
+      if((s.parent_name||'')!==v.parent_name||(s.parent_phone||'')!==v.parent_phone||(s.parent_email||'')!==v.parent_email)changes.push({s:s,v:v});
+    });
+    if(!changes.length){showToast('Nothing changed','info');return;}
+    var bad=0,errMsg='';
+    var tasks=changes.map(function(c){return async function(){
+      var r=await supabaseClient.from('students').update(c.v).eq('id',c.s.id);
+      if(r.error){bad++;errMsg=r.error.message;}else Object.assign(c.s,c.v);
+    };});
+    await runPool(tasks,6);
+    if(bad)showToast((bad)+' could not be saved: '+errMsg+(/column|schema/i.test(errMsg)?' - run notifications_setup.sql first.':''),'error');
+    else showToast('Saved '+changes.length+' contact'+(changes.length===1?'':'s'),'success');
+  }
+
+  /* ---------- notice board ---------- */
+  async function postBoardRow(title,body,aud,classId,exp){
+    if(!body){showToast('Write the notice first','error');return false;}
+    var row={title:title||'Notice',body:body,audience:aud,class_id:classId||null,created_by:String(currentUser.id),created_by_name:currentUser.name||'',expires_at:exp||null};
+    var r=await supabaseClient.from('announcements').insert(row);
+    if(r.error){showToast('Could not post: '+r.error.message+(/relation|does not exist/i.test(r.error.message)?' - run notifications_setup.sql first.':''),'error');return false;}
+    showToast('Posted on the notice board','success');return true;
+  }
+  async function postBoard(){
+    var cls=$('ntfBClass').value||null;
+    if(isTch()&&!cls){showToast('Choose your class','error');return;}
+    var ok=await postBoardRow($('ntfBTitle').value.trim(),$('ntfBBody').value.trim(),isTch()?'parents':$('ntfBAud').value,cls,$('ntfBExp').value);
+    if(ok){$('ntfBTitle').value='';$('ntfBBody').value='';boardLoad();}
+  }
+  async function boardLoad(){
+    var w=$('ntfBoardList');
+    var r=await supabaseClient.from('announcements').select('*').order('created_at',{ascending:false}).limit(50);
+    if(r.error){w.innerHTML='<div class="empty-state">'+esc(r.error.message)+'</div>';return;}
+    var mine=myClasses().map(function(c){return String(c.id);});
+    var rows=(r.data||[]).filter(function(a){return isAdm()||String(a.created_by)===String(currentUser.id);});
+    if(!rows.length){w.innerHTML='<div class="empty-state">No notices yet</div>';return;}
+    w.innerHTML=rows.map(function(a){
+      var cn=a.class_id?((classes||[]).find(function(c){return sameId(c.id,a.class_id);})||{}).name:'All classes';
+      return '<div style="border:1px solid #e5e5e5;border-radius:10px;padding:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(a.title||'Notice')+'</b><button class="btn btn-danger btn-sm" onclick="ntfDeleteNotice(\''+a.id+'\')"><i class="fas fa-trash"></i></button></div>'
+        +'<div style="font-size:.78rem;color:#888;margin:2px 0 6px">'+esc(cn||'')+' • '+esc(a.audience)+' • '+new Date(a.created_at).toLocaleDateString()+(a.expires_at?' • hides '+esc(a.expires_at):'')+'</div><div style="white-space:pre-wrap;font-size:.88rem">'+esc(a.body)+'</div></div>';
+    }).join('');
+  }
+  async function deleteNotice(id){
+    if(!confirm('Delete this notice?'))return;
+    var r=await supabaseClient.from('announcements').delete().eq('id',id);
+    if(r.error)showToast(r.error.message,'error');else{showToast('Deleted');boardLoad();}
+  }
+
+  /* ---------- history ---------- */
+  async function logLoad(){
+    var w=$('ntfLogWrap');
+    var q=supabaseClient.from('notification_log').select('*').order('created_at',{ascending:false}).limit(100);
+    var r=await q;
+    if(r.error){w.innerHTML='<div class="empty-state">'+esc(r.error.message)+'</div>';return;}
+    var rows=(r.data||[]).filter(function(x){return isAdm()||String(x.created_by)===String(currentUser.id);});
+    if(!rows.length){w.innerHTML='<div class="empty-state">Nothing sent yet</div>';return;}
+    var st=function(s){var c={sent:'#27ae60',opened:'#2980b9',queued:'#e67e22',failed:'#c0392b'}[s]||'#555';return '<span style="color:'+c+';font-weight:600">'+esc(s)+'</span>';};
+    w.innerHTML='<table><thead><tr><th>When</th><th>Type</th><th>Channel</th><th>Student</th><th>To</th><th>Status</th></tr></thead><tbody>'+rows.map(function(x){
+      var s=(students||[]).find(function(y){return sameId(y.id,x.student_id);});
+      return '<tr><td>'+new Date(x.created_at).toLocaleString()+'</td><td>'+esc(x.kind)+'</td><td>'+esc(x.channel)+'</td><td>'+esc(s?s.name:x.student_id)+'</td><td>'+esc(x.recipient||'')+'</td><td>'+st(x.status)+(x.error?'<br><small style="color:#c0392b">'+esc(x.error)+'</small>':'')+'</td></tr>';
+    }).join('')+'</tbody></table>';
+  }
+
+  /* ---------- notice board on dashboards ---------- */
+  async function showNotices(){
+    var u=currentUser;if(!u)return;
+    var host=u.role==='student'?$('studentDashboard'):u.role==='teacher'?$('teacherDashboard'):u.role==='admin'?$('adminDashboard'):null;
+    if(!host)return;
+    var box=$('ngisNoticeBoard');
+    if(!box){box=document.createElement('div');box.id='ngisNoticeBoard';host.insertBefore(box,host.firstChild);}
+    var r=await supabaseClient.from('announcements').select('*').order('created_at',{ascending:false}).limit(30);
+    if(r.error||!r.data){box.innerHTML='';return;}
+    var today=new Date().toISOString().slice(0,10);
+    var rows=r.data.filter(function(a){
+      if(a.expires_at&&String(a.expires_at)<today)return false;
+      if(u.role==='student')return (a.audience==='parents'||a.audience==='all')&&(!a.class_id||sameId(a.class_id,u.class_id));
+      return a.audience==='staff'||a.audience==='all';
+    }).slice(0,4);
+    if(!rows.length){box.innerHTML='';return;}
+    box.innerHTML='<div style="background:#fffbea;border:1px solid #f3dd8a;border-left:5px solid #e0a800;border-radius:12px;padding:14px 16px;margin-bottom:18px">'
+      +'<div style="font-weight:700;color:#8a6d00;margin-bottom:8px"><i class="fas fa-bullhorn"></i> School notices</div>'
+      +rows.map(function(a){return '<div style="margin-bottom:10px"><b>'+esc(a.title||'Notice')+'</b> <span style="font-size:.74rem;color:#999">'+new Date(a.created_at).toLocaleDateString()+'</span><div style="white-space:pre-wrap;font-size:.88rem;color:#444">'+esc(a.body)+'</div></div>';}).join('')+'</div>';
+  }
+
+  /* ---------- after results are published ---------- */
+  window.ngisAfterPublish=function(ids,termId,sessionId){
+    if(!isAdm())return;
+    if(!confirm('Results published.\n\nTell parents now? This opens Parent Notifications with the message ready.'))return;
+    window.showSection('notifyCenter',null);
+    setTimeout(function(){
+      $('ntfType').value='results';typeChange();
+      if(ids&&ids.length===1)$('ntfClass').value=String(ids[0]);else $('ntfClass').value='__all';
+      if(termId)$('ntfTerm').value=termId;if(sessionId)$('ntfSession').value=sessionId;
+      prepare();
+    },300);
+  };
+
+  window.ntfTab=tab;window.ntfTypeChange=typeChange;window.ntfPrepare=prepare;window.ntfMark=mark;window.ntfNext=next;window.ntfQueue=queue;
+  window.ntfPostFromSend=postFromSend;window.ntfContactsLoad=contactsLoad;window.ntfContactsSave=contactsSave;window.ntfPostBoard=postBoard;window.ntfDeleteNotice=deleteNotice;
+
+  document.addEventListener('DOMContentLoaded',function(){
+    var o=window.showSection;
+    if(typeof o==='function'){
+      window.showSection=function(id,navEl){
+        if(id==='notifyCenter'&&currentUser&&!(isAdm()||(isTch()&&ngisHasDesignatedClass()))){showToast('Parent notifications are for administrators, management and class teachers.','error');return;}
+        var r=o.apply(this,arguments);
+        if(id==='notifyCenter'){var t=$('pageTitle');if(t)t.innerHTML='<i class="fas fa-bell"></i> Parent Notifications';init();}
+        return r;
+      };
+    }
+    var sd=window.setupDashboard;
+    if(typeof sd==='function'){
+      window.setupDashboard=async function(){var r=await sd.apply(this,arguments);try{setTimeout(showNotices,500);}catch(e){}return r;};
     }
   });
 })();
