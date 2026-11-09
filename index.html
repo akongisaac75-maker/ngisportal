@@ -14012,7 +14012,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
 
     RC.busy=true;RC.cancel=false;RC.rows=[];
     var ov=overlay(),msg=function(t){var e=$('rcOvMsg');if(e)e.textContent=t;},bar=function(p){var e=$('rcOvBar');if(e)e.style.width=Math.min(100,Math.round(p))+'%';};
-    var noContact=0,noCards=0,failed=0,diag={students:0,withContact:0};
+    var noContact=0,noCards=0,failed=0,diag={students:0,withContact:0},noContactNames=[],failedNames=[];
     try{
       var jobs=[];
       for(var ci=0;ci<cls.length;ci++){
@@ -14022,6 +14022,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
         if(!list.length)continue;
         var withContact=list.filter(function(s){return (phoneIntl(s.parent_phone)&&(useWa||useSms))||((s.parent_email||'').trim()&&useEm);});
         noContact+=list.length-withContact.length;
+        list.forEach(function(s){if(withContact.indexOf(s)<0)noContactNames.push(s.name);});
         diag.withContact+=withContact.length;
         if(!withContact.length)continue;
         var ids=withContact.map(function(s){return s.id;});
@@ -14073,11 +14074,11 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
         }catch(e){
           if(e&&e.message==='__cancel')throw e;
           if(e&&/^__setup:/.test(e.message||'')){throw new Error('The report-card storage is not set up yet. Run v10_setup.sql in Supabase > SQL Editor, then try again. ('+e.message.slice(8)+')');}
-          failed++;console.warn('Skipped a report card:',e);
+          failed++;failedNames.push(j.s.name+' ('+String((e&&e.message)||e).slice(0,80)+')');console.warn('Skipped a report card:',e);
         }
       }
       bar(100);
-      rcRender({noContact:noContact,noCards:noCards,failed:failed,channels:{wa:useWa,sms:useSms,em:useEm}});
+      rcRender({noContactNames:noContactNames,failedNames:failedNames,noContact:noContact,noCards:noCards,failed:failed,channels:{wa:useWa,sms:useSms,em:useEm}});
       showToast(RC.rows.length+' report card'+(RC.rows.length===1?'':'s')+' ready','success');
     }catch(e){
       if(e&&e.message==='__cancel')showToast('Cancelled','info');
@@ -14088,10 +14089,10 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     RC.info=info||RC.info||{};var ch=RC.info.channels||{wa:true,sms:true,em:true};
     var rows=RC.rows;
     var h='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><b>'+rows.length+' famil'+(rows.length===1?'y':'ies')+' ready</b>'
-      +(RC.info.noContact?'<span style="color:#c0392b;font-size:.82rem">'+RC.info.noContact+' skipped: no phone/email (ask the class teacher to fill Parent Phone Numbers)</span>':'')
+      +(RC.info.noContact?'<span style="color:#c0392b;font-size:.82rem">'+RC.info.noContact+' skipped, no phone/email: '+esc((RC.info.noContactNames||[]).join(', '))+' (ask the class teacher to fill Parent Phone Numbers)</span>':'')
       +(RC.info.noCards?'<span style="color:#e67e22;font-size:.82rem">'+RC.info.noCards+' skipped: no report card data yet</span>':'')
-      +(RC.info.failed?'<span style="color:#c0392b;font-size:.82rem">'+RC.info.failed+' could not be built</span>':'')+'</div>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+(ch.wa?'<button class="btn btn-success" onclick="rcNext()"><i class="fab fa-whatsapp"></i> Open next WhatsApp</button>':'')+'<button class="btn btn-secondary btn-sm" onclick="rcQueue()"><i class="fas fa-server"></i> Send by server instead (needs provider)</button></div>'
+      +(RC.info.failed?'<span style="color:#c0392b;font-size:.82rem">'+RC.info.failed+' could not be built: '+esc((RC.info.failedNames||[]).join('; '))+'</span>':'')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+(ch.wa?'<button id="rcNextBtn" class="btn btn-success" onclick="rcNext()"><i class="fab fa-whatsapp"></i> '+rcNextLabel()+'</button>':'')+'<button class="btn btn-secondary btn-sm" onclick="rcQueue()"><i class="fas fa-server"></i> Send by server instead (needs provider)</button></div>'
       +'<div class="table-container"><table><thead><tr><th>Student</th><th>Parent</th><th>Send (opens WhatsApp with the message ready)</th><th>Done</th></tr></thead><tbody>'
       +rows.map(function(r,i){
         var enc=encodeURIComponent(r.text),b=[];
@@ -14102,6 +14103,11 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
       }).join('')+'</tbody></table></div>'
       +'<p style="font-size:.76rem;color:#888;margin-top:10px">WhatsApp opens on <b>your phone or computer</b> with the school message and the PDF link ready; you tap Send, the same as Send alert. WhatsApp cannot attach a file from a link, so the parent taps the link to open the PDF. The paperclip button (phones) shares the PDF file itself: choose WhatsApp, then the parent. The eye button previews the report card.</p>';
     $('rcResult').innerHTML=h;
+  }
+  function rcNextLabel(){
+    var n=RC.rows.filter(function(r){return r.phone;}).length,d=RC.rows.filter(function(r){return r.phone&&Object.keys(r.sent).length;}).length;
+    var nx=RC.rows.find(function(r){return r.phone&&!Object.keys(r.sent).length;});
+    return nx?('Open next WhatsApp ('+d+' of '+n+' done) - next: '+nx.name):('All '+n+' opened');
   }
   function rcNext(){
     for(var i=0;i<RC.rows.length;i++){
@@ -14120,6 +14126,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
   }
   function rcMark(i,ch){
     var r=RC.rows[i];if(!r)return;r.sent[ch]=1;
+    var nb=$('rcNextBtn');if(nb)nb.innerHTML='<i class="fab fa-whatsapp"></i> '+rcNextLabel();
     var c=$('rcDone'+i);if(c)c.innerHTML='<span style="color:#27ae60">&#10003; '+Object.keys(r.sent).join(', ')+'</span>';
     supabaseClient.from('notification_log').insert([{kind:'report',channel:ch,student_id:String(r.id),recipient:ch==='email'?r.email:r.phone,subject:r.subject,message:r.text,attachment_url:r.url,status:'opened',created_by:String(me().id)}]).then(function(x){if(x&&x.error)console.warn(x.error.message);});
   }
