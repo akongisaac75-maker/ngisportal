@@ -13962,9 +13962,28 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     document.body.appendChild(o);return o;
   }
   function phoneIntl(p){
-    var d=String(p||'').replace(/[^\d+]/g,'');if(!d)return '';
-    if(d.charAt(0)==='+')d=d.slice(1);else if(d.indexOf('00')===0)d=d.slice(2);else if(d.charAt(0)==='0')d='234'+d.slice(1);else if(d.length===10)d='234'+d;
-    d=d.replace(/\D/g,'');return d.length>=11?d:'';
+    var raw=String(p||'').split(/[\/,;]|\bor\b/i)[0];            // if two numbers were typed, use the first
+    var d=raw.replace(/[^\d+]/g,'');if(!d)return '';
+    if(d.charAt(0)==='+')d=d.slice(1);else if(d.indexOf('00')===0)d=d.slice(2);
+    d=d.replace(/\D/g,'');
+    if(d.indexOf('2340')===0&&d.length===14)d='234'+d.slice(4);     // +234 0803... typed with the extra 0
+    else if(d.charAt(0)==='0'&&d.length===11)d='234'+d.slice(1);     // 0803 123 4567
+    else if(d.length===10&&/^[789]/.test(d))d='234'+d;               // 803 123 4567
+    return d.length>=11&&d.length<=15?d:'';
+  }
+  // Read the class list fresh from the database (the cached list can be stale or cut at 1000 rows)
+  async function rcClassStudents(classId){
+    try{
+      var out=[],from=0;
+      while(true){
+        var r=await supabaseClient.from('students').select('*').eq('class_id',classId).order('name').range(from,from+999);
+        if(r.error)throw r.error;
+        out=out.concat(r.data||[]);if(!r.data||r.data.length<1000)break;from+=1000;
+      }
+      out.forEach(function(f){var c=(students||[]).find(function(x){return sameId(x.id,f.id);});if(c)Object.assign(c,f);});
+      return out;
+    }catch(e){console.warn('Fresh student read failed, using cached list:',e);
+      return (students||[]).filter(function(x){return sameId(x.class_id,classId);});}
   }
   var safeFile=function(s){return String(s||'x').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,60)||'x';};
   function token(){var a=crypto.getRandomValues(new Uint8Array(16)),h='';for(var i=0;i<a.length;i++)h+=('0'+a[i].toString(16)).slice(-2);return h;}
@@ -13986,25 +14005,29 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     var cls=cv==='__all'?(classes||[]).slice():(classes||[]).filter(function(c){return sameId(c.id,cv);});
     var term=(terms||[]).find(function(t){return sameId(t.id,termId);}),session=(sessions||[]).find(function(s){return sameId(s.id,sessionId);});
     var termWeeks=(weeks||[]).filter(function(w){return sameId(w.term_id,termId)&&(!weekMode||selWeeks.indexOf(String(w.id))>-1);});
+    var weekAlias={};   // scores saved under an older same-named week row (no term) still count
+    termWeeks.forEach(function(w){(weeks||[]).forEach(function(o){if(String(o.id)!==String(w.id)&&!o.term_id&&String(o.name||'').trim().toLowerCase()===String(w.name||'').trim().toLowerCase())weekAlias[String(o.id)]=String(w.id);});});
     var period=weekMode?termWeeks.map(function(w){return w.name;}).join(', ')+' ('+(term?term.name:'')+')':(term?term.name:'')+' '+(session?session.name:'');
     period=period.trim();
 
     RC.busy=true;RC.cancel=false;RC.rows=[];
     var ov=overlay(),msg=function(t){var e=$('rcOvMsg');if(e)e.textContent=t;},bar=function(p){var e=$('rcOvBar');if(e)e.style.width=Math.min(100,Math.round(p))+'%';};
-    var noContact=0,noCards=0,failed=0;
+    var noContact=0,noCards=0,failed=0,diag={students:0,withContact:0};
     try{
       var jobs=[];
       for(var ci=0;ci<cls.length;ci++){
         var c=cls[ci];
-        var list=(students||[]).filter(function(s){return sameId(s.class_id,c.id);}).sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+        var list=(await rcClassStudents(c.id)).sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+        diag.students+=list.length;
         if(!list.length)continue;
         var withContact=list.filter(function(s){return (phoneIntl(s.parent_phone)&&(useWa||useSms))||((s.parent_email||'').trim()&&useEm);});
         noContact+=list.length-withContact.length;
+        diag.withContact+=withContact.length;
         if(!withContact.length)continue;
         var ids=withContact.map(function(s){return s.id;});
         msg('Checking '+c.name+'…');
         var hasW={},hasM={},termly=null;
-        if(wantW&&termWeeks.length){var wk=await pagedIn('assessments','student_id,week_id','student_id',ids,weekMode?function(q){return q.in('week_id',selWeeks);}:undefined);wk.forEach(function(r){hasW[String(r.student_id)+'|'+String(r.week_id)]=1;});}
+        if(wantW&&termWeeks.length){var wkIds=selWeeks.concat(Object.keys(weekAlias));var wk=await pagedIn('assessments','student_id,week_id','student_id',ids,weekMode?function(q){return q.in('week_id',wkIds);}:undefined);wk.forEach(function(r){var wid=weekAlias[String(r.week_id)]||String(r.week_id);hasW[String(r.student_id)+'|'+wid]=1;});}
         if(wantM){var mr=await pagedIn('midterm_assessments','student_id','student_id',ids,function(q){return q.eq('term_id',termId).eq('session_id',sessionId);});mr.forEach(function(r){hasM[String(r.student_id)]=1;});}
         if(wantT){try{termly=await ngisTermlyCards(c.id,termId,sessionId);}catch(e){console.warn('Termly data:',e);}}
         withContact.forEach(function(s){
@@ -14016,7 +14039,13 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
         });
         if(RC.cancel)throw new Error('__cancel');
       }
-      if(!jobs.length){showToast('No report cards with a parent contact were found for this selection','error');return;}
+      if(!jobs.length){
+        var why;
+        if(!diag.students)why='No students were found in the selected class. Check the class and session.';
+        else if(!diag.withContact)why='None of the '+diag.students+' student(s) has a usable parent '+(useEm&&!useWa&&!useSms?'email':'phone number')+'. Add them in Parent Phone Numbers (e.g. 08031234567), then try again.';
+        else why='The '+diag.withContact+' student(s) with a parent contact have no '+(weekMode?'scores saved for the ticked week(s)':'report data for this term')+'. Ask teachers to enter the scores for that week, or tick a week that has scores.';
+        showToast(why,'error');return;
+      }
       if(jobs.length>300&&!confirm('This will build '+jobs.length+' report-card PDFs. It can take a long time. Tip: do one class at a time. Continue?'))return;
       for(var i=0;i<jobs.length;i++){
         if(RC.cancel)throw new Error('__cancel');

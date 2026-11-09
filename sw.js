@@ -1,8 +1,8 @@
-// NGIS Live App service worker v4 - lets the app open without internet.
+// NGIS Live App service worker v5 - lets the app open without internet.
 // Pages: network first (always the newest version when online), saved copy when offline.
 // Libraries / fonts / icons: saved after first use, then served instantly.
 // Supabase data requests are NOT handled here (the app's offline layer manages those).
-var CACHE='ngis-shell-v4';
+var CACHE='ngis-shell-v5';
 var CORE=['./','index.html','manifest.json','icon-192.png','icon-512.png'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return Promise.all(CORE.map(function(u){return c.add(u).catch(function(){});}));}).then(function(){return self.skipWaiting();}));
