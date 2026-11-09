@@ -1068,6 +1068,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('viewReports',this)"><i class="fas fa-file-alt"></i> View Reports</div>
 <div class="nav-item ngis-class-reports" style="display:none" onclick="showSection('reportCardSection',this)"><i class="fas fa-id-card"></i> Weekly Report Cards</div>
 <div class="nav-item ngis-class-reports" style="display:none" onclick="showSection('reportZipSection',this)"><i class="fas fa-file-archive"></i> Download Report Cards (ZIP)</div>
+<div class="nav-item ngis-class-reports" style="display:none" onclick="showSection('parentPhones',this)"><i class="fas fa-address-book"></i> Parent Phone Numbers</div>
 <div class="nav-item ngis-class-reports" style="display:none" onclick="showSection('notifyCenter',this)"><i class="fas fa-bell"></i> Parent Notifications</div>
 <div class="nav-item" onclick="showSection('teacherCBTSubmit',this)"><i class="fas fa-upload"></i> Submit CBT Questions</div>
 <div class="nav-item" onclick="showSection('teacherAssignments',this)"><i class="fas fa-tasks"></i> Assignments</div>
@@ -1144,6 +1145,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" onclick="showSection('caRecord',this)"><i class="fas fa-clipboard-list"></i> General C.A Record</div>
 <div class="nav-item" onclick="showSection('tsReports',this)"><i class="fas fa-file-pdf"></i> Termly Report Cards</div>
 <div class="nav-item" onclick="showSection('reportZipSection',this)"><i class="fas fa-file-archive"></i> Download All Report Cards (ZIP)</div>
+<div class="nav-item" onclick="showSection('parentPhones',this)"><i class="fas fa-address-book"></i> Parent Phone Numbers</div>
 <div class="nav-item" onclick="showSection('notifyCenter',this)"><i class="fas fa-bell"></i> Parent Notifications</div>
 <div class="nav-item" onclick="showSection('tsBroadsheet',this)"><i class="fas fa-th"></i> Termly Broadsheet</div>
 <div class="nav-item" onclick="showSection('tsAnalysis',this)"><i class="fas fa-chart-pie"></i> Termly Analysis</div>
@@ -1558,6 +1560,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <button class="btn btn-primary btn-sm" id="ntfTabBtnSend" onclick="ntfTab('Send')"><i class="fas fa-paper-plane"></i> Send alert</button>
 <button class="btn btn-secondary btn-sm" id="ntfTabBtnContacts" onclick="ntfTab('Contacts')"><i class="fas fa-address-book"></i> Parent contacts</button>
 <button class="btn btn-secondary btn-sm" id="ntfTabBtnBoard" onclick="ntfTab('Board')"><i class="fas fa-thumbtack"></i> Notice board</button>
+<button class="btn btn-secondary btn-sm" id="ntfTabBtnReports" onclick="ntfTab('Reports')"><i class="fas fa-id-card"></i> Send report cards</button>
 <button class="btn btn-secondary btn-sm" id="ntfTabBtnLog" onclick="ntfTab('Log')"><i class="fas fa-history"></i> History</button>
 </div>
 <div id="ntfSetupWarn" style="display:none;background:#fff6e5;border:1px solid #f0c36d;border-radius:10px;padding:12px;margin-bottom:14px;font-size:.84rem"></div>
@@ -1600,7 +1603,38 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div id="ntfBoardList" style="margin-top:16px"></div>
 </div>
 
+<div id="ntfTabReports" style="display:none">
+<p style="font-size:.84rem;color:#666;margin-bottom:10px">One place to send report cards to parents. The app builds each child's report card PDF and prepares one WhatsApp message per parent (short, with the school name and the PDF link), using the phone numbers class teachers entered. You then send them exactly like Send alert: tap WhatsApp next to each parent, or use Open next WhatsApp.</p>
+<div class="form-grid">
+<div class="form-group"><label>Class</label><select id="rcClass"></select></div>
+<div class="form-group"><label>Session</label><select id="rcSession" onchange="rcTerms()"></select></div>
+<div class="form-group"><label>Term</label><select id="rcTerm" onchange="rcWeeks()"></select></div>
+<div class="form-group"><label>Weeks</label><select id="rcScope" onchange="rcScopeChange()"><option value="term">Whole term (every week + mid-term + termly)</option><option value="week">Choose weeks</option></select></div>
+</div>
+<div id="rcWeekWrap" style="display:none;margin:0 0 10px"><div style="font-size:.84rem;margin-bottom:6px"><b>Tick the weeks to send</b> <a href="#" onclick="rcAllWeeks(true);return false" style="margin-left:8px">all</a> <a href="#" onclick="rcAllWeeks(false);return false" style="margin-left:8px">none</a></div><div id="rcWeekBoxes" style="display:flex;gap:6px 16px;flex-wrap:wrap;font-size:.88rem"></div></div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 10px;font-size:.88rem">
+<label><input type="checkbox" id="rcWeekly" checked> Weekly report cards</label>
+<label id="rcMidWrap"><input type="checkbox" id="rcMid" checked> Mid-term report cards</label>
+<label id="rcTermlyWrap"><input type="checkbox" id="rcTermly" checked> Termly report cards</label>
+</div>
+<div class="form-group"><label>Message to parents ({parent} {student} {class} {period} {school} {link} are filled in for each family)</label><textarea id="rcMsg" rows="4" style="width:100%"></textarea></div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 12px;font-size:.88rem">
+<label><input type="checkbox" id="rcChWa" checked> WhatsApp (PDF)</label><label><input type="checkbox" id="rcChSms"> SMS (link)</label><label><input type="checkbox" id="rcChEmail"> Email</label>
+</div>
+<button class="btn btn-success" onclick="rcRun()"><i class="fab fa-whatsapp"></i> Prepare report cards for all parents</button>
+<div id="rcResult" style="margin-top:16px"></div>
+</div>
+
 <div id="ntfTabLog" style="display:none"><div id="ntfLogWrap" class="table-container"></div></div>
+</div></div>
+
+<div id="parentPhones" class="section hidden"><div class="card">
+<div class="card-header"><h3><i class="fas fa-address-book"></i> Parent Phone Numbers</h3></div>
+<p style="font-size:.86rem;color:#555;margin-bottom:12px">Type each parent's WhatsApp / phone number next to the child's name, then press <b>Submit</b>. The numbers go straight into Parent Notifications. You can come back and change any number at any time.</p>
+<div class="form-grid" id="ppClassRow"><div class="form-group"><label>Class</label><select id="ppClass" onchange="ppLoad()"></select></div></div>
+<div id="ppProgress"></div>
+<div id="ppWrap" class="table-container"></div>
+<div id="ppOverview" style="margin-top:20px"></div>
 </div></div>
 
 <div id="reportZipSection" class="section hidden"><div class="card">
@@ -1736,6 +1770,10 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 
     <div class="form-grid">
       <div class="form-group">
+        <label>CBT category</label>
+        <select id="teacherCbtType" onchange="cbtTypeUi('teacher')"><option value="weekly">CBT Weekly Assessment</option><option value="exam">Termly Examination</option><option value="jamb">JAMB Past Practices</option></select>
+      </div>
+      <div class="form-group">
         <label>Quiz Title</label>
         <input id="teacherCbtTitle" placeholder="e.g. Week 3 Mathematics CBT">
       </div>
@@ -1750,6 +1788,10 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
       <div class="form-group">
         <label>Week</label>
         <select id="teacherCbtWeek"><option value="">-- Select Week --</option></select>
+      </div>
+      <div class="form-group" id="teacherCbtTermWrap" style="display:none">
+        <label>Term &amp; session</label>
+        <div style="display:flex;gap:6px"><select id="teacherCbtTerm"></select><select id="teacherCbtSession"></select></div>
       </div>
       <div class="form-group">
         <label>Duration (minutes)</label>
@@ -2379,10 +2421,12 @@ Only the class teacher assigned to this class can save the comment.
 <div class="card">
 <div class="card-header"><h3><i class="fas fa-laptop-code"></i> CBT / Online Quiz Management</h3><span class="cbt-badge">Scores automatically enter Weekly Test /10</span></div>
 <div class="form-grid">
+<div class="form-group"><label>CBT category</label><select id="cbtType" onchange="cbtTypeUi('admin')"><option value="weekly">CBT Weekly Assessment</option><option value="exam">Termly Examination</option><option value="jamb">JAMB Past Practices</option></select></div>
 <div class="form-group"><label>Quiz Title</label><input id="cbtTitle" placeholder="e.g. Week 3 Mathematics Quiz"></div>
 <div class="form-group"><label>Class</label><select id="cbtClass"><option value="">-- Select Class --</option></select></div>
 <div class="form-group"><label>Subject</label><select id="cbtSubject"><option value="">-- Select Subject --</option></select></div>
 <div class="form-group"><label>Week</label><select id="cbtWeek"><option value="">-- Select Week --</option></select></div>
+<div class="form-group" id="cbtTermWrap" style="display:none"><label>Term &amp; session</label><div style="display:flex;gap:6px"><select id="cbtTerm"></select><select id="cbtSession"></select></div></div>
 <div class="form-group"><label>Duration (minutes)</label><input type="number" id="cbtDuration" min="1" max="240" value="30"></div>
 <div class="form-group"><label>Questions</label><input type="number" id="cbtQuestionCount" value="0" readonly></div>
 </div>
@@ -5873,7 +5917,8 @@ async function submitTeacherCBT(){
   const title=document.getElementById('teacherCbtTitle').value.trim();
   const class_id=document.getElementById('teacherCbtClass').value;
   const subject_id=document.getElementById('teacherCbtSubject').value;
-  const week_id=document.getElementById('teacherCbtWeek').value;
+  const qx=cbtTypeFields('teacher'); if(!qx) return;
+  const week_id=qx.week_id;
   const duration=Math.max(1,Math.min(240,parseInt(document.getElementById('teacherCbtDuration').value)||30));
 
   if(!title||!class_id||!subject_id||!week_id){
@@ -5886,7 +5931,7 @@ async function submitTeacherCBT(){
   const {data:q,error}=await supabaseClient.from('quizzes').insert([{
     title,class_id,subject_id,week_id,teacher_id:currentUser.id,
     duration_minutes:duration,max_score:10,pass_score:5,
-    status:'pending',shuffle_questions:true,shuffle_options:true,attempts_allowed:1
+    ...qx.extra,status:'pending',shuffle_questions:true,shuffle_options:true,attempts_allowed:1
   }]).select().single();
 
   if(error){
@@ -5941,7 +5986,7 @@ async function loadTeacherCBTSubmissions(){
       '<td><strong>'+cbtEsc(q.title)+'</strong></td>'+
       '<td>'+cbtEsc(q.classes?.name||'-')+'</td>'+
       '<td>'+cbtEsc(q.subjects?.name||'-')+'</td>'+
-      '<td>'+cbtEsc(q.weeks?.name||'-')+'</td>'+
+      '<td>'+cbtEsc(window.cbtTypeLabel(q))+'</td>'+
       '<td>'+((q.quiz_questions||[]).length)+'</td>'+
       '<td><span class="cbt-badge">'+cbtEsc(q.status||'pending')+'</span></td>'+
       '<td>'+cbtEsc(submitted)+'</td>'+
@@ -6010,11 +6055,12 @@ async function loadCBTQuizzes(){
 }
 async function createCBTQuiz(){
   if(currentUser?.role!=='admin'){showToast('Only administrators can create CBT quizzes','error');return;}
-  const title=document.getElementById('cbtTitle').value.trim(),class_id=document.getElementById('cbtClass').value,subject_id=document.getElementById('cbtSubject').value,week_id=document.getElementById('cbtWeek').value;
+  const title=document.getElementById('cbtTitle').value.trim(),class_id=document.getElementById('cbtClass').value,subject_id=document.getElementById('cbtSubject').value,qx=cbtTypeFields('admin'),week_id=qx?qx.week_id:'';
   const duration=Math.max(1,Math.min(240,parseInt(document.getElementById('cbtDuration').value)||30));
-  if(!title||!class_id||!subject_id||!week_id){showToast('Fill quiz title, class, subject and week','error');return;}
+  if(!qx)return;
+  if(!title||!class_id||!subject_id||!week_id){showToast('Fill quiz title, class and subject','error');return;}
   if(!cbtQuestionsBuffer.length){showToast('Upload a valid question file first','error');return;}
-  const {data:q,error}=await supabaseClient.from('quizzes').insert([{title,class_id,subject_id,week_id,teacher_id:currentUser.id,duration_minutes:duration,max_score:10,pass_score:5,status:'published',shuffle_questions:true,shuffle_options:true,attempts_allowed:1}]).select().single();
+  const {data:q,error}=await supabaseClient.from('quizzes').insert([{title,class_id,subject_id,week_id,teacher_id:currentUser.id,duration_minutes:duration,max_score:10,pass_score:5,...qx.extra,status:'published',shuffle_questions:true,shuffle_options:true,attempts_allowed:1}]).select().single();
   if(error){showToast('Could not create quiz: '+error.message,'error');return;}
   const records=cbtQuestionsBuffer.map((x,i)=>({...x,quiz_id:q.id,question_no:i+1,marks:1}));
   const {error:qe}=await supabaseClient.from('quiz_questions').insert(records);
@@ -6035,7 +6081,7 @@ async function loadStudentQuizzes(){
   if(error){box.innerHTML='<div class="empty-state">CBT database tables are not ready. Ask the administrator to run add_cbt_schema.sql.</div>';return;}
   if(!data?.length){box.innerHTML='<div class="empty-state"><i class="fas fa-clipboard-check"></i><h4>No CBT quiz is available</h4><p>Your administrator will publish quizzes for your class.</p></div>';return;}
   const ids=data.map(x=>x.id);const {data:attempts}=await supabaseClient.from('quiz_attempts').select('quiz_id,status,score,percentage').eq('student_id',currentUser.id).in('quiz_id',ids);const amap={};(attempts||[]).forEach(a=>amap[a.quiz_id]=a);
-  box.innerHTML=data.map(q=>{const a=amap[q.id];const done=a?.status==='submitted'||a?.status==='expired';return '<div style="border:1px solid #eee;border-radius:14px;padding:18px;margin-bottom:12px;display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap"><div><h4 style="color:var(--primary);margin-bottom:5px">'+cbtEsc(q.title)+'</h4><p style="color:#777;font-size:.85rem">'+cbtEsc(q.subjects?.name||'Subject')+' • '+cbtEsc(q.weeks?.name||'Week')+' • '+q.quiz_questions.length+' questions • '+q.duration_minutes+' minutes</p></div><div>'+(done?'<span class="cbt-badge">Completed: '+Number(a.score||0).toFixed(1)+'/10</span>':'<button class="btn btn-primary" onclick="startStudentQuiz(\''+q.id+'\')"><i class="fas fa-play"></i> Start Quiz</button>')+'</div></div>';}).join('');
+  box.innerHTML=data.map(q=>{const a=amap[q.id];const done=a?.status==='submitted'||a?.status==='expired';return '<div style="border:1px solid #eee;border-radius:14px;padding:18px;margin-bottom:12px;display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap"><div><h4 style="color:var(--primary);margin-bottom:5px">'+cbtEsc(q.title)+'</h4><p style="color:#777;font-size:.85rem">'+cbtEsc(q.subjects?.name||'Subject')+' • '+cbtEsc(window.cbtTypeLabel(q))+' • '+q.quiz_questions.length+' questions • '+q.duration_minutes+' minutes</p></div><div>'+(done?'<span class="cbt-badge">Completed: '+Number(a.score||0).toFixed(1)+'/10</span>':'<button class="btn btn-primary" onclick="startStudentQuiz(\''+q.id+'\')"><i class="fas fa-play"></i> Start Quiz</button>')+'</div></div>';}).join('');
 }
 async function startStudentQuiz(quizId){
   if(cbtRunner){showToast('A quiz is already in progress','error');return;}
@@ -6045,7 +6091,7 @@ async function startStudentQuiz(quizId){
   if(old){showToast('You have already attempted this quiz','error');return;}
   const qs=quiz.shuffle_questions?shuffleArray(quiz.quiz_questions):quiz.quiz_questions;
   cbtRunner={quiz,questions:qs}; cbtSecondsLeft=quiz.duration_minutes*60;
-  document.getElementById('runnerTitle').textContent=quiz.title;document.getElementById('runnerMeta').textContent=(quiz.subjects?.name||'')+' • '+(quiz.weeks?.name||'')+' • '+qs.length+' questions';
+  document.getElementById('runnerTitle').textContent=quiz.title;document.getElementById('runnerMeta').textContent=(quiz.subjects?.name||'')+' • '+window.cbtTypeLabel(quiz)+' • '+qs.length+' questions';
   const form=document.getElementById('studentQuizForm');form.innerHTML=qs.map((q,i)=>{let opts=[['A',q.option_a],['B',q.option_b],['C',q.option_c],['D',q.option_d]];if(quiz.shuffle_options)opts=shuffleArray(opts);return '<div class="cbt-question"><div style="font-weight:700;line-height:1.6"><span style="color:var(--primary)">Q'+(i+1)+'.</span> '+cbtEsc(q.question_text)+'</div>'+opts.map(o=>'<label class="cbt-option"><input type="radio" name="q_'+q.id+'" value="'+o[0]+'"><span><strong>'+o[0]+'.</strong> '+cbtEsc(o[1])+'</span></label>').join('')+'</div>';}).join('');
   document.getElementById('studentQuizRunner').classList.remove('hidden');document.getElementById('studentQuizResult').classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'});startCBTTimer();
 }
@@ -7546,7 +7592,7 @@ window.tsQuizLoad=async function(){
   if(error){$('tsQuizWrap').innerHTML='<div class="empty-state">'+esc(tsErr(error))+'</div>';return;}
   $('tsQuizWrap').innerHTML='<table><thead><tr><th>Quiz</th><th>Type</th><th>Term</th><th>Session</th><th></th></tr></thead><tbody>'+(data||[]).map(q=>
    '<tr data-qid="'+q.id+'"><td>'+esc(q.title)+'<div style="font-size:.72rem;color:#888">'+esc(q.classes?.name||'')+' • '+esc(q.subjects?.name||'')+' • '+esc(q.weeks?.name||'')+'</div></td>'+
-   '<td><select class="qt"><option value="weekly"'+(q.quiz_type!=='exam'?' selected':'')+'>Weekly</option><option value="exam"'+(q.quiz_type==='exam'?' selected':'')+'>Exam (/40; /70 for Senior)</option></select></td>'+
+   '<td><select class="qt"><option value="weekly"'+(q.quiz_type!=='exam'&&q.quiz_type!=='jamb'?' selected':'')+'>CBT Weekly Assessment</option><option value="exam"'+(q.quiz_type==='exam'?' selected':'')+'>Termly Examination (/40; /70 for Senior)</option><option value="jamb"'+(q.quiz_type==='jamb'?' selected':'')+'>JAMB Past Practices</option></select></td>'+
    '<td><select class="qm">'+opts(terms,'—',termLab).replace('value="'+q.term_id+'"','value="'+q.term_id+'" selected')+'</select></td>'+
    '<td><select class="qs">'+opts(sessions,'—',s=>s.name).replace('value="'+(q.session_id||activeSess())+'"','value="'+(q.session_id||activeSess())+'" selected')+'</select></td>'+
    '<td><button class="btn btn-sm btn-primary" onclick="tsQuizSave(this)">Save</button></td></tr>').join('')+'</tbody></table>';
@@ -7554,7 +7600,7 @@ window.tsQuizLoad=async function(){
 window.tsQuizSave=async function(btn){
   const tr=btn.closest('tr'),type=tr.querySelector('.qt').value,t=tr.querySelector('.qm').value||null,se=tr.querySelector('.qs').value||null;
   if(type==='exam'&&(!t||!se)){showToast('Choose term and session for an Exam CBT','error');return;}
-  const {error}=await supabaseClient.from('quizzes').update({quiz_type:type,term_id:t,session_id:se}).eq('id',tr.dataset.qid);
+  const {error}=await supabaseClient.from('quizzes').update({quiz_type:type,term_id:type==='exam'?t:null,session_id:type==='exam'?se:null}).eq('id',tr.dataset.qid);
   showToast(error?tsErr(error):'Quiz updated',error?'error':'success');
 };
 
@@ -10932,6 +10978,7 @@ function navItems(){
       ['midTermBroadsheet','Mid-Term Broadsheet','fa-table'],
       ['allReports','Weekly Assessment & Analysis','fa-calendar-week'],
       ['reportZipSection','Download Report Cards (ZIP)','fa-file-archive'],
+      ['parentPhones','Parent Phone Numbers','fa-address-book'],
       ['notifyCenter','Parent Notifications','fa-bell'],
       ['tsBroadsheet','Termly Broadsheet','fa-th'],
       ['tsAnalysis','Termly Student Analysis','fa-chart-pie'],
@@ -12895,21 +12942,24 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     }
   }
 
-  async function loginWithFingerprint(){
+  async function loginWithFingerprint(auto){
+    auto=(auto===true);
     var list=load();
-    if(!list.length){showToast('No fingerprint set up on this device yet. Log in with your password first, then enable it.','info');return;}
-    if(!supported()){showToast('Fingerprint login needs a secure (https) connection','error');return;}
+    if(!list.length){if(!auto)showToast('No fingerprint set up on this device yet. Log in with your password first, then enable it.','info');return false;}
+    if(!supported()){if(!auto)showToast('Fingerprint login needs a secure (https) connection','error');return false;}
     try{
       var a=await navigator.credentials.get({publicKey:{
         challenge:rnd(32),rpId:location.hostname,userVerification:'required',timeout:60000,
         allowCredentials:list.map(function(x){return{type:'public-key',id:unb64(x.credId),transports:['internal']};})
       }});
       var id=b64(a.rawId),entry=list.find(function(x){return x.credId===id;});
-      if(!entry){showToast('Fingerprint not recognised','error');return;}
+      if(!entry){showToast('Fingerprint not recognised','error');return false;}
       await finishLogin(entry);
+      return true;
     }catch(e){
-      if(e&&e.name==='NotAllowedError')showToast('Fingerprint cancelled or not recognised','info');
-      else showToast('Fingerprint login failed: '+(e&&e.message||e),'error');
+      if(e&&e.name==='NotAllowedError'){if(!auto)showToast('Fingerprint cancelled or not recognised','info');return false;}
+      if(!auto)showToast('Fingerprint login failed: '+(e&&e.message||e),'error');
+      return false;
     }
   }
 
@@ -13455,13 +13505,14 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
     ntfTab('Send');
   }
   function tab(name){
-    ['Send','Contacts','Board','Log'].forEach(function(n){
+    ['Send','Contacts','Board','Log','Reports'].forEach(function(n){
       $('ntfTab'+n).style.display=n===name?'block':'none';
       $('ntfTabBtn'+n).className='btn btn-sm '+(n===name?'btn-primary':'btn-secondary');
     });
     if(name==='Contacts')contactsLoad();
     if(name==='Board')boardLoad();
     if(name==='Log')logLoad();
+    if(name==='Reports'&&window.rcFill)window.rcFill();
   }
   function typeChange(){
     var t=$('ntfType').value;S.type=t;
@@ -13725,6 +13776,650 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
       window.setupDashboard=async function(){var r=await sd.apply(this,arguments);try{setTimeout(showNotices,500);}catch(e){}return r;};
     }
   });
+})();
+</script>
+
+<script id="ngis-v10-module">
+/* ===== v10: (1) fingerprint auto-detect  (2) Parent phone-number form  (3) Send report cards to parents ===== */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var SCHOOL='Nigeria-Ghana International School';
+  var BUCKET='report-cards';
+  var esc=function(v){return escapeHtml(v);};
+  var me=function(){try{return window.currentUser||currentUser||null;}catch(e){return null;}};
+  var isAdm=function(){var u=me();return !!(u&&(u.role==='admin'||u.role==='management'));};
+  var isTch=function(){var u=me();return !!(u&&u.role==='teacher');};
+  var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
+
+  /* ================= 1. FINGERPRINT AUTO-DETECT ================= */
+  var fpTried=false,fpArmed=false;
+  function fpEnrolled(){try{return (JSON.parse(localStorage.getItem('ngis_fp_v1')||'[]')||[]).length>0;}catch(e){return false;}}
+  function onLanding(){
+    var l=$('landingPage');if(!l||me())return false;
+    return getComputedStyle(l).display!=='none';
+  }
+  async function fpAuto(viaGesture){
+    if(fpTried||!onLanding()||!fpEnrolled()||typeof window.ngisFpLogin!=='function')return;
+    fpTried=true;
+    var t0=Date.now(),ok=false;
+    try{ok=await window.ngisFpLogin(true);}catch(e){}
+    if(ok||me())return;
+    // Failed very fast and with no tap yet: the browser wants a touch first (e.g. iPhone Safari). Retry on the first tap.
+    if(!viaGesture&&Date.now()-t0<700&&!fpArmed){
+      fpArmed=true;fpTried=false;
+      var once=function(){document.removeEventListener('pointerdown',once,true);fpArmed=false;setTimeout(function(){fpAuto(true);},0);};
+      document.addEventListener('pointerdown',once,true);
+    }
+  }
+  function fpRearm(){fpTried=false;setTimeout(function(){fpAuto(false);},700);}
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(function(){fpAuto(false);},1200);          // opens the fingerprint prompt by itself, no button press
+    var lo=window.logout;
+    if(typeof lo==='function'){window.logout=function(){var r=lo.apply(this,arguments);try{fpRearm();}catch(e){}return r;};}
+    document.addEventListener('visibilitychange',function(){if(!document.hidden&&onLanding()&&!fpArmed){fpTried=false;setTimeout(function(){fpAuto(false);},500);}});
+  });
+
+  /* ================= 2. PARENT PHONE NUMBER FORM ================= */
+  function clean(p){return String(p||'').replace(/[\s\-().]/g,'');}
+  function phoneOk(p){var d=clean(p);return !d||/^\+?\d{10,15}$/.test(d);}
+  function myClassList(){
+    if(isAdm())return (classes||[]).slice();
+    if(isTch()){var ids=ngisDesignatedClassIds();return (classes||[]).filter(function(c){return ids.indexOf(String(c.id))>-1;});}
+    return [];
+  }
+  function hasCols(){return (students||[]).some(function(s){return 'parent_phone' in s;});}
+  function ppInit(){
+    var cl=myClassList(),sel=$('ppClass');
+    sel.innerHTML=cl.length?cl.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join(''):'<option value="">No class assigned to you</option>';
+    $('ppClassRow').style.display=cl.length>1?'':'none';
+    ppLoad();ppOverview();
+  }
+  function classStudents(cid){return (students||[]).filter(function(s){return sameId(s.class_id,cid);}).sort(function(a,b){return String(a.name).localeCompare(String(b.name));});}
+  function ppProgress(){
+    var rows=[].slice.call(document.querySelectorAll('#ppWrap tbody tr')),n=rows.length,f=0;
+    rows.forEach(function(tr){var v=tr.querySelector('[data-f=parent_phone]').value.trim();if(v&&phoneOk(v))f++;});
+    var pct=n?Math.round(f/n*100):0;
+    $('ppProgress').innerHTML='<div style="margin:6px 0 12px"><div style="font-size:.86rem;margin-bottom:5px"><b>'+f+' of '+n+'</b> phone numbers filled ('+pct+'%)</div><div style="height:10px;background:#e5efe7;border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#1a5f2a"></div></div></div>';
+  }
+  function ppLoad(){
+    var cid=$('ppClass').value,w=$('ppWrap');
+    if(!hasCols()){w.innerHTML='<div class="empty-state">One-time setup needed: run <code>notifications_setup.sql</code> in Supabase (see NOTIFICATIONS_SETUP.md), then refresh.</div>';$('ppProgress').innerHTML='';return;}
+    if(!cid){w.innerHTML='<div class="empty-state">No class assigned to you</div>';$('ppProgress').innerHTML='';return;}
+    var list=classStudents(cid);
+    if(!list.length){w.innerHTML='<div class="empty-state">No students in this class</div>';$('ppProgress').innerHTML='';return;}
+    var inp='width:100%;padding:9px;border:1px solid #ccc;border-radius:6px;font-size:.88rem;min-width:130px';
+    w.innerHTML='<table><thead><tr><th>#</th><th>Student</th><th>Parent / guardian name</th><th>Parent phone (WhatsApp)</th><th>Email (optional)</th></tr></thead><tbody>'
+      +list.map(function(s,i){return '<tr data-id="'+esc(s.id)+'"><td>'+(i+1)+'</td><td style="font-weight:600">'+esc(s.name)+'</td>'
+        +'<td><input style="'+inp+'" data-f="parent_name" placeholder="e.g. Mrs Ade" value="'+esc(s.parent_name||'')+'"></td>'
+        +'<td><input style="'+inp+'" data-f="parent_phone" inputmode="tel" placeholder="0803 123 4567" value="'+esc(s.parent_phone||'')+'"></td>'
+        +'<td><input style="'+inp+'" data-f="parent_email" inputmode="email" placeholder="name@email.com" value="'+esc(s.parent_email||'')+'"></td></tr>';}).join('')
+      +'</tbody></table><div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn btn-primary" onclick="ppSubmit()"><i class="fas fa-paper-plane"></i> Submit numbers</button><span style="font-size:.8rem;color:#777">Nigerian numbers: 0803… &nbsp; Other countries: +233…</span></div>';
+    w.oninput=function(e){
+      var t=e.target;if(t&&t.getAttribute&&t.getAttribute('data-f')==='parent_phone')t.style.borderColor=phoneOk(t.value)?'#ccc':'#c0392b';
+      ppProgress();
+    };
+    ppProgress();
+  }
+  async function ppSubmit(){
+    var trs=[].slice.call(document.querySelectorAll('#ppWrap tbody tr')),changes=[],bad=[];
+    trs.forEach(function(tr){
+      var id=tr.getAttribute('data-id'),s=(students||[]).find(function(x){return sameId(x.id,id);});if(!s)return;
+      var v={};tr.querySelectorAll('input').forEach(function(i){v[i.getAttribute('data-f')]=i.value.trim();});
+      if(!phoneOk(v.parent_phone)){bad.push(s.name);tr.querySelector('[data-f=parent_phone]').style.borderColor='#c0392b';return;}
+      v.parent_phone=clean(v.parent_phone);
+      if((s.parent_name||'')!==v.parent_name||(s.parent_phone||'')!==v.parent_phone||(s.parent_email||'')!==v.parent_email)changes.push({s:s,v:v});
+    });
+    if(bad.length){showToast('Check the phone number for: '+bad.slice(0,4).join(', ')+(bad.length>4?' and '+(bad.length-4)+' more':'')+'. Use digits only, e.g. 08031234567.','error');return;}
+    if(!changes.length){showToast('Nothing changed since the last submit','info');return;}
+    var failed=0,msg='';
+    for(var i=0;i<changes.length;i+=6){
+      await Promise.all(changes.slice(i,i+6).map(async function(c){
+        var r=await supabaseClient.from('students').update(c.v).eq('id',c.s.id);
+        if(r.error){failed++;msg=r.error.message;}else Object.assign(c.s,c.v);   // Parent Notifications reads this same data
+      }));
+    }
+    if(failed)showToast(failed+' could not be saved: '+msg+(/column|schema/i.test(msg)?' (run notifications_setup.sql first)':''),'error');
+    else showToast('Submitted. '+changes.length+' parent contact'+(changes.length===1?'':'s')+' saved and ready in Parent Notifications.','success');
+    ppProgress();ppOverview();
+  }
+  function ppOverview(){
+    var box=$('ppOverview');if(!box)return;
+    if(!isAdm()||!hasCols()){box.innerHTML='';return;}
+    var rows=(classes||[]).map(function(c){
+      var l=classStudents(c.id),f=l.filter(function(s){return clean(s.parent_phone);}).length;
+      var t=(typeof teachers!=='undefined'&&teachers||[]).find(function(x){return c.class_teacher_id!=null&&String(x.id)===String(c.class_teacher_id);});
+      return {c:c,n:l.length,f:f,t:t?t.name:'-'};
+    }).filter(function(r){return r.n;});
+    var tot=rows.reduce(function(a,r){return a+r.n;},0),fil=rows.reduce(function(a,r){return a+r.f;},0);
+    box.innerHTML='<h4 style="margin-bottom:8px"><i class="fas fa-clipboard-check"></i> Progress by class: '+fil+' of '+tot+' numbers filled</h4><div class="table-container"><table><thead><tr><th>Class</th><th>Class teacher</th><th>Filled</th><th>Missing</th></tr></thead><tbody>'
+      +rows.map(function(r){var done=r.f===r.n;return '<tr><td>'+esc(r.c.name)+'</td><td>'+esc(r.t)+'</td><td>'+r.f+' / '+r.n+'</td><td style="color:'+(done?'#27ae60':'#c0392b')+';font-weight:600">'+(done?'Complete':(r.n-r.f))+'</td></tr>';}).join('')+'</tbody></table></div>';
+  }
+  async function nudge(){
+    if(!isTch()||!hasCols()||!ngisHasDesignatedClass())return;
+    var ids=ngisDesignatedClassIds(),miss=(students||[]).filter(function(s){return ids.indexOf(String(s.class_id))>-1&&!clean(s.parent_phone);}).length;
+    if(miss)showToast(miss+' parent phone number'+(miss===1?' is':'s are')+' still missing. Open "Parent Phone Numbers" to add them.','info');
+  }
+
+  /* ================= 3. SEND REPORT CARDS TO PARENTS ================= */
+  var RC={busy:false,cancel:false,rows:[]};
+  var DEFAULT_MSG=SCHOOL+': Dear {parent}, the {period} report card for {student} ({class}) is ready. Open or download it here: {link}';
+  function rcFill(){
+    if(!isAdm()){return;}
+    $('rcClass').innerHTML='<option value="__all">All classes</option>'+(classes||[]).map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('');
+    var act=(sessions||[]).find(function(s){return s.is_active;});
+    $('rcSession').innerHTML=(sessions||[]).map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>';}).join('');
+    if(act)$('rcSession').value=act.id;
+    if(!$('rcMsg').value)$('rcMsg').value=DEFAULT_MSG;
+    rcTerms();rcScopeChange();
+  }
+  function rcTerms(){
+    var sid=$('rcSession').value;
+    var list=(terms||[]).filter(function(t){return !t.session_id||!sid||sameId(t.session_id,sid);});if(!list.length)list=(terms||[]).slice();
+    $('rcTerm').innerHTML=list.map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'</option>';}).join('');
+    var cur=list.find(function(t){return t.is_active||t.is_current;});if(cur)$('rcTerm').value=cur.id;
+    rcWeeks();
+  }
+  function rcWeeks(){
+    var t=$('rcTerm').value,tws=(weeks||[]).filter(function(w){return sameId(w.term_id,t);});
+    $('rcWeekBoxes').innerHTML=tws.length?tws.map(function(w){return '<label><input type="checkbox" class="rcWk" value="'+esc(w.id)+'" checked> '+esc(w.name)+'</label>';}).join(''):'<span style="color:#888">No weeks in this term</span>';
+  }
+  function rcScopeChange(){
+    var wk=$('rcScope').value==='week';
+    $('rcWeekWrap').style.display=wk?'':'none';
+    $('rcMidWrap').style.display=$('rcTermlyWrap').style.display=wk?'none':'';
+    if(wk)$('rcWeekly').checked=true;
+  }
+  function rcAllWeeks(on){[].slice.call(document.querySelectorAll('.rcWk')).forEach(function(b){b.checked=on;});}
+  async function pagedIn(table,cols,col,ids,extra){
+    var out=[];
+    for(var i=0;i<ids.length;i+=100){
+      var chunk=ids.slice(i,i+100),from=0;
+      while(true){
+        var q=supabaseClient.from(table).select(cols).in(col,chunk);if(extra)q=extra(q);
+        var r=await q.range(from,from+999);if(r.error)throw r.error;
+        out=out.concat(r.data||[]);if(!r.data||r.data.length<1000)break;from+=1000;
+      }
+    }
+    return out;
+  }
+  async function addCard(pdf,html,widthCss,first){
+    var host=document.createElement('div');
+    host.style.cssText='position:fixed;left:-10000px;top:0;width:'+widthCss+';background:#fff;z-index:-1;padding:0;margin:0';
+    host.innerHTML=html;document.body.appendChild(host);
+    try{
+      var card=host.querySelector('.bulk-pdf-card')||host.firstElementChild;if(!card)throw new Error('Empty report card');
+      await new Promise(function(r){requestAnimationFrame(function(){requestAnimationFrame(r);});});
+      var canvas=await html2canvas(card,{scale:2.2,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,width:card.scrollWidth,height:card.scrollHeight,windowWidth:Math.max(document.documentElement.clientWidth,900)});
+      var pageW=210,pageH=297,m=6,uw=pageW-2*m,uh=pageH-2*m,rw=canvas.width/2.2,rh=canvas.height/2.2,k=Math.min(uw/rw,uh/rh),iw=rw*k,ih=rh*k;
+      if(!first)pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.9),'JPEG',m+(uw-iw)/2,m+(uh-ih)/2,iw,ih,undefined,'FAST');
+    }finally{host.remove();}
+  }
+  function overlay(){
+    var o=document.createElement('div');
+    o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center';
+    o.innerHTML='<div style="background:#fff;padding:26px 30px;border-radius:14px;width:min(380px,90vw);text-align:center"><div style="font-weight:700;color:#1a5f2a;margin-bottom:10px"><i class="fas fa-id-card"></i> Preparing report cards for parents</div><div id="rcOvMsg" style="font-size:.85rem;color:#444;margin-bottom:10px;min-height:2.4em">Starting…</div><div style="height:10px;background:#e5efe7;border-radius:6px;overflow:hidden"><div id="rcOvBar" style="height:100%;width:0;background:#1a5f2a;transition:width .2s"></div></div><button type="button" class="btn btn-secondary btn-sm" style="margin-top:14px" onclick="rcCancel()">Cancel</button><div style="font-size:.72rem;color:#888;margin-top:8px">Keep this tab open until it finishes.</div></div>';
+    document.body.appendChild(o);return o;
+  }
+  function phoneIntl(p){
+    var d=String(p||'').replace(/[^\d+]/g,'');if(!d)return '';
+    if(d.charAt(0)==='+')d=d.slice(1);else if(d.indexOf('00')===0)d=d.slice(2);else if(d.charAt(0)==='0')d='234'+d.slice(1);else if(d.length===10)d='234'+d;
+    d=d.replace(/\D/g,'');return d.length>=11?d:'';
+  }
+  var safeFile=function(s){return String(s||'x').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,60)||'x';};
+  function token(){var a=crypto.getRandomValues(new Uint8Array(16)),h='';for(var i=0;i<a.length;i++)h+=('0'+a[i].toString(16)).slice(-2);return h;}
+
+  async function rcRun(){
+    if(RC.busy)return;
+    if(!isAdm()){showToast('Only administrators and management can send report cards to parents','error');return;}
+    if(typeof html2canvas==='undefined'||!(window.jspdf&&window.jspdf.jsPDF)){showToast('A required library did not load. Check your internet connection and refresh.','error');return;}
+    var cv=$('rcClass').value,sessionId=$('rcSession').value,termId=$('rcTerm').value,weekMode=$('rcScope').value==='week',selWeeks=[].slice.call(document.querySelectorAll('.rcWk')).filter(function(b){return b.checked;}).map(function(b){return b.value;});
+    var wantW=weekMode||$('rcWeekly').checked,wantM=!weekMode&&$('rcMid').checked,wantT=!weekMode&&$('rcTermly').checked;
+    var useWa=$('rcChWa').checked,useSms=$('rcChSms').checked,useEm=$('rcChEmail').checked;
+    if(!sessionId||!termId){showToast('Choose a session and term','error');return;}
+    if(weekMode&&!selWeeks.length){showToast('Tick at least one week','error');return;}
+    if(!(wantW||wantM||wantT)){showToast('Tick at least one type of report card','error');return;}
+    if(!(useWa||useSms||useEm)){showToast('Tick at least one way to reach parents','error');return;}
+    var tpl=$('rcMsg').value.trim();if(!tpl){showToast('Write the message first','error');return;}
+    if(tpl.indexOf('{link}')<0)tpl+=' {link}';
+    if(typeof ngisFpVerify==='function'&&!(await ngisFpVerify('send report cards to parents')))return;
+    var cls=cv==='__all'?(classes||[]).slice():(classes||[]).filter(function(c){return sameId(c.id,cv);});
+    var term=(terms||[]).find(function(t){return sameId(t.id,termId);}),session=(sessions||[]).find(function(s){return sameId(s.id,sessionId);});
+    var termWeeks=(weeks||[]).filter(function(w){return sameId(w.term_id,termId)&&(!weekMode||selWeeks.indexOf(String(w.id))>-1);});
+    var period=weekMode?termWeeks.map(function(w){return w.name;}).join(', ')+' ('+(term?term.name:'')+')':(term?term.name:'')+' '+(session?session.name:'');
+    period=period.trim();
+
+    RC.busy=true;RC.cancel=false;RC.rows=[];
+    var ov=overlay(),msg=function(t){var e=$('rcOvMsg');if(e)e.textContent=t;},bar=function(p){var e=$('rcOvBar');if(e)e.style.width=Math.min(100,Math.round(p))+'%';};
+    var noContact=0,noCards=0,failed=0;
+    try{
+      var jobs=[];
+      for(var ci=0;ci<cls.length;ci++){
+        var c=cls[ci];
+        var list=(students||[]).filter(function(s){return sameId(s.class_id,c.id);}).sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+        if(!list.length)continue;
+        var withContact=list.filter(function(s){return (phoneIntl(s.parent_phone)&&(useWa||useSms))||((s.parent_email||'').trim()&&useEm);});
+        noContact+=list.length-withContact.length;
+        if(!withContact.length)continue;
+        var ids=withContact.map(function(s){return s.id;});
+        msg('Checking '+c.name+'…');
+        var hasW={},hasM={},termly=null;
+        if(wantW&&termWeeks.length){var wk=await pagedIn('assessments','student_id,week_id','student_id',ids,weekMode?function(q){return q.in('week_id',selWeeks);}:undefined);wk.forEach(function(r){hasW[String(r.student_id)+'|'+String(r.week_id)]=1;});}
+        if(wantM){var mr=await pagedIn('midterm_assessments','student_id','student_id',ids,function(q){return q.eq('term_id',termId).eq('session_id',sessionId);});mr.forEach(function(r){hasM[String(r.student_id)]=1;});}
+        if(wantT){try{termly=await ngisTermlyCards(c.id,termId,sessionId);}catch(e){console.warn('Termly data:',e);}}
+        withContact.forEach(function(s){
+          var cards=[];
+          if(wantW)termWeeks.forEach(function(w){if(hasW[String(s.id)+'|'+String(w.id)])cards.push({k:'w',w:w});});
+          if(wantM&&hasM[String(s.id)])cards.push({k:'m'});
+          if(termly&&termly.list.some(function(x){return sameId(x.id,s.id);}))cards.push({k:'t',termly:termly});
+          if(cards.length)jobs.push({s:s,c:c,cards:cards});else noCards++;
+        });
+        if(RC.cancel)throw new Error('__cancel');
+      }
+      if(!jobs.length){showToast('No report cards with a parent contact were found for this selection','error');return;}
+      if(jobs.length>300&&!confirm('This will build '+jobs.length+' report-card PDFs. It can take a long time. Tip: do one class at a time. Continue?'))return;
+      for(var i=0;i<jobs.length;i++){
+        if(RC.cancel)throw new Error('__cancel');
+        var j=jobs[i];bar(i/jobs.length*100);msg(j.c.name+' • '+j.s.name+'  ('+(i+1)+'/'+jobs.length+')');
+        await sleep(0);
+        try{
+          var pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+          for(var k=0;k<j.cards.length;k++){
+            var cd=j.cards[k];
+            if(cd.k==='w')await addCard(pdf,await buildWeeklyReportCardHTML(j.s,cd.w.id),'194mm',k===0);
+            else if(cd.k==='m')await addCard(pdf,await buildMidTermReportCardHTML(j.s,termId,sessionId),'194mm',k===0);
+            else await addCard(pdf,cd.termly.html(j.s),'794px',k===0);
+          }
+          var blob=pdf.output('blob');
+          var path=token()+'/'+safeFile(j.s.name)+'_'+safeFile(weekMode?(termWeeks.length===1?termWeeks[0].name:termWeeks.length+'_weeks'):(term&&term.name))+'_Report_Card.pdf';
+          var up=await supabaseClient.storage.from(BUCKET).upload(path,blob,{contentType:'application/pdf',upsert:false});
+          if(up.error){
+            if(/bucket|not found|row-level|policy|security/i.test(up.error.message||''))throw new Error('__setup:'+up.error.message);
+            throw up.error;
+          }
+          var url=supabaseClient.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+          var ctx={parent:j.s.parent_name||'Parent/Guardian',student:j.s.name||'your child',class:j.c.name,period:period,school:SCHOOL,link:url};
+          var text=tpl.replace(/\{(\w+)\}/g,function(_,key){return ctx[key]!==undefined?ctx[key]:'{'+key+'}';});
+          RC.rows.push({id:j.s.id,name:j.s.name,cls:j.c.name,parent:j.s.parent_name||'',phone:phoneIntl(j.s.parent_phone),rawPhone:j.s.parent_phone||'',email:(j.s.parent_email||'').trim(),text:text,subject:SCHOOL+' - Report card',url:url,blob:blob,file:path.split('/').pop(),sent:{}});
+        }catch(e){
+          if(e&&e.message==='__cancel')throw e;
+          if(e&&/^__setup:/.test(e.message||'')){throw new Error('The report-card storage is not set up yet. Run v10_setup.sql in Supabase > SQL Editor, then try again. ('+e.message.slice(8)+')');}
+          failed++;console.warn('Skipped a report card:',e);
+        }
+      }
+      bar(100);
+      rcRender({noContact:noContact,noCards:noCards,failed:failed,channels:{wa:useWa,sms:useSms,em:useEm}});
+      showToast(RC.rows.length+' report card'+(RC.rows.length===1?'':'s')+' ready','success');
+    }catch(e){
+      if(e&&e.message==='__cancel')showToast('Cancelled','info');
+      else{console.error(e);showToast(String(e&&e.message||e),'error');}
+    }finally{RC.busy=false;ov.remove();}
+  }
+  function rcRender(info){
+    RC.info=info||RC.info||{};var ch=RC.info.channels||{wa:true,sms:true,em:true};
+    var rows=RC.rows;
+    var h='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><b>'+rows.length+' famil'+(rows.length===1?'y':'ies')+' ready</b>'
+      +(RC.info.noContact?'<span style="color:#c0392b;font-size:.82rem">'+RC.info.noContact+' skipped: no phone/email (ask the class teacher to fill Parent Phone Numbers)</span>':'')
+      +(RC.info.noCards?'<span style="color:#e67e22;font-size:.82rem">'+RC.info.noCards+' skipped: no report card data yet</span>':'')
+      +(RC.info.failed?'<span style="color:#c0392b;font-size:.82rem">'+RC.info.failed+' could not be built</span>':'')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+(ch.wa?'<button class="btn btn-success" onclick="rcNext()"><i class="fab fa-whatsapp"></i> Open next WhatsApp</button>':'')+'<button class="btn btn-secondary btn-sm" onclick="rcQueue()"><i class="fas fa-server"></i> Send by server instead (needs provider)</button></div>'
+      +'<div class="table-container"><table><thead><tr><th>Student</th><th>Parent</th><th>Send (opens WhatsApp with the message ready)</th><th>Done</th></tr></thead><tbody>'
+      +rows.map(function(r,i){
+        var enc=encodeURIComponent(r.text),b=[];
+        if(ch.wa&&r.phone)b.push('<a class="btn btn-success btn-sm" target="_blank" rel="noopener" href="https://wa.me/'+r.phone+'?text='+enc+'" onclick="rcMark('+i+',\'whatsapp\')"><i class="fab fa-whatsapp"></i></a>');
+        if(ch.sms&&r.phone)b.push('<a class="btn btn-primary btn-sm" href="sms:+'+r.phone+'?&body='+enc+'" onclick="rcMark('+i+',\'sms\')"><i class="fas fa-sms"></i></a>');
+        if(ch.em&&r.email)b.push('<a class="btn btn-secondary btn-sm" href="mailto:'+esc(r.email)+'?subject='+encodeURIComponent(r.subject)+'&body='+enc+'" onclick="rcMark('+i+',\'email\')"><i class="fas fa-envelope"></i></a>');
+        return '<tr><td>'+esc(r.name)+'<br><small style="color:#888">'+esc(r.cls)+'</small></td><td>'+esc(r.parent||'-')+'<br><small style="color:#888">'+esc(r.rawPhone||'no phone')+'</small></td><td style="white-space:nowrap">'+b.join(' ')+(navigator.canShare?' <button class="btn btn-accent btn-sm" title="Share the PDF file itself" onclick="rcShare('+i+')"><i class="fas fa-paperclip"></i></button>':'')+' <a class="btn btn-secondary btn-sm" target="_blank" rel="noopener" href="'+esc(r.url)+'"><i class="fas fa-eye"></i></a></td><td id="rcDone'+i+'">'+(r.sent&&Object.keys(r.sent).length?'<span style="color:#27ae60">&#10003; '+Object.keys(r.sent).join(', ')+'</span>':'')+'</td></tr>';
+      }).join('')+'</tbody></table></div>'
+      +'<p style="font-size:.76rem;color:#888;margin-top:10px">WhatsApp opens on <b>your phone or computer</b> with the school message and the PDF link ready; you tap Send, the same as Send alert. WhatsApp cannot attach a file from a link, so the parent taps the link to open the PDF. The paperclip button (phones) shares the PDF file itself: choose WhatsApp, then the parent. The eye button previews the report card.</p>';
+    $('rcResult').innerHTML=h;
+  }
+  function rcNext(){
+    for(var i=0;i<RC.rows.length;i++){
+      var r=RC.rows[i];if(Object.keys(r.sent).length||!r.phone)continue;
+      window.open('https://wa.me/'+r.phone+'?text='+encodeURIComponent(r.text),'_blank');rcMark(i,'whatsapp');return;
+    }
+    showToast('Everyone with a phone number has been opened','info');
+  }
+  async function rcShare(i){
+    var r=RC.rows[i];if(!r||!r.blob)return;
+    try{
+      var f=new File([r.blob],r.file||'Report Card.pdf',{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:r.text});rcMark(i,'whatsapp');}
+      else showToast('This device cannot share files. Use the WhatsApp button (link) instead.','info');
+    }catch(e){if(e&&e.name!=='AbortError')showToast('Could not share: '+(e.message||e),'error');}
+  }
+  function rcMark(i,ch){
+    var r=RC.rows[i];if(!r)return;r.sent[ch]=1;
+    var c=$('rcDone'+i);if(c)c.innerHTML='<span style="color:#27ae60">&#10003; '+Object.keys(r.sent).join(', ')+'</span>';
+    supabaseClient.from('notification_log').insert([{kind:'report',channel:ch,student_id:String(r.id),recipient:ch==='email'?r.email:r.phone,subject:r.subject,message:r.text,attachment_url:r.url,status:'opened',created_by:String(me().id)}]).then(function(x){if(x&&x.error)console.warn(x.error.message);});
+  }
+  async function rcQueue(auto){
+    var ch=(RC.info&&RC.info.channels)||{wa:true,sms:true,em:true},rows=[];
+    RC.rows.forEach(function(r){
+      if(Object.keys(r.sent).length)return;
+      if(ch.wa&&r.phone)rows.push({kind:'report',channel:'whatsapp',student_id:String(r.id),recipient:r.phone,subject:r.subject,message:r.text,attachment_url:r.url,status:'queued',created_by:String(me().id)});
+      if(ch.sms&&r.phone)rows.push({kind:'report',channel:'sms',student_id:String(r.id),recipient:r.phone,subject:r.subject,message:r.text,attachment_url:r.url,status:'queued',created_by:String(me().id)});
+      if(ch.em&&r.email)rows.push({kind:'report',channel:'email',student_id:String(r.id),recipient:r.email,subject:r.subject,message:r.text,attachment_url:r.url,status:'queued',created_by:String(me().id)});
+    });
+    if(!rows.length){showToast('Nothing to send','info');return;}
+    if(!auto&&!confirm('Queue '+rows.length+' message(s) for automatic sending to parents?'))return;
+    var ins=await supabaseClient.from('notification_log').insert(rows);
+    if(ins.error&&/attachment_url|column|schema/i.test(ins.error.message||'')){
+      rows.forEach(function(x){delete x.attachment_url;});ins=await supabaseClient.from('notification_log').insert(rows);   // still works; the link is inside the message
+    }
+    if(ins.error){showToast('Could not queue: '+ins.error.message,'error');return;}
+    try{
+      var tot={sent:0,failed:0,skipped:0};
+      for(var round=0;round<40;round++){   // the server sends up to 100 per call, so keep calling until the queue is empty
+        showToast('Sending to parents… '+tot.sent+' sent so far','info');
+        var f=await supabaseClient.functions.invoke('send-notifications');if(f.error)throw f.error;
+        var d=f.data||{};tot.sent+=d.sent||0;tot.failed+=d.failed||0;tot.skipped=d.skipped||0;
+        if(!(d.sent||d.failed))break;
+      }
+      showToast(tot.sent+' sent, '+tot.failed+' failed'+(tot.skipped?', '+tot.skipped+' waiting (channel not set up)':'')+'. Details are in History.',tot.failed||tot.skipped?'info':'success');
+    }catch(e){showToast('Messages are queued, but the server sender is not set up yet. Use the buttons on each row, or follow NOTIFICATIONS_SETUP.md.','info');}
+  }
+
+  window.ppLoad=ppLoad;window.ppSubmit=ppSubmit;
+  window.rcAllWeeks=rcAllWeeks;window.rcFill=rcFill;window.rcTerms=rcTerms;window.rcWeeks=rcWeeks;window.rcScopeChange=rcScopeChange;window.rcRun=rcRun;window.rcQueue=rcQueue;window.rcNext=rcNext;window.rcShare=rcShare;window.rcMark=rcMark;
+  window.rcCancel=function(){RC.cancel=true;};
+
+  document.addEventListener('DOMContentLoaded',function(){
+    var o=window.showSection;
+    if(typeof o==='function'){
+      window.showSection=function(id,navEl){
+        if(id==='parentPhones'&&me()&&!(isAdm()||(isTch()&&ngisHasDesignatedClass()))){showToast('Parent phone numbers are filled in by class teachers (and the administrator).','error');return;}
+        var r=o.apply(this,arguments);
+        if(id==='parentPhones'){var t=$('pageTitle');if(t)t.innerHTML='<i class="fas fa-address-book"></i> Parent Phone Numbers';ppInit();}
+        if(id==='notifyCenter'){var b=$('ntfTabBtnReports');if(b)b.style.display=isAdm()?'':'none';}
+        return r;
+      };
+    }
+    var sd=window.setupDashboard;
+    if(typeof sd==='function'){window.setupDashboard=async function(){var r=await sd.apply(this,arguments);try{setTimeout(nudge,2500);}catch(e){}return r;};}
+  });
+})();
+</script>
+
+<script id="ngis-v10b-module">
+/* ===== v10b: CBT categories (Weekly / Termly Exam / JAMB) + fill-in Incident and Lesson Observation forms ===== */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var esc=function(v){return escapeHtml(v);};
+  var me=function(){try{return window.currentUser||currentUser||null;}catch(e){return null;}};
+
+  /* ================= CBT categories ================= */
+  window.cbtTypeLabel=function(q){
+    return q&&q.quiz_type==='exam'?'Termly Examination':q&&q.quiz_type==='jamb'?'JAMB Past Practices':((q&&q.weeks&&q.weeks.name)||'-');
+  };
+  function ids(p){return p==='teacher'?{type:'teacherCbtType',week:'teacherCbtWeek',wrap:'teacherCbtTermWrap',term:'teacherCbtTerm',ses:'teacherCbtSession'}:{type:'cbtType',week:'cbtWeek',wrap:'cbtTermWrap',term:'cbtTerm',ses:'cbtSession'};}
+  window.cbtTypeUi=function(p){
+    var i=ids(p),t=$(i.type);if(!t)return;
+    var wk=$(i.week);if(wk&&wk.closest)wk.closest('.form-group').style.display=t.value==='weekly'?'':'none';
+    $(i.wrap).style.display=t.value==='exam'?'':'none';
+    if(t.value==='exam'){
+      var ts=$(i.term),ss=$(i.ses);
+      if(!ts.options.length)ts.innerHTML=(terms||[]).map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+'</option>';}).join('');
+      if(!ss.options.length)ss.innerHTML=(sessions||[]).map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+'</option>';}).join('');
+      var ct=(terms||[]).find(function(x){return x.is_active||x.is_current;}),cs=(sessions||[]).find(function(x){return x.is_active;});
+      if(ct&&!ts.dataset.set){ts.value=ct.id;ts.dataset.set=1;}if(cs&&!ss.dataset.set){ss.value=cs.id;ss.dataset.set=1;}
+    }
+  };
+  /* Returns {week_id, extra} for the chosen category, or null (after telling the user what is missing). */
+  window.cbtTypeFields=function(p){
+    var i=ids(p),type=($(i.type)||{}).value||'weekly';
+    if(type==='weekly'){
+      var w=$(i.week).value;
+      if(!w){showToast('Select the week for a weekly CBT','error');return null;}
+      return {week_id:w,extra:{}};
+    }
+    var wid='',extra={quiz_type:type};
+    if(type==='exam'){
+      var t=$(i.term).value,s=$(i.ses).value;
+      if(!t||!s){showToast('Choose the term and session for the termly examination','error');return null;}
+      extra.term_id=t;extra.session_id=s;
+      var tw=(weeks||[]).filter(function(x){return sameId(x.term_id,t);});
+      wid=tw.length?tw[tw.length-1].id:((weeks||[])[0]||{}).id;
+    }else{
+      var ct=(terms||[]).find(function(x){return x.is_active||x.is_current;}),tw2=ct?(weeks||[]).filter(function(x){return sameId(x.term_id,ct.id);}):[];
+      wid=tw2.length?tw2[tw2.length-1].id:((weeks||[])[0]||{}).id;
+    }
+    if(!wid){showToast('Create at least one week in the app first (needed internally to store the quiz)','error');return null;}
+    return {week_id:String(wid),extra:extra};
+  };
+  /* JAMB Past Practices: practice only. Scores are NOT sent to weekly or termly report cards, and can be retaken. */
+  document.addEventListener('DOMContentLoaded',function(){
+    var ps=window.startStudentQuiz,pu=window.submitStudentQuiz;
+    if(typeof ps==='function'){
+      window.startStudentQuiz=async function(quizId){
+        try{
+          var q=await supabaseClient.from('quizzes').select('quiz_type').eq('id',quizId).maybeSingle();
+          if(q.data&&q.data.quiz_type==='jamb'){await supabaseClient.from('quiz_attempts').delete().eq('quiz_id',quizId).eq('student_id',currentUser.id);}
+        }catch(e){}
+        return ps.apply(this,arguments);
+      };
+    }
+    if(typeof pu==='function'){
+      window.submitStudentQuiz=async function(confirmSubmit,expired){
+        var quiz=cbtRunner&&cbtRunner.quiz;
+        if(!quiz||quiz.quiz_type!=='jamb')return pu.apply(this,arguments);
+        if(confirmSubmit!==false&&!confirm('Finish this practice now?'))return;
+        clearInterval(cbtTimer);
+        var correct=0,answers={};
+        cbtRunner.questions.forEach(function(q){var el=document.querySelector('input[name="q_'+q.id+'"]:checked');var a=el?el.value:'';answers[q.id]=a;if(a&&a===q.correct_answer)correct++;});
+        var total=cbtRunner.questions.length,pct=total?correct/total*100:0,now=new Date().toISOString();
+        var ins=await supabaseClient.from('quiz_attempts').insert([{quiz_id:quiz.id,student_id:currentUser.id,started_at:new Date(Date.now()-(quiz.duration_minutes*60-cbtSecondsLeft)*1000).toISOString(),submitted_at:now,score:pct/10,percentage:pct,correct_count:correct,total_questions:total,status:expired?'expired':'submitted',answers:answers}]);
+        if(ins.error){showToast('Could not save practice result: '+ins.error.message,'error');startCBTTimer();return;}
+        $('studentQuizRunner').classList.add('hidden');var r=$('studentQuizResult');r.classList.remove('hidden');
+        r.innerHTML='<div style="text-align:center;padding:30px"><i class="fas fa-check-circle" style="font-size:3rem;color:var(--primary)"></i><h2 style="margin:12px 0;color:var(--primary)">Practice Completed</h2><div style="font-size:2rem;font-weight:800">'+correct+' / '+total+'</div><p style="font-size:1.1rem;margin-top:5px">'+pct.toFixed(1)+'%</p><p style="margin-top:10px;font-size:.85rem;color:#777">JAMB Past Practices do not affect your report card. You can take it again any time.</p></div>';
+        showToast('Practice saved','success');
+        cbtRunner=null;loadStudentQuizzes();
+      };
+    }
+  });
+
+  /* ================= Fill-in forms ================= */
+  var CSS='<style>.nf{font-size:.9rem;color:#222}.nf h4{background:#1a5f2a;color:#fff;padding:7px 12px;margin:16px 0 8px;font-size:.88rem;border-radius:4px}'
+   +'.nf .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px 14px}.nf label.l{display:block;font-size:.76rem;color:#555;margin-bottom:2px}'
+   +'.nf input[type=text],.nf input[type=date],.nf input[type=time],.nf input[type=number],.nf textarea{width:100%;padding:8px;border:1px solid #bbb;border-radius:6px;font-size:.88rem;font-family:inherit;box-sizing:border-box}'
+   +'.nf textarea{min-height:90px;resize:vertical}.nf .cb{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 12px}'
+   +'.nf .fc{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:.86rem;background:#fafafa}.nf .fc input{width:20px;height:20px;margin:0;flex:none;accent-color:#1a5f2a}.nf .fc:has(input:checked){background:#e8f5ec;border-color:#1a5f2a}'
+   +'.nf table{width:100%;border-collapse:collapse;font-size:.84rem}.nf th,.nf td{border:1px solid #ccc;padding:5px 6px;vertical-align:middle}.nf th{background:#f1f5f2}.nf td.c{text-align:center}.nf td.c input{width:22px;height:22px;accent-color:#1a5f2a}'
+   +'.nf .tw{overflow-x:auto}.nf .tot{font-weight:700;background:#f7fbf8}.nf .bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #ddd;padding:10px 0;display:flex;gap:8px;flex-wrap:wrap;z-index:5}</style>';
+  var uniq=0;
+  function T(k,label,type){return '<div><label class="l">'+label+'</label><input type="'+(type||'text')+'" data-k="'+k+'"></div>';}
+  function A(k,label,rows){return '<div style="margin-bottom:8px"><label class="l">'+label+'</label><textarea data-k="'+k+'" rows="'+(rows||4)+'"></textarea></div>';}
+  function C(k,label,one){return '<label class="fc"><input type="checkbox" data-k="'+k+'" value="'+esc(label)+'"'+(one?' data-one="1"':'')+'><span>'+label+'</span></label>';}
+  function CB(k,list,one){return '<div class="cb">'+list.map(function(x){return C(k,x,one);}).join('')+'</div>';}
+  function OTH(k,ph){return '<div style="margin-top:6px"><input type="text" data-k="'+k+'" placeholder="'+ph+'"></div>';}
+
+  function incidentHtml(){
+    return '<div class="nf"><div style="text-align:center"><div style="font-weight:800;color:#1a5f2a;font-size:1.05rem">NIGERIA GHANA INTERNATIONAL SCHOOL, JABI</div><div style="font-weight:700;margin-top:2px">CLASSROOM INCIDENT &amp; CONCERN REPORT</div><div style="font-size:.8rem;color:#666;font-style:italic">For matters requiring the attention of the HOD and/or School Management</div></div>'
+     +'<div style="background:#fff4e5;border:1px solid #f0c36d;border-radius:8px;padding:10px;margin-top:10px;font-size:.82rem"><b>CONFIDENTIAL:</b> Complete factually and promptly. For an immediate safety, medical or safeguarding concern, inform the appropriate school leader at once. Do not rely on this form alone.</div>'
+     +'<h4>1. REPORT DETAILS</h4><div class="g">'+T('rep_date','Date of report','date')+T('rep_time','Time','time')+T('teacher','Teacher')+T('class','Class / Year')+T('inc_date','Incident date','date')+T('inc_time','Incident time','time')+T('location','Location')+T('subject','Subject / lesson')+T('notified','Date / time notified')+T('others_present','Other staff present')+'</div>'
+     +'<div style="margin-top:8px"><label class="l">Reported to</label>'+CB('reported_to',['HOD','Management','Both'])+'</div>'
+     +'<h4>2. TYPE OF INCIDENT / CONCERN</h4>'+CB('type',['Behaviour / misconduct','Bullying / peer conflict','Disruption to learning','Academic / learning concern','Attendance / lateness','Property damage / loss','Injury / medical concern','Safety hazard / near miss','Safeguarding / welfare concern','Staff–pupil / staff–parent concern','Inappropriate language / online issue','Other'])+OTH('type_other','If other, type here')
+     +'<h4>3. PEOPLE INVOLVED</h4><div class="g" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">'+A('people','Pupil(s) / person(s) involved (names and class)',4)+A('witnesses','Witness(es) (names / roles)',4)+'</div>'
+     +'<div class="g"><div><label class="l">Parent / guardian contacted?</label>'+CB('parent_contacted',['No','Yes'],true)+'</div>'+T('parent_by','Contacted by')+T('parent_when','Date / time contacted')+'</div>'
+     +'<div style="margin-top:8px"><label class="l">Other person notified</label>'+CB('notified_other',['None','Nurse','Safeguarding lead','HOD','Management'])+'</div>'
+     +'<h4>4. WHAT HAPPENED? (record facts in time order; use exact words where relevant)</h4>'+A('what','',9)
+     +'<h4>5. IMMEDIATE ACTION TAKEN</h4>'+CB('action',['Verbal reminder / redirection','Separated pupils / de-escalated','Restorative discussion','First aid / nurse contacted','Area made safe / hazard removed','Work / property secured','Pupil supported / supervised','Parent/guardian contacted','HOD / Management informed','Safeguarding procedure followed','No action yet (explain below)','Other'])+OTH('action_other','If other, type here')+'<div style="margin-top:8px">'+A('action_details','Details of action / outcome so far',4)+'</div>'
+     +'<h4>6. LEVEL OF URGENCY</h4>'+CB('urgency',['ROUTINE: follow-up can be scheduled','URGENT: HOD / Management attention needed today','HIGH RISK: immediate verbal escalation already made'],true)+'<div style="margin-top:8px">'+T('urgency_reason','Reason / deadline for follow-up')+'</div>'
+     +'<h4>7. SUPPORT OR FOLLOW-UP REQUESTED</h4>'+CB('support',['HOD guidance','Management decision','Parent meeting','Counselling / learner support','Safety / safeguarding review','Monitor / review'])+'<div class="g" style="margin-top:8px">'+T('monitor_date','Monitor / review on','date')+'</div><div style="margin-top:8px">'+A('next_steps','Additional comments / recommended next steps',4)+'</div>'
+     +'<h4>8. LEARNER’S STATEMENT (where applicable)</h4>'+A('statement','',6)
+     +'<h4>9. TEACHER DECLARATION &amp; MANAGEMENT REVIEW</h4><div class="g">'+T('decl_name','Teacher’s name (typed as signature)')+T('decl_when','Date / time submitted')+'</div>'
+     +'<div style="margin-top:8px"><label class="l">HOD review</label>'+CB('hod_review',['Seen','Follow-up required','Referred to Management'])+'</div><div class="g" style="margin-top:8px">'+T('hod_name','HOD name / signature')+'</div>'
+     +'<div style="margin-top:8px"><label class="l">Management action</label>'+CB('mgmt_action',['Monitor','Meet parent','Investigate','Other'])+'</div><div class="g" style="margin-top:8px">'+T('mgmt_other','If other, type here')+T('responsible','Responsible person')+T('mgmt_sign','Management signature')+T('mgmt_date','Date','date')+'</div><div style="margin-top:8px">'+A('outcome','Action taken / outcome and review date',3)+'</div>'
+     +'<p style="font-size:.74rem;color:#777;margin-top:10px">OFFICE USE: File securely. Share only with staff who need the information to respond appropriately. NGIS JABI | Classroom Incident &amp; Concern Report | Confidential</p></div>';
+  }
+
+  var PILLARS=[
+   ['S','Scholarship',['Lesson objectives/outcomes are clear and measurable.','Teacher demonstrates strong subject knowledge.','Prior learning is connected effectively to new learning.','Learners are challenged to think, reason and solve problems.','Questioning promotes higher-order thinking.','Activities are engaging, purposeful and academically appropriate.']],
+   ['A','Accountability',['Teacher is prepared, punctual and organised.','Learners understand and follow classroom expectations.','Learners take responsibility for learning and behaviour.','Teacher checks understanding throughout the lesson.','Learners are held accountable for completing tasks.','Feedback is timely, specific and constructive.']],
+   ['G','Global Citizenship',['Lesson promotes respect, empathy and responsible behaviour.','Learners listen to and respect different perspectives.','Learning connects to relevant real-life/local/global issues.','Classroom environment is inclusive and respectful.','Learners collaborate and demonstrate responsible citizenship.']],
+   ['E','Excellence',['Teacher uses effective and varied teaching strategies.','Resources/technology are used effectively.','Lesson is learner-centred and encourages active participation.','Differentiation/support is provided for learner needs.','Lesson pace, transitions and time are effectively managed.','Assessment evidence shows progress toward outcomes.','Teacher responds to learner needs during the lesson.']]];
+  var ENG=['Learners are attentive','Learners participate actively','Learners ask meaningful questions','Learners collaborate effectively','Learners demonstrate independence','Learners demonstrate understanding'];
+  var RATINGS=['Outstanding','Very Good','Satisfactory','Needs Improvement','Unsatisfactory'];
+  function rateCells(k){var h='';for(var n=1;n<=5;n++)h+='<td class="c"><input type="checkbox" data-k="'+k+'" data-one="1" data-rate="1" value="'+n+'"></td>';return h;}
+  function obsHtml(){
+    var i=0,rows='';
+    PILLARS.forEach(function(p,pi){p[2].forEach(function(t){rows+='<tr><td class="c"><b>'+p[0]+'</b></td><td>'+p[1]+'</td><td>'+t+'</td>'+rateCells('rt_'+(i++))+'</tr>';});});
+    var snap=PILLARS.map(function(p,pi){return '<tr><td><b>'+p[1]+'</b></td><td><input type="text" data-k="ev_'+pi+'" placeholder="Evidence observed"></td><td><input type="text" data-k="sc_'+pi+'" data-auto="1" readonly style="width:70px;background:#f1f5f2"></td><td><input type="text" data-k="pa_'+pi+'" placeholder="Priority action"></td></tr>';}).join('');
+    var eng=ENG.map(function(t,j){return '<tr><td>'+t+'</td>'+rateCells('en_'+j)+'<td><input type="text" data-k="enc_'+j+'"></td></tr>';}).join('');
+    var plan='';for(var r=0;r<3;r++){plan+='<tr>'+['area','base','target','action','resp','time'].map(function(c){return '<td><input type="text" data-k="ap_'+r+'_'+c+'"></td>';}).join('')+'</tr>';}
+    return '<div class="nf"><div style="text-align:center"><div style="font-weight:800;color:#1a5f2a">NIGERIA GHANA INTERNATIONAL SCHOOL, JABI</div><div style="font-weight:700">SAGE LESSON OBSERVATION SHEET</div><div style="font-size:.76rem;color:#666">SCHOLARSHIP • ACCOUNTABILITY • GLOBAL CITIZENSHIP • EXCELLENCE</div></div>'
+     +'<div class="g" style="margin-top:12px">'+T('teacher',"Teacher's name")+T('observer','Observer (HOD)')+T('subject','Subject')+T('class','Class / Year')+T('topic','Topic')+T('date','Date','date')+T('period','Time / period')+T('learners','No. of learners','number')+'</div>'
+     +'<h4>A. RATING SCALE</h4><div style="font-size:.84rem"><b>5</b> = Outstanding &nbsp;|&nbsp; <b>4</b> = Very Good &nbsp;|&nbsp; <b>3</b> = Satisfactory &nbsp;|&nbsp; <b>2</b> = Needs Improvement &nbsp;|&nbsp; <b>1</b> = Unsatisfactory. Tap one box per row.</div>'
+     +'<h4>B. SAGE-ALIGNED LESSON OBSERVATION</h4><div class="tw"><table><thead><tr><th>SAGE</th><th>Pillar</th><th>Observation indicator</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+     +'<h4>C. SAGE INTEGRATION SNAPSHOT (score fills in by itself)</h4><div class="tw"><table><thead><tr><th>Pillar</th><th>Evidence observed</th><th>Score / 5</th><th>Priority action</th></tr></thead><tbody>'+snap+'</tbody></table></div>'
+     +'<h4>D. LEARNER ENGAGEMENT</h4><div class="tw"><table><thead><tr><th>Indicator</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>Evidence / comment</th></tr></thead><tbody>'+eng+'</tbody></table></div>'
+     +'<h4>E. EVIDENCE, STRENGTHS &amp; DEVELOPMENT</h4>'+A('e1','Evidence of learning observed',3)+A('e2','Evidence of SAGE values demonstrated',3)+A('e3','Key strengths observed',3)+A('e4','Areas for development',3)
+     +'<h4>F. ACTION PLAN</h4><div class="tw"><table><thead><tr><th>Priority area</th><th>Baseline</th><th>Target</th><th>Intervention / action</th><th>Responsible</th><th>Timeline</th></tr></thead><tbody>'+plan+'</tbody></table></div>'
+     +'<h4>G. OVERALL EVALUATION (fills in by itself)</h4><div class="g">'+['S /30','A /30','G /25','E /35'].map(function(l,x){return T('tot_'+x,PILLARS[x][1]+' '+l.split(' ')[1]);}).join('')+T('tot_all','TOTAL /120')+'</div>'
+     +'<div style="margin-top:8px"><label class="l">Overall rating (suggested from the total; tap another to change)</label>'+CB('overall',RATINGS,true)+'</div>'
+     +'<h4>H. REFLECTION &amp; FOLLOW-UP</h4>'+A('h1',"Observer's overall comment",3)+A('h2',"Teacher's reflection / comment",3)+'<div class="g">'+T('follow','Follow-up observation date','date')+'</div>'
+     +'<h4>I. SCHEME OF WORK COMPLETION (to be graded by the HOD)</h4><div class="g">'+T('sw_term','Term / weeks covered')+T('sw_planned','Topics planned to date','number')+T('sw_done','Topics completed to date','number')+T('sw_pct','SCHEME OF WORK COMPLETED %')+'</div>'
+     +'<div style="margin-top:8px"><label class="l">Grade band (tick one; suggested from the %)</label>'+CB('sw_band',['90–100%  On track / complete','75–89%  Satisfactory progress','Below 75%  Behind – catch-up plan needed'],true)+'</div><div style="margin-top:8px">'+A('sw_comment','HOD comment / catch-up plan',3)+'</div>'
+     +'<div class="g" style="margin-top:8px">'+T('sig_teacher','Teacher (typed as signature)')+T('sig_teacher_date','Date','date')+T('sig_obs','Observer (typed as signature)')+T('sig_obs_date','Date','date')+'</div>'
+     +'<p style="font-size:.78rem;color:#666;font-style:italic;margin-top:10px">“Observe not only what the teacher teaches, but what learners learn, how they take responsibility, and the quality they demonstrate.”</p></div>';
+  }
+  function calcObs(root){
+    var g=function(k){var e=root.querySelector('[data-k="'+k+'"]:checked');return e?parseInt(e.value,10):0;},idx=0,tot=0,set=function(k,v){var e=root.querySelector('[data-k="'+k+'"]');if(e)e.value=v;};
+    var cnt=0;
+    PILLARS.forEach(function(p,pi){var sum=0,n=0;p[2].forEach(function(){var v=g('rt_'+(idx++));sum+=v;if(v)n++;});tot+=sum;cnt+=n;set('tot_'+pi,n?String(sum):'');set('sc_'+pi,n?(sum/p[2].length).toFixed(1):'');});
+    set('tot_all',cnt?String(tot):'');
+    if(cnt===24){var avg=tot/24,r=avg>=4.5?0:avg>=3.5?1:avg>=2.5?2:avg>=1.5?3:4;
+      if(!root.querySelector('[data-k="overall"]:checked')||root.dataset.autoRate==='1'){root.querySelectorAll('[data-k="overall"]').forEach(function(c,ci){c.checked=ci===r;});root.dataset.autoRate='1';}}
+    var pl=parseFloat((root.querySelector('[data-k="sw_planned"]')||{}).value),dn=parseFloat((root.querySelector('[data-k="sw_done"]')||{}).value);
+    if(pl>0&&dn>=0){var pc=Math.min(100,Math.round(dn/pl*100));set('sw_pct',String(pc));var b=pc>=90?0:pc>=75?1:2;root.querySelectorAll('[data-k="sw_band"]').forEach(function(c,ci){c.checked=ci===b;});}
+  }
+
+  function collect(root){
+    var d={};
+    root.querySelectorAll('[data-k]').forEach(function(e){
+      var k=e.getAttribute('data-k');
+      if(e.type==='checkbox'){ if(e.checked){ if(e.dataset.one)d[k]=e.value; else (d[k]=d[k]||[]).push(e.value);} }
+      else d[k]=e.value;
+    });
+    return d;
+  }
+  function fill(root,d){
+    d=d||{};
+    root.querySelectorAll('[data-k]').forEach(function(e){
+      var k=e.getAttribute('data-k'),v=d[k];
+      if(e.type==='checkbox'){e.checked=e.dataset.one?(v===e.value):(Array.isArray(v)&&v.indexOf(e.value)>-1);}
+      else e.value=v==null?'':v;
+    });
+  }
+
+  function mkForm(cfg){
+    var host=$(cfg.id),root,editing=null,draftKey=null;
+    var kindTitle=cfg.title;
+    function dk(){var u=me();return 'ngis_form_draft_'+cfg.kind+'_'+(u?u.id:'x');}
+    function open(){
+      var u=me();
+      host.innerHTML=CSS+'<div class="card"><div class="card-header"><h3><i class="fas '+cfg.icon+'"></i> '+cfg.heading+'</h3></div>'
+        +'<p style="color:#555;line-height:1.6;margin-bottom:12px;font-size:.88rem">'+cfg.intro+'</p>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn btn-secondary btn-sm" onclick="ngisForm.newForm(\''+cfg.kind+'\')"><i class="fas fa-file"></i> New blank form</button><span id="'+cfg.kind+'Status" style="font-size:.8rem;color:#888;align-self:center"></span></div>'
+        +'<div id="'+cfg.kind+'Root">'+cfg.html()+'</div>'
+        +'<div class="bar"><button class="btn btn-primary" onclick="ngisForm.save(\''+cfg.kind+'\')"><i class="fas fa-paper-plane"></i> Submit / Save</button><button class="btn btn-secondary" onclick="ngisForm.print(\''+cfg.kind+'\')"><i class="fas fa-print"></i> Print / PDF</button><button class="btn btn-accent" onclick="ngisForm.word(\''+cfg.kind+'\')"><i class="fas fa-file-word"></i> Word</button></div></div>'
+        +'<div class="card"><div class="card-header"><h3><i class="fas fa-folder-open"></i> '+cfg.listTitle+'</h3></div><div id="'+cfg.kind+'List" class="table-container"></div></div>';
+      root=$(cfg.kind+'Root');editing=null;
+      var saved=null;try{saved=JSON.parse(localStorage.getItem(dk())||'null');}catch(e){}
+      if(saved){fill(root,saved);$(cfg.kind+'Status').textContent='Draft restored';}
+      else{var pre=cfg.prefill(u);fill(root,pre);}
+      if(cfg.calc)cfg.calc(root);
+      root.addEventListener('change',function(e){
+        var t=e.target;
+        if(t&&t.dataset&&t.dataset.one&&t.checked){root.querySelectorAll('[data-k="'+t.getAttribute('data-k')+'"]').forEach(function(o){if(o!==t)o.checked=false;});}
+        if(t&&t.getAttribute&&t.getAttribute('data-k')==='overall')root.dataset.autoRate='0';
+        if(cfg.calc)cfg.calc(root);
+        try{localStorage.setItem(dk(),JSON.stringify(collect(root)));}catch(x){}
+      });
+      root.addEventListener('input',function(e){
+        if(cfg.calc)cfg.calc(root);
+        try{localStorage.setItem(dk(),JSON.stringify(collect(root)));}catch(x){}
+      });
+      list();
+    }
+    async function list(){
+      var w=$(cfg.kind+'List');if(!w)return;
+      var u=me(),admin=u&&(u.role==='admin'||u.role==='management');
+      var r=await supabaseClient.from('form_submissions').select('*').eq('kind',cfg.kind).order('created_at',{ascending:false}).limit(60);
+      if(r.error){w.innerHTML='<div class="empty-state">Saved forms are not available yet: ask the administrator to run <code>v10_setup.sql</code> in Supabase. You can still fill, print and download the form above.</div>';return;}
+      var rows=(r.data||[]).filter(function(x){return admin||String(x.submitted_by)===String(u.id);});
+      if(!rows.length){w.innerHTML='<div class="empty-state">Nothing submitted yet</div>';return;}
+      w.innerHTML='<table><thead><tr><th>Date</th><th>'+cfg.col1+'</th><th>'+cfg.col2+'</th>'+(admin?'<th>By</th>':'')+'<th></th></tr></thead><tbody>'+rows.map(function(x){var d=x.data||{};
+        return '<tr><td>'+new Date(x.created_at).toLocaleDateString()+'</td><td>'+esc(cfg.v1(d))+'</td><td>'+esc(cfg.v2(d))+'</td>'+(admin?'<td>'+esc(x.submitted_by_name||'')+'</td>':'')
+         +'<td style="white-space:nowrap"><button class="btn btn-sm btn-primary" onclick="ngisForm.openRow(\''+cfg.kind+'\','+x.id+')">Open</button> '+((admin||String(x.submitted_by)===String(u.id))?'<button class="btn btn-sm btn-danger" onclick="ngisForm.del(\''+cfg.kind+'\','+x.id+')"><i class="fas fa-trash"></i></button>':'')+'</td></tr>';}).join('')+'</tbody></table>';
+      cfg._rows=rows;
+    }
+    cfg.api={
+      open:open,
+      newForm:function(){if(!confirm('Clear the form and start a new one?'))return;try{localStorage.removeItem(dk());}catch(e){}open();},
+      save:async function(){
+        var d=collect(root),u=me();
+        if(!cfg.valid(d))return;
+        var row={kind:cfg.kind,title:cfg.v1(d)+' / '+cfg.v2(d),data:d,submitted_by:String(u.id),submitted_by_name:u.name||'',submitted_by_role:u.role||''},r;
+        if(editing)r=await supabaseClient.from('form_submissions').update({title:row.title,data:d,updated_at:new Date().toISOString()}).eq('id',editing);
+        else r=await supabaseClient.from('form_submissions').insert([row]);
+        if(r.error){showToast('Could not save: '+r.error.message+(/relation|does not exist|schema/i.test(r.error.message)?' (run v10_setup.sql in Supabase first). You can still print or download the form.':''),'error');return;}
+        try{localStorage.removeItem(dk());}catch(e){}
+        showToast(editing?'Form updated':'Form submitted','success');editing=null;list();
+      },
+      openRow:function(id){
+        var x=(cfg._rows||[]).find(function(r){return String(r.id)===String(id);});if(!x)return;
+        fill(root,x.data);if(cfg.calc)cfg.calc(root);editing=x.id;
+        $(cfg.kind+'Status').textContent='Editing a saved form (Submit / Save will update it)';
+        host.scrollIntoView({behavior:'smooth'});
+      },
+      del:async function(id){
+        if(!confirm('Delete this saved form?'))return;
+        var r=await supabaseClient.from('form_submissions').delete().eq('id',id);
+        if(r.error)showToast(r.error.message,'error');else{showToast('Deleted');list();}
+      },
+      printHtml:function(){
+        var c=root.cloneNode(true);
+        var live=[].slice.call(root.querySelectorAll('input,textarea')),cl=[].slice.call(c.querySelectorAll('input,textarea'));
+        cl.forEach(function(e,i){
+          var s=live[i];
+          if(e.tagName==='TEXTAREA'){var d=document.createElement('div');d.style.cssText='border:1px solid #999;padding:6px;min-height:'+(parseInt(e.rows||3)*18)+'px;white-space:pre-wrap';d.textContent=s.value;e.replaceWith(d);}
+          else if(e.type==='checkbox'){e.setAttribute('disabled','');if(s.checked)e.setAttribute('checked','');else e.removeAttribute('checked');}
+          else{var sp=document.createElement('span');sp.style.cssText='display:block;border-bottom:1px solid #999;min-height:20px;padding:2px 0';sp.textContent=s.value;e.replaceWith(sp);}
+        });
+        return '<!doctype html><html><head><meta charset="utf-8"><title>'+cfg.heading+'</title>'+CSS+'<style>body{font-family:Arial,sans-serif;margin:14px}.nf h4{-webkit-print-color-adjust:exact;print-color-adjust:exact}.bar{display:none}@page{size:A4;margin:10mm}</style></head><body>'+c.outerHTML+'</body></html>';
+      }
+    };
+    return cfg;
+  }
+
+  var today=function(){return new Date().toISOString().slice(0,10);};
+  var INC=mkForm({kind:'incident',id:'incidentForm',icon:'fa-file-medical-alt',heading:'Classroom Incident &amp; Concern Report',listTitle:'My submitted incident reports',col1:'Teacher / class',col2:'Type',
+    intro:'Tap the boxes that apply and type in the spaces, then press <b>Submit / Save</b>. It is kept safely and your HOD / Management can open it. You can also print it or download it as Word. For an immediate safety, medical or safeguarding concern, inform a school leader at once.',
+    html:incidentHtml,
+    prefill:function(u){return {teacher:u&&u.name||'',rep_date:today(),inc_date:today(),decl_name:u&&u.name||'',decl_when:new Date().toLocaleString()};},
+    v1:function(d){return (d.teacher||'-')+' / '+(d.class||'-');},v2:function(d){return (d.type||[]).join(', ')||'-';},
+    valid:function(d){if(!d.teacher){showToast('Type the teacher’s name','error');return false;}if(!(d.type&&d.type.length)){showToast('Tick at least one type of incident','error');return false;}if(!d.what){showToast('Describe what happened','error');return false;}return true;}});
+  var OBS=mkForm({kind:'observation',id:'hodObservation',icon:'fa-eye',heading:'SAGE Lesson Observation Sheet',listTitle:'Saved lesson observations',col1:'Teacher / subject',col2:'Date / total',
+    intro:'For Heads of Department. While you observe the lesson, tap one box for each indicator and type your comments. Scores, the overall rating and the scheme-of-work grade band fill in by themselves (you can change the ticks). Press <b>Submit / Save</b> when done, or print / download it.',
+    html:obsHtml,calc:calcObs,
+    prefill:function(u){return {observer:u&&u.name||'',date:today(),sig_obs:u&&u.name||'',sig_obs_date:today()};},
+    v1:function(d){return (d.teacher||'-')+' / '+(d.subject||'-');},v2:function(d){return (d.date||'-')+' / '+(d.tot_all||'?')+' of 120';},
+    valid:function(d){if(!d.teacher){showToast('Type the teacher’s name','error');return false;}if(!d.subject){showToast('Type the subject','error');return false;}return true;}});
+  var F={incident:INC,observation:OBS};
+  window.ngisForm={
+    newForm:function(k){F[k].api.newForm();},save:function(k){F[k].api.save();},openRow:function(k,id){F[k].api.openRow(id);},del:function(k,id){F[k].api.del(id);},
+    print:function(k){var w=window.open('','_blank');if(!w){showToast('Allow pop-ups to print','error');return;}w.document.write(F[k].api.printHtml());w.document.close();setTimeout(function(){try{w.focus();w.print();}catch(e){}},600);},
+    word:function(k){var h=F[k].api.printHtml(),b=new Blob(['\ufeff'+h],{type:'application/msword'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(k==='incident'?'NGIS_Incident_Report':'NGIS_Lesson_Observation')+'_'+today()+'.doc';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);}
+  };
+  var prevShow=window.showSection;
+  window.showSection=function(id,nav){
+    var r=prevShow.apply(this,arguments);
+    if(id==='incidentForm')INC.api.open();
+    if(id==='hodObservation')OBS.api.open();
+    return r;
+  };
 })();
 </script>
 
