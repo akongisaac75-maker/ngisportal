@@ -405,6 +405,7 @@ tr:last-child td{border-bottom:none}
 .signature-line{text-align:center;flex:1;min-width:180px;max-width:280px}
 .signature-line .line{border-bottom:1px solid #333;margin-bottom:8px;padding-bottom:5px;min-height:24px;word-break:break-word;font-weight:600;font-size:0.85rem;color:var(--dark)}
 .signature-line p{font-size:0.8rem;color:#666}
+.ngis-search{position:relative}.ngis-search input{width:100%;padding-right:34px}.ngis-search-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:1.3rem;line-height:1;color:#888;cursor:pointer;padding:2px 8px}.ngis-search-count{font-size:.76rem;color:#777;margin-top:4px;min-height:1em}mark.ngis-hit{background:#fff3a3;color:inherit;padding:0 1px;border-radius:2px}
 @media print{body{background:white}.sidebar,.top-bar,.no-print{display:none !important}.main-content{margin-left:0;padding:0}.report-card{box-shadow:none;max-width:100%}.dashboard{display:block !important}#reportCardSection{display:block !important}#studentReportCardSection{display:block !important}}
 .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
 .toast{padding:16px 24px;border-radius:var(--radius-sm);color:white;font-weight:500;box-shadow:var(--shadow-lg);animation:slideIn 0.3s ease-out;display:flex;align-items:center;gap:10px;min-width:300px}
@@ -2224,7 +2225,7 @@ Only the class teacher assigned to this class can save the comment.
 <div id="teacherStudents" class="section hidden">
 <div class="card">
 <div class="card-header"><h3><i class="fas fa-user-graduate"></i> My Class Students</h3><button class="btn btn-primary btn-sm" onclick="tsOpenAddStudent()"><i class="fas fa-plus"></i> Add Student</button></div>
-<div class="form-grid" style="margin-bottom:16px;"><div class="form-group"><label>Class</label><select id="tsStuClass" onchange="tsRenderStudents()"></select></div></div>
+<div class="form-grid" style="margin-bottom:16px;"><div class="form-group"><label>Class</label><select id="tsStuClass" onchange="tsRenderStudents()"></select></div><div class="form-group"><label><i class="fas fa-search"></i> Search Student</label><div class="ngis-search"><input type="search" id="tsStuSearch" oninput="tsRenderStudents()" placeholder="Name or registration no…" autocomplete="off"><button type="button" class="ngis-search-x" onclick="ngisClearSearch('tsStuSearch',tsRenderStudents)" title="Clear">&times;</button></div><div class="ngis-search-count" id="tsStuSearchCount"></div></div></div>
 <div class="student-login-tools"><i class="fas fa-shield-alt"></i> Each new student gets the next free registration number automatically (e.g. <b>NGIS/25/2026</b>). A number that belongs to a student can never be given to another student.</div>
 <div class="table-container"><table><thead><tr><th>#</th><th>Student Name</th><th>Registration No. (Username)</th><th>Password</th></tr></thead><tbody id="tsStuTable"></tbody></table></div>
 </div>
@@ -2273,7 +2274,7 @@ Only the class teacher assigned to this class can save the comment.
 <div id="studentsMgmt" class="section hidden">
 <div class="card">
 <div class="card-header"><h3><i class="fas fa-user-graduate"></i> Student Management</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-success btn-sm" onclick="generateMissingStudentLogins()"><i class="fas fa-key"></i> Generate / Reset All Logins</button><button class="btn btn-success btn-sm" onclick="downloadAllStudentLoginsExcel()"><i class="fas fa-file-excel"></i> Excel - All Logins</button><button class="btn btn-secondary btn-sm" onclick="downloadAllStudentLoginsWord()"><i class="fas fa-file-word"></i> Word - All Logins</button><button class="btn btn-accent btn-sm" onclick="downloadStudentWhatsAppText()"><i class="fab fa-whatsapp"></i> WhatsApp List</button><button class="btn btn-primary btn-sm" onclick="openModal('studentModal');prepareStudentLoginGenerator()"><i class="fas fa-plus"></i> Add Student</button></div></div>
-<div class="form-grid" style="margin-bottom:20px;align-items:end;"><div class="form-group"><label>Filter by Class</label><select id="studentFilterClass" onchange="loadStudents()"><option value="">All Classes</option></select></div><div class="form-group"><label>Download Login Details for Class</label><select id="loginDownloadClass"><option value="">-- Select Class --</option></select></div><div class="form-group" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><button class="btn btn-success btn-sm" onclick="downloadSelectedClassLoginExcel()"><i class="fas fa-file-excel"></i> Class Excel</button><button class="btn btn-secondary btn-sm" onclick="downloadSelectedClassLoginWord()"><i class="fas fa-file-word"></i> Class Word</button><button class="btn btn-accent btn-sm" onclick="downloadAllClassesLoginExcel()"><i class="fas fa-layer-group"></i> All Classes Excel</button><button class="btn btn-secondary btn-sm" onclick="downloadAllStudentLoginsWord()"><i class="fas fa-file-word"></i> All Classes Word</button></div></div>
+<div class="form-grid" style="margin-bottom:20px;align-items:end;"><div class="form-group"><label>Filter by Class</label><select id="studentFilterClass" onchange="loadStudents()"><option value="">All Classes</option></select></div><div class="form-group"><label><i class="fas fa-search"></i> Search Student</label><div class="ngis-search"><input type="search" id="studentSearch" oninput="renderStudentsTable()" placeholder="Name, login ID or class…" autocomplete="off"><button type="button" class="ngis-search-x" onclick="ngisClearSearch('studentSearch',renderStudentsTable)" title="Clear">&times;</button></div><div class="ngis-search-count" id="studentSearchCount"></div></div><div class="form-group"><label>Download Login Details for Class</label><select id="loginDownloadClass"><option value="">-- Select Class --</option></select></div><div class="form-group" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><button class="btn btn-success btn-sm" onclick="downloadSelectedClassLoginExcel()"><i class="fas fa-file-excel"></i> Class Excel</button><button class="btn btn-secondary btn-sm" onclick="downloadSelectedClassLoginWord()"><i class="fas fa-file-word"></i> Class Word</button><button class="btn btn-accent btn-sm" onclick="downloadAllClassesLoginExcel()"><i class="fas fa-layer-group"></i> All Classes Excel</button><button class="btn btn-secondary btn-sm" onclick="downloadAllStudentLoginsWord()"><i class="fas fa-file-word"></i> All Classes Word</button></div></div>
 <div class="table-container"><table><thead><tr><th>#</th><th>Student Name</th><th>Login ID</th><th>Password</th><th>Login Status</th><th>Class</th><th>Actions</th></tr></thead><tbody id="studentsTable"></tbody></table></div>
 </div>
 </div>
@@ -2307,6 +2308,7 @@ Only the class teacher assigned to this class can save the comment.
 <div id="teachersMgmt" class="section hidden">
 <div class="card">
 <div class="card-header"><h3><i class="fas fa-chalkboard-teacher"></i> Teacher Management</h3><button class="btn btn-primary btn-sm" onclick="openModal('teacherModal')"><i class="fas fa-plus"></i> Add Teacher</button></div>
+<div class="form-group" style="max-width:420px;margin-bottom:14px"><label><i class="fas fa-search"></i> Search Teacher</label><div class="ngis-search"><input type="search" id="teacherSearch" oninput="renderTeachersTable()" placeholder="Name, email, subject or class…" autocomplete="off"><button type="button" class="ngis-search-x" onclick="ngisClearSearch('teacherSearch',renderTeachersTable)" title="Clear">&times;</button></div><div class="ngis-search-count" id="teacherSearchCount"></div></div>
 <div class="table-container"><table><thead><tr><th>Name</th><th>Email</th><th>Subjects</th><th>Assigned Classes</th><th>Section(s)</th><th>Role</th><th>Actions</th></tr></thead><tbody id="teachersTable"></tbody></table></div>
 </div>
 </div>
@@ -3543,17 +3545,25 @@ async function saveSubject(){
   try{await loadTeachers();}catch(e){console.warn('Teacher refresh after subject creation failed:',e);}
 }
 
+function ngisNorm(v){return String(v==null?'':v).toLowerCase().replace(/\s+/g,' ').trim();}
+// Every word typed must appear somewhere in the row's fields (any order), so "ada p1" finds Ada in Primary 1.
+function ngisMatch(fields,q){const hay=ngisNorm((fields||[]).join(' '));return q.split(' ').every(w=>hay.indexOf(w)>-1);}
+function ngisClearSearch(id,fn){const el=document.getElementById(id);if(el){el.value='';el.focus();}try{fn();}catch(e){}}
 function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 function renderStudentsTable(){
 const filterClass=document.getElementById('studentFilterClass')?.value;
 let filtered=students;
 if(filterClass)filtered=students.filter(s=>String(s.class_id)===String(filterClass));
+const q=ngisNorm(document.getElementById('studentSearch')?.value);
+if(q)filtered=filtered.filter(s=>ngisMatch([s.name,s.student_login_id,s.classes?.name||getStudentClassName(s)],q));
+const cnt=document.getElementById('studentSearchCount');
+if(cnt)cnt.textContent=q?(filtered.length+' of '+(filterClass?students.filter(s=>String(s.class_id)===String(filterClass)).length:students.length)+' students'):'';
 const tbody=document.getElementById('studentsTable');
 if(!tbody)return;
 tbody.innerHTML=filtered.map((s,i)=>{
  const ready=!!(s.student_login_id&&s.student_password);
  return '<tr><td>'+(i+1)+'</td><td><strong>'+escapeHtml(s.name)+'</strong></td><td><code>'+escapeHtml(s.student_login_id||'-')+'</code></td><td><span style="font-weight:700">'+escapeHtml(s.student_password||'-')+'</span></td><td>'+(ready?'<span style="color:green;font-weight:600">Ready</span>':'<span style="color:#d97706;font-weight:600">Not set</span>')+'</td><td>'+escapeHtml(s.classes?.name||getStudentClassName(s)||'-')+'</td><td><button type="button" class="btn btn-primary btn-sm edit-student-btn" data-student-id="'+escapeHtml(s.id)+'" style="margin-right:5px"><i class="fas fa-edit"></i> Edit / Login</button><button type="button" class="btn btn-danger btn-sm delete-student-btn" data-student-id="'+escapeHtml(s.id)+'"><i class="fas fa-trash"></i></button></td></tr>';
-}).join('')||'<tr><td colspan="7" class="empty-state">No students yet</td></tr>';
+}).join('')||'<tr><td colspan="7" class="empty-state">'+(q?'No student matches your search':'No students yet')+'</td></tr>';
 }
 let editingStudentId=null;
 document.addEventListener('click',function(e){
@@ -3596,6 +3606,8 @@ loadStudents();
 function renderTeachersTable(){
   const tbody=document.getElementById('teachersTable');
   if(!tbody)return;
+  const q=ngisNorm(document.getElementById('teacherSearch')?.value);
+  const rows=[];
   tbody.innerHTML=teachers.map(t=>{
     let subjNames='-';
     if(t.teacher_subjects?.length){
@@ -3604,8 +3616,13 @@ function renderTeachersTable(){
     const assignedClasses=(classTeachers||[]).filter(ct=>String(ct.teacher_id)===String(t.id)).map(ct=>ct.classes?.name||classes.find(c=>String(c.id)===String(ct.class_id))?.name||ct.class_id).filter(Boolean);
     const classNames=assignedClasses.length?assignedClasses.join(', '):'None';
     const sectionNames=(t.ngis_sections||[]).map(k=>NGIS_SECTION_NAMES[k]||k).join(', ')||'Not assigned';
-    return '<tr><td><strong>'+escapeHtml(t.name||'')+'</strong></td><td>'+escapeHtml(t.email||'')+'</td><td>'+escapeHtml(subjNames)+'</td><td>'+escapeHtml(classNames)+'</td><td><span class="grade-badge '+(t.role==='admin'?'grade-a':'grade-c')+'">'+escapeHtml((t.role||'teacher').toUpperCase())+'</span></td><td>'+escapeHtml(sectionNames)+'</td><td><button type="button" class="btn btn-primary btn-sm edit-teacher-btn" data-teacher-id="'+escapeHtml(String(t.id))+'" onclick="return ngisOpenTeacherEdit(event,this)" style="margin-right:5px"><i class="fas fa-edit"></i> Edit</button><button type="button" class="btn btn-danger btn-sm delete-teacher-btn" data-teacher-id="'+escapeHtml(String(t.id))+'"><i class="fas fa-trash"></i></button></td></tr>';
+    rows.push(t);
+    if(q&&!ngisMatch([t.name,t.email,subjNames,classNames,sectionNames,t.role],q)){rows.pop();return '';}
+    return '<tr><td><strong>'+escapeHtml(t.name||'')+'</strong></td><td>'+escapeHtml(t.email||'')+'</td><td>'+escapeHtml(subjNames)+'</td><td>'+escapeHtml(classNames)+'</td><td>'+escapeHtml(sectionNames)+'</td><td><span class="grade-badge '+(t.role==='admin'?'grade-a':'grade-c')+'">'+escapeHtml((t.role||'teacher').toUpperCase())+'</span></td><td><button type="button" class="btn btn-primary btn-sm edit-teacher-btn" data-teacher-id="'+escapeHtml(String(t.id))+'" onclick="return ngisOpenTeacherEdit(event,this)" style="margin-right:5px"><i class="fas fa-edit"></i> Edit</button><button type="button" class="btn btn-danger btn-sm delete-teacher-btn" data-teacher-id="'+escapeHtml(String(t.id))+'"><i class="fas fa-trash"></i></button></td></tr>';
   }).join('')||'<tr><td colspan="7" class="empty-state">No teachers yet</td></tr>';
+  if(q&&!rows.length)tbody.innerHTML='<tr><td colspan="7" class="empty-state">No teacher matches your search</td></tr>';
+  const cnt=document.getElementById('teacherSearchCount');
+  if(cnt)cnt.textContent=q?(rows.length+' of '+teachers.length+' teachers'):'';
 }
 
 document.addEventListener('click',function(e){
@@ -12357,8 +12374,12 @@ window.generateMissingStudentLogins=async function(){
 window.tsRenderStudents=function(){
   const tb=$('tsStuTable');if(!tb)return;
   const cid=$('tsStuClass')?.value;
-  const list=(students||[]).filter(s=>cid&&String(s.class_id)===String(cid)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
-  tb.innerHTML=list.map((s,i)=>'<tr><td>'+(i+1)+'</td><td><strong>'+E(s.name||'')+'</strong></td><td><code>'+E(s.student_login_id||'-')+'</code></td><td>'+E(s.student_password||'-')+'</td></tr>').join('')||'<tr><td colspan="4" class="empty-state">'+(cid?'No students in this class yet':'Choose a class')+'</td></tr>';
+  let list=(students||[]).filter(s=>cid&&String(s.class_id)===String(cid)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const total=list.length;
+  const q=ngisNorm($('tsStuSearch')?.value);
+  if(q)list=list.filter(s=>ngisMatch([s.name,s.student_login_id],q));
+  const cnt=$('tsStuSearchCount');if(cnt)cnt.textContent=q?(list.length+' of '+total+' students'):'';
+  tb.innerHTML=list.map((s,i)=>'<tr><td>'+(i+1)+'</td><td><strong>'+E(s.name||'')+'</strong></td><td><code>'+E(s.student_login_id||'-')+'</code></td><td>'+E(s.student_password||'-')+'</td></tr>').join('')||'<tr><td colspan="4" class="empty-state">'+(cid?(q?'No student matches your search':'No students in this class yet'):'Choose a class')+'</td></tr>';
 };
 async function tsInit(){
   const sel=$('tsStuClass');if(!sel)return;
