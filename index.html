@@ -2046,8 +2046,18 @@ Only the class teacher assigned to this class can save the comment.
       <div class="form-group"><label>Week (optional)</label><select id="asgWeek"><option value="">-- None --</option></select></div>
       <div class="form-group"><label>Due Date &amp; Time</label><input type="datetime-local" id="asgDue"></div>
       <div class="form-group" id="asgMaxWrap"><label>Maximum Score</label><input type="number" id="asgMax" min="1" max="1000" step="0.5" value="10"></div>
+      <div class="form-group hidden" id="asgQuizSrcWrap"><label>CBT Questions</label>
+        <select id="asgQuizSrc" onchange="asgTypeChanged()">
+          <option value="upload">Upload a CBT question file now</option>
+          <option value="existing">Use an already published quiz</option>
+        </select></div>
       <div class="form-group hidden" id="asgQuizWrap"><label>Published CBT Quiz</label><select id="asgQuiz"><option value="">-- Select Class first --</option></select></div>
+      <div class="form-group hidden" id="asgCbtDurWrap"><label>CBT Duration (minutes)</label><input type="number" id="asgCbtDur" min="1" max="240" value="30"></div>
     </div>
+    <div class="form-group hidden" id="asgCbtFileWrap" style="margin-bottom:20px"><label><i class="fas fa-upload"></i> CBT question file (Excel, CSV, Word, PDF, PowerPoint, text, JSON or image)</label>
+      <input type="file" id="asgCbtFile" accept=".txt,.csv,.xls,.xlsx,.json,.doc,.docx,.pdf,.ppt,.pptx,.html,.htm,.png,.jpg,.jpeg,.webp" onchange="asgCbtFileChosen(this.files[0])" style="width:100%;max-width:600px">
+      <div style="font-size:.78rem;color:#777;margin-top:6px">Each question needs options A–D and an answer. The week above is required. The quiz goes live for the selected class as soon as you publish the assignment &ndash; no admin approval needed. Students are scored out of 10.</div>
+      <div id="asgCbtStatus" style="margin-top:8px;color:#777"></div></div>
     <div class="form-group" style="margin-bottom:20px"><label>Instructions</label><textarea id="asgInstr" placeholder="Tell students what to do and how to submit…"></textarea></div>
     <div class="form-group" id="asgAttachWrap" style="margin-bottom:20px"><label>Attach question file(s) for students (optional – any format)</label><input type="file" id="asgAttach" multiple></div>
     <button class="btn btn-primary" id="asgCreateBtn" onclick="asgCreate()"><i class="fas fa-paper-plane"></i> Publish Assignment</button>
@@ -6988,10 +6998,27 @@ async function asgTeacherInit(){
 }
 function asgTypeChanged(){
   const cbt=asgVal('asgType')==='cbt';
-  document.getElementById('asgQuizWrap').classList.toggle('hidden',!cbt);
+  const up=cbt&&asgVal('asgQuizSrc')!=='existing';
+  document.getElementById('asgQuizSrcWrap').classList.toggle('hidden',!cbt);
+  document.getElementById('asgQuizWrap').classList.toggle('hidden',!cbt||up);
+  document.getElementById('asgCbtFileWrap').classList.toggle('hidden',!up);
+  document.getElementById('asgCbtDurWrap').classList.toggle('hidden',!up);
   document.getElementById('asgMaxWrap').classList.toggle('hidden',cbt);
   document.getElementById('asgAttachWrap').classList.toggle('hidden',cbt);
-  if(cbt)asgLoadQuizOptions();
+  if(cbt&&!up)asgLoadQuizOptions();
+}
+let asgCbtBuffer=[];
+async function asgCbtFileChosen(file){
+  const st=document.getElementById('asgCbtStatus');asgCbtBuffer=[];
+  if(!file){st.textContent='';return;}
+  st.textContent='Reading '+file.name+'…';
+  try{
+    const r=await extractFileText(file);let qs=r.questions||[];
+    if(!qs.length&&r.text)qs=parseQuestionText(r.text);
+    asgCbtBuffer=qs;
+    st.innerHTML=qs.length?'<span style="color:#1a5f2a;font-weight:700">✓ '+qs.length+' questions detected and ready.</span>'
+      :'<span style="color:#c41e3a;font-weight:700">No complete MCQ set detected. Use the CBT template format (question, A, B, C, D, answer).</span>';
+  }catch(e){st.textContent='Could not read this file: '+(e&&e.message||e);}
 }
 function asgClassChanged(){if(asgVal('asgType')==='cbt')asgLoadQuizOptions();}
 let asgQuizCache=[];
@@ -7014,30 +7041,52 @@ async function asgCreate(){
   if(!title){showToast('Enter an assignment title','error');return;}
   if(!classId){showToast('Select the class','error');return;}
   let quiz=null,max=Number(document.getElementById('asgMax').value);
+  let uploadMode=false;
   if(type==='cbt'){
-    quiz=asgQuizCache.find(x=>sameId(x.id,asgVal('asgQuiz')));
-    if(!quiz){showToast('Select a published CBT quiz','error');return;}
-    max=10;subjectId=subjectId||String(quiz.subject_id||'');weekId=weekId||String(quiz.week_id||'');
+    if(asgVal('asgQuizSrc')!=='existing'){
+      uploadMode=true;
+      if(!asgCbtBuffer.length){showToast('Upload a valid CBT question file first','error');return;}
+      if(!subjectId){showToast('Select the subject','error');return;}
+      if(!weekId){showToast('Select the week for this CBT','error');return;}
+      max=10;
+    }else{
+      quiz=asgQuizCache.find(x=>sameId(x.id,asgVal('asgQuiz')));
+      if(!quiz){showToast('Select a published CBT quiz','error');return;}
+      max=10;subjectId=subjectId||String(quiz.subject_id||'');weekId=weekId||String(quiz.week_id||'');
+    }
   }
   if(!subjectId){showToast('Select the subject','error');return;}
   if(!(max>0)){showToast('Maximum score must be greater than 0','error');return;}
   const files=[...(document.getElementById('asgAttach').files||[])];
   if(files.length>ASG_MAX_FILES){showToast('Attach at most '+ASG_MAX_FILES+' files','error');return;}
   const btn=document.getElementById('asgCreateBtn');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Publishing…';
-  const id=asgUuid();let attachments=[];
+  const id=asgUuid();let attachments=[];let newQuizId=null;
   try{
     if(type==='file'&&files.length)attachments=await asgUploadFiles(files,'teacher/'+asgSafe(currentUser.id)+'/'+id);
+    if(uploadMode){
+      const dur=Math.max(1,Math.min(240,parseInt(document.getElementById('asgCbtDur').value)||30));
+      const qr=await supabaseClient.from('quizzes').insert([{title,class_id:classId,subject_id:subjectId,week_id:weekId,teacher_id:currentUser.id,duration_minutes:dur,max_score:10,pass_score:5,status:'published',shuffle_questions:true,shuffle_options:true,attempts_allowed:1}]).select().single();
+      if(qr.error){
+        const m=String(qr.error.message||'');
+        throw new Error(/row-level security|permission denied/i.test(m)?'Supabase security rules block teachers from creating quizzes. Ask the administrator to allow teachers to insert into quizzes and quiz_questions.':m);
+      }
+      newQuizId=String(qr.data.id);
+      const recs=asgCbtBuffer.map((x,i)=>({...x,quiz_id:qr.data.id,question_no:i+1,marks:1}));
+      const qe=await supabaseClient.from('quiz_questions').insert(recs);
+      if(qe.error){await supabaseClient.from('quizzes').delete().eq('id',qr.data.id);newQuizId=null;throw qe.error;}
+    }
     const nameOf=(list,v)=>(list||[]).find(x=>sameId(x.id,v))?.name||'';
-    const row={id,title,instructions:instr||null,assignment_type:type,quiz_id:type==='cbt'?String(quiz.id):null,
+    const row={id,title,instructions:instr||null,assignment_type:type,quiz_id:type==='cbt'?(newQuizId||String(quiz.id)):null,
       class_id:String(classId),class_name:nameOf(classes,classId),subject_id:String(subjectId),subject_name:nameOf(subjects,subjectId),
       week_id:weekId?String(weekId):null,week_name:weekId?nameOf(weeks,weekId):null,
       teacher_id:String(currentUser.id),teacher_name:currentUser.name,
       due_date:dueRaw?new Date(dueRaw).toISOString():null,max_score:max,attachments};
     const {error}=await supabaseClient.from('assignments').insert([row]);
-    if(error){await asgRemovePaths(attachments.map(a=>a.path));throw error;}
+    if(error){await asgRemovePaths(attachments.map(a=>a.path));if(newQuizId){await supabaseClient.from('quiz_questions').delete().eq('quiz_id',newQuizId);await supabaseClient.from('quizzes').delete().eq('id',newQuizId);}throw error;}
     showToast('Assignment published to '+row.class_name,'success');
     ['asgTitle','asgInstr','asgDue'].forEach(k=>document.getElementById(k).value='');
     document.getElementById('asgAttach').value='';
+    asgCbtBuffer=[];{const f=document.getElementById('asgCbtFile');if(f)f.value='';const st=document.getElementById('asgCbtStatus');if(st)st.textContent='';}
     asgLoadList();
   }catch(e){showToast(asgErrMsg(e),'error');}
   finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> Publish Assignment';}
