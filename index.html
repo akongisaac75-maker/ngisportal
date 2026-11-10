@@ -2449,7 +2449,7 @@ Only the class teacher assigned to this class can save the comment.
 <div id="cbtPendingNotice"></div><div class="card-header"><h3><i class="fas fa-list"></i> Published Quizzes & Results</h3></div>
 <div class="table-container"><table><thead><tr><th>Quiz</th><th>Class</th><th>Subject</th><th>Week</th><th>Questions</th><th>Duration</th><th>Status</th><th>Actions</th></tr></thead><tbody id="cbtQuizTable"></tbody></table></div>
 </div>
-<div class="card hidden" id="cbtResultsCard"><div class="card-header"><h3><i class="fas fa-chart-line"></i> Quiz Results</h3><button class="btn btn-sm btn-secondary" onclick="document.getElementById('cbtResultsCard').classList.add('hidden')">Close</button></div><div class="table-container"><table><thead><tr><th>Student</th><th>Class</th><th>Score</th><th>Percentage</th><th>Correct</th><th>Submitted</th></tr></thead><tbody id="cbtResultsTable"></tbody></table></div></div>
+<div class="card hidden" id="cbtResultsCard"><div class="card-header"><h3><i class="fas fa-chart-line"></i> Quiz Results</h3><button class="btn btn-sm btn-secondary" onclick="document.getElementById('cbtResultsCard').classList.add('hidden')">Close</button></div><div class="table-container"><table><thead><tr><th>Student</th><th>Class</th><th>Score</th><th>Percentage</th><th>Correct</th><th>Submitted</th><th>Review</th></tr></thead><tbody id="cbtResultsTable"></tbody></table></div></div>
 <div class="card hidden" id="cbtReviewCard">
   <div class="card-header"><h3><i class="fas fa-clipboard-check"></i> CBT Question Vetting</h3><button class="btn btn-sm btn-secondary" onclick="closeCBTReview()">Close</button></div>
   <div id="cbtReviewContent"></div>
@@ -6098,7 +6098,10 @@ async function viewCBTResults(quizId){
   const {data,error}=await supabaseClient.from('quiz_attempts').select('*,students(name,class_id,classes(name))').eq('quiz_id',quizId).order('submitted_at',{ascending:false});
   if(error){showToast('Unable to load quiz results: '+error.message,'error');return;}
   document.getElementById('cbtResultsCard').classList.remove('hidden'); const tb=document.getElementById('cbtResultsTable');
-  tb.innerHTML=(data||[]).map(a=>'<tr><td><strong>'+cbtEsc(a.students?.name||'-')+'</strong></td><td>'+cbtEsc(a.students?.classes?.name||'-')+'</td><td><strong>'+Number(a.score||0).toFixed(2)+' / 10</strong></td><td>'+Number(a.percentage||0).toFixed(1)+'%</td><td>'+a.correct_count+' / '+a.total_questions+'</td><td>'+ (a.submitted_at?new Date(a.submitted_at).toLocaleString():'-')+'</td></tr>').join('')||'<tr><td colspan="6" class="empty-state">No attempts yet</td></tr>';
+  tb.innerHTML=(data||[]).map(a=>'<tr><td><strong>'+cbtEsc(a.students?.name||'-')+'</strong></td><td>'+cbtEsc(a.students?.classes?.name||'-')+'</td><td><strong>'+Number(a.score||0).toFixed(2)+' / 10</strong></td><td>'+Number(a.percentage||0).toFixed(1)+'%</td><td>'+a.correct_count+' / '+a.total_questions+'</td><td>'+ (a.submitted_at?new Date(a.submitted_at).toLocaleString():'-')+'</td><td><button type="button" class="btn btn-sm btn-primary" onclick="cbtOpenReview({attemptId:\''+a.id+'\',who:\'teacher\'})"><i class="fas fa-search"></i> Wrong answers</button></td></tr>').join('')||'<tr><td colspan="7" class="empty-state">No attempts yet</td></tr>';
+  const hb=document.getElementById('cbtResultsCard').querySelector('.card-header');
+  if(hb&&!document.getElementById('cbtResultsMiss')){const b=document.createElement('button');b.id='cbtResultsMiss';b.type='button';b.className='btn btn-sm btn-accent';b.style.marginRight='8px';b.innerHTML='<i class="fas fa-chart-bar"></i> Most-missed questions';hb.insertBefore(b,hb.lastElementChild);}
+  const mb=document.getElementById('cbtResultsMiss');if(mb)mb.onclick=()=>cbtOpenAnalysis(quizId);
 }
 function shuffleArray(a){const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}return x;}
 async function loadStudentQuizzes(){
@@ -6108,7 +6111,7 @@ async function loadStudentQuizzes(){
   if(error){box.innerHTML='<div class="empty-state">CBT database tables are not ready. Ask the administrator to run add_cbt_schema.sql.</div>';return;}
   if(!data?.length){box.innerHTML='<div class="empty-state"><i class="fas fa-clipboard-check"></i><h4>No CBT quiz is available</h4><p>Your administrator will publish quizzes for your class.</p></div>';return;}
   const ids=data.map(x=>x.id);const {data:attempts}=await supabaseClient.from('quiz_attempts').select('quiz_id,status,score,percentage').eq('student_id',currentUser.id).in('quiz_id',ids);const amap={};(attempts||[]).forEach(a=>amap[a.quiz_id]=a);
-  box.innerHTML=data.map(q=>{const a=amap[q.id];const done=a?.status==='submitted'||a?.status==='expired';return '<div style="border:1px solid #eee;border-radius:14px;padding:18px;margin-bottom:12px;display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap"><div><h4 style="color:var(--primary);margin-bottom:5px">'+cbtEsc(q.title)+'</h4><p style="color:#777;font-size:.85rem">'+cbtEsc(q.subjects?.name||'Subject')+' • '+cbtEsc(window.cbtTypeLabel(q))+' • '+q.quiz_questions.length+' questions • '+q.duration_minutes+' minutes</p></div><div>'+(done?'<span class="cbt-badge">Completed: '+Number(a.score||0).toFixed(1)+'/10</span>':'<button class="btn btn-primary" onclick="startStudentQuiz(\''+q.id+'\')"><i class="fas fa-play"></i> Start Quiz</button>')+'</div></div>';}).join('');
+  box.innerHTML=data.map(q=>{const a=amap[q.id];const done=a?.status==='submitted'||a?.status==='expired';return '<div style="border:1px solid #eee;border-radius:14px;padding:18px;margin-bottom:12px;display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap"><div><h4 style="color:var(--primary);margin-bottom:5px">'+cbtEsc(q.title)+'</h4><p style="color:#777;font-size:.85rem">'+cbtEsc(q.subjects?.name||'Subject')+' • '+cbtEsc(window.cbtTypeLabel(q))+' • '+q.quiz_questions.length+' questions • '+q.duration_minutes+' minutes</p></div><div>'+(done?'<span class="cbt-badge">Completed: '+Number(a.score||0).toFixed(1)+'/10</span> <button type="button" class="btn btn-sm btn-secondary" onclick="cbtOpenReview({quizId:\''+q.id+'\',studentId:\''+currentUser.id+'\',who:\'student\'})"><i class="fas fa-search"></i> Review corrections</button>':'<button class="btn btn-primary" onclick="startStudentQuiz(\''+q.id+'\')"><i class="fas fa-play"></i> Start Quiz</button>')+'</div></div>';}).join('');
 }
 async function startStudentQuiz(quizId){
   if(cbtRunner){showToast('A quiz is already in progress','error');return;}
@@ -7162,7 +7165,7 @@ async function asgOpenReview(id){
   asgCurrent=a;
   const card=document.getElementById('asgReviewCard');card.classList.remove('hidden');
   document.getElementById('asgReviewTitle').textContent=a.title;
-  document.getElementById('asgReviewMeta').innerHTML='<strong>'+asgEsc(a.class_name||'')+'</strong> • '+asgEsc(a.subject_name||'')+(a.week_name?' • '+asgEsc(a.week_name):'')+' • Due: '+asgFmtDate(a.due_date)+' • Max score: <strong>'+a.max_score+'</strong>';
+  document.getElementById('asgReviewMeta').innerHTML='<strong>'+asgEsc(a.class_name||'')+'</strong> • '+asgEsc(a.subject_name||'')+(a.week_name?' • '+asgEsc(a.week_name):'')+' • Due: '+asgFmtDate(a.due_date)+' • Max score: <strong>'+a.max_score+'</strong>'+(a.assignment_type==='cbt'&&a.quiz_id?' <button type="button" class="btn btn-sm btn-accent" style="margin-left:8px" onclick="cbtOpenAnalysis(\''+asgEsc(a.quiz_id)+'\')"><i class="fas fa-chart-bar"></i> Most-missed questions</button>':'');
   document.getElementById('asgFilter').value='all';document.getElementById('asgSearch').value='';
   document.getElementById('asgSaveAllBtn').classList.toggle('hidden',a.assignment_type==='cbt');
   document.getElementById('asgReviewHead').innerHTML='';
@@ -7173,7 +7176,7 @@ async function asgOpenReview(id){
     if(se)throw se;
     let map={};
     if(a.assignment_type==='cbt'){
-      const {data,error}=await supabaseClient.from('quiz_attempts').select('student_id,score,percentage,correct_count,total_questions,submitted_at,status').eq('quiz_id',a.quiz_id);
+      const {data,error}=await supabaseClient.from('quiz_attempts').select('id,student_id,score,percentage,correct_count,total_questions,submitted_at,status').eq('quiz_id',a.quiz_id);
       if(error)throw error;(data||[]).forEach(r=>map[String(r.student_id)]=r);
       asgRows=(studs||[]).map(s=>({student:s,att:map[String(s.id)]||null}));
     }else{
@@ -7202,13 +7205,14 @@ function asgRenderReview(){
     if(f==='graded')return graded;if(f==='missing')return !submitted&&!graded;if(f==='pending')return submitted&&!graded;return true;
   });
   if(cbt){
-    head.innerHTML='<tr><th>#</th><th>Student</th><th>Class / Arm</th><th>Status</th><th>Score (/10)</th><th>Percent</th><th>Correct</th><th>Submitted</th></tr>';
+    head.innerHTML='<tr><th>#</th><th>Student</th><th>Class / Arm</th><th>Status</th><th>Score (/10)</th><th>Percent</th><th>Correct</th><th>Submitted</th><th>Wrong answers</th></tr>';
     body.innerHTML=items.map(({r},n)=>{const t=r.att;
       return '<tr><td>'+(n+1)+'</td><td><strong>'+asgEsc(r.student.name)+'</strong></td><td>'+asgEsc(a.class_name||'')+'</td>'
         +'<td>'+(t?'<span class="asg-badge green">Completed</span>':'<span class="asg-badge orange">Not attempted</span>')+'</td>'
         +'<td><strong>'+(t?Number(t.score||0).toFixed(1):'—')+'</strong></td><td>'+(t?Number(t.percentage||0).toFixed(1)+'%':'—')+'</td>'
-        +'<td>'+(t?t.correct_count+' / '+t.total_questions:'—')+'</td><td>'+(t?.submitted_at?asgFmtDate(t.submitted_at):'—')+'</td></tr>';
-    }).join('')||'<tr><td colspan="8" class="empty-state">No students match.</td></tr>';
+        +'<td>'+(t?t.correct_count+' / '+t.total_questions:'—')+'</td><td>'+(t?.submitted_at?asgFmtDate(t.submitted_at):'—')+'</td>'
+        +'<td>'+(t?'<button type="button" class="btn btn-sm btn-primary" onclick="cbtOpenReview({attemptId:\''+asgEsc(t.id)+'\',who:\'teacher\'})"><i class="fas fa-search"></i> View</button>':'—')+'</td></tr>';
+    }).join('')||'<tr><td colspan="9" class="empty-state">No students match.</td></tr>';
     return;
   }
   head.innerHTML='<tr><th>#</th><th>Student</th><th>Class / Arm</th><th>Status</th><th>Submitted</th><th>Student\'s work</th><th>Score / '+a.max_score+'</th><th>Feedback</th><th></th></tr>';
@@ -7348,7 +7352,7 @@ function asgStudentCard(a,i){
   if(cbt){
     if(att){
       badge='<span class="asg-badge green">Completed</span>';
-      body='<div class="asg-score">'+Number(att.score||0).toFixed(1)+'<small>/ 10</small></div> <span style="color:#777;margin-left:8px">'+Number(att.percentage||0).toFixed(1)+'% • '+att.correct_count+' / '+att.total_questions+' correct</span>';
+      body='<div class="asg-score">'+Number(att.score||0).toFixed(1)+'<small>/ 10</small></div> <span style="color:#777;margin-left:8px">'+Number(att.percentage||0).toFixed(1)+'% • '+att.correct_count+' / '+att.total_questions+' correct</span> <button type="button" class="btn btn-sm btn-secondary" style="margin-left:8px" onclick="cbtOpenReview({quizId:\''+asgEsc(a.quiz_id)+'\',studentId:\''+currentUser.id+'\',who:\'student\'})"><i class="fas fa-search"></i> Review corrections</button>';
     }else{
       badge=overdue?'<span class="asg-badge red">Overdue</span>':'<span class="asg-badge orange">Not taken</span>';
       body='<button class="btn btn-primary btn-sm" onclick="asgTakeCbt(\''+asgEsc(a.quiz_id)+'\')"><i class="fas fa-laptop-code"></i> Take CBT Now</button>';
@@ -14529,5 +14533,127 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
 })();
 </script>
 
+
+<script>
+/* ===== CBT corrections review: wrong answers + correct answers for students and teachers ===== */
+(function(){
+  var E=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});};
+  var KEYS=['A','B','C','D'];
+  function opt(q,k){return q['option_'+k.toLowerCase()]||'';}
+  function norm(x){return String(x==null?'':x).trim().toUpperCase();}
+  function isWrong(q,ans){return norm(ans[q.id])!==norm(q.correct_answer);}
+  var css=document.createElement('style');
+  css.textContent='.cr-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px}'
+   +'.cr-box{background:#fff;border-radius:16px;max-width:760px;width:100%;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.3)}'
+   +'.cr-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.cr-head h3{margin:0;color:#1a5f2a;font-size:1.1rem}'
+   +'.cr-sum{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px}.cr-sum div{flex:1;min-width:120px;padding:10px 12px;border-radius:10px;background:#f4f7f5;font-size:.82rem;color:#555}.cr-sum b{display:block;font-size:1.3rem;color:#222}'
+   +'.cr-q{border:1px solid #eee;border-left:4px solid #dc3545;border-radius:10px;padding:12px 14px;margin-bottom:12px}.cr-q .qt{font-weight:700;line-height:1.5;margin-bottom:8px}'
+   +'.cr-o{padding:7px 10px;border-radius:8px;margin:4px 0;font-size:.9rem;border:1px solid #eee}.cr-o.ok{background:#e8f5e9;border-color:#9ccc9f;color:#14501f;font-weight:600}.cr-o.bad{background:#fdecea;border-color:#f1a9a0;color:#9b1c1c;font-weight:600}'
+   +'.cr-tag{font-size:.7rem;font-weight:800;text-transform:uppercase;margin-left:6px}.cr-top{font-size:.78rem;color:#777;margin-top:6px}'
+   +'.cr-perfect{text-align:center;padding:22px;color:#1a5f2a}.cr-perfect i{font-size:2.4rem}'
+   +'.cr-bar{height:8px;background:#eee;border-radius:6px;overflow:hidden;margin:4px 0 8px}.cr-bar i{display:block;height:100%;background:#dc3545}';
+  document.head.appendChild(css);
+
+  function qCard(q,n,ans,who){
+    var ua=norm(ans[q.id]),ca=norm(q.correct_answer);
+    var you=who==='teacher'?"Student's answer":'Your answer';
+    var h='<div class="cr-q"><div class="qt">'+n+'. '+E(q.question_text||'')+'</div>';
+    KEYS.forEach(function(k){
+      var cls='',tag='';
+      if(k===ca){cls=' ok';tag='<span class="cr-tag">✓ Correct answer</span>';}
+      else if(k===ua){cls=' bad';tag='<span class="cr-tag">✗ '+you+'</span>';}
+      h+='<div class="cr-o'+cls+'"><b>'+k+'.</b> '+E(opt(q,k))+tag+'</div>';
+    });
+    if(!ua)h+='<div class="cr-top" style="color:#9b1c1c"><b>Not answered.</b></div>';
+    var tp=q.topic||q.topic_concern;
+    if(tp&&tp!=='General / Review required')h+='<div class="cr-top">Topic: '+E(tp)+'</div>';
+    return h+'</div>';
+  }
+  window.cbtReviewHtml=function(qs,ans,who){
+    ans=ans||{};qs=qs||[];
+    var wrong=qs.filter(function(q){return isWrong(q,ans);});
+    var total=qs.length,right=total-wrong.length;
+    var h='<div class="cr-sum"><div><b style="color:#1a5f2a">'+right+'</b>Correct</div><div><b style="color:#c41e3a">'+wrong.length+'</b>Wrong / unanswered</div><div><b>'+total+'</b>Total questions</div></div>';
+    if(!wrong.length)return h+'<div class="cr-perfect"><i class="fas fa-check-circle"></i><h4 style="margin-top:8px">'+(who==='teacher'?'This student answered every question correctly.':'Perfect! You answered every question correctly.')+'</h4></div>';
+    h+='<h4 style="margin:6px 0 10px;color:#9b1c1c"><i class="fas fa-exclamation-circle"></i> '+(who==='teacher'?'Questions answered wrongly':'Questions to learn from')+'</h4>';
+    return h+wrong.map(function(q,i){return qCard(q,i+1,ans,who);}).join('');
+  };
+  function openModal(title,html){
+    var old=document.getElementById('crOv');if(old)old.remove();
+    var o=document.createElement('div');o.className='cr-ov';o.id='crOv';
+    o.innerHTML='<div class="cr-box"><div class="cr-head"><h3>'+title+'</h3><button type="button" class="btn btn-sm btn-secondary" id="crClose">Close</button></div><div>'+html+'</div></div>';
+    o.addEventListener('click',function(e){if(e.target===o)o.remove();});
+    document.body.appendChild(o);document.getElementById('crClose').onclick=function(){o.remove();};
+  }
+  function loading(){openModal('Loading…','<div style="padding:20px;text-align:center;color:#777"><i class="fas fa-spinner fa-spin"></i></div>');}
+  async function questionsOf(quizId){
+    var r=await supabaseClient.from('quiz_questions').select('*').eq('quiz_id',quizId).order('question_no');
+    if(r.error)throw r.error;return r.data||[];
+  }
+  window.cbtOpenReview=async function(o){
+    loading();
+    try{
+      var q=supabaseClient.from('quiz_attempts').select('*,students(name),quizzes(title,subjects(name))');
+      q=o.attemptId?q.eq('id',o.attemptId):q.eq('quiz_id',o.quizId).eq('student_id',o.studentId);
+      var r=await q.limit(1);
+      if(r.error)throw r.error;
+      var a=(r.data||[])[0];
+      if(!a){openModal('Review','<div class="cr-perfect" style="color:#777">No completed attempt found.</div>');return;}
+      var qs=await questionsOf(a.quiz_id);
+      var title=o.who==='teacher'?E((a.students&&a.students.name)||'Student')+' &ndash; '+E((a.quizzes&&a.quizzes.title)||'CBT'):'My corrections &ndash; '+E((a.quizzes&&a.quizzes.title)||'CBT');
+      var meta='<p style="margin:0 0 12px;color:#666;font-size:.88rem">Score: <b>'+Number(a.score||0).toFixed(1)+'</b> &bull; '+Number(a.percentage||0).toFixed(1)+'%'+((a.quizzes&&a.quizzes.subjects&&a.quizzes.subjects.name)?' &bull; '+E(a.quizzes.subjects.name):'')+'</p>';
+      openModal(title,meta+window.cbtReviewHtml(qs,a.answers||{},o.who));
+    }catch(e){openModal('Review','<div class="cr-perfect" style="color:#c41e3a">Could not load the review: '+E(e&&e.message||e)+'</div>');}
+  };
+  window.cbtOpenAnalysis=async function(quizId){
+    loading();
+    try{
+      var qs=await questionsOf(quizId);
+      var r=await supabaseClient.from('quiz_attempts').select('answers').eq('quiz_id',quizId);
+      if(r.error)throw r.error;
+      var att=r.data||[],n=att.length;
+      if(!n){openModal('Most-missed questions','<div class="cr-perfect" style="color:#777">No student has taken this CBT yet.</div>');return;}
+      var rows=qs.map(function(q){
+        var wrong=0,pick={};
+        att.forEach(function(a){var u=norm((a.answers||{})[q.id]);if(u!==norm(q.correct_answer)){wrong++;var k=u||'—';pick[k]=(pick[k]||0)+1;}});
+        var top=Object.keys(pick).sort(function(x,y){return pick[y]-pick[x];})[0];
+        return {q:q,wrong:wrong,pct:wrong/n*100,top:top,topN:top?pick[top]:0};
+      }).filter(function(x){return x.wrong>0;}).sort(function(a,b){return b.wrong-a.wrong;});
+      var h='<p style="margin:0 0 12px;color:#666;font-size:.88rem">Based on <b>'+n+'</b> student attempt'+(n===1?'':'s')+'. Questions are listed from most to least missed.</p>';
+      if(!rows.length)h+='<div class="cr-perfect"><i class="fas fa-check-circle"></i><h4 style="margin-top:8px">Every student answered every question correctly.</h4></div>';
+      h+=rows.map(function(x,i){
+        var q=x.q,ca=norm(q.correct_answer);
+        return '<div class="cr-q"><div class="qt">'+(i+1)+'. '+E(q.question_text||'')+'</div>'
+          +'<div style="font-size:.84rem;color:#9b1c1c;font-weight:700">'+x.wrong+' of '+n+' got it wrong ('+x.pct.toFixed(0)+'%)</div><div class="cr-bar"><i style="width:'+x.pct+'%"></i></div>'
+          +'<div class="cr-o ok"><b>'+E(ca)+'.</b> '+E(opt(q,ca))+'<span class="cr-tag">✓ Correct answer</span></div>'
+          +(x.top&&x.top!=='—'?'<div class="cr-top">Most common wrong choice: <b>'+E(x.top)+'. '+E(opt(q,x.top))+'</b> ('+x.topN+' student'+(x.topN===1?'':'s')+')</div>':'')+'</div>';
+      }).join('');
+      openModal('Most-missed questions',h);
+    }catch(e){openModal('Most-missed questions','<div class="cr-perfect" style="color:#c41e3a">Could not load: '+E(e&&e.message||e)+'</div>');}
+  };
+
+  /* Show the corrections straight after a student submits (weekly, exam and practice quizzes). */
+  function hook(){
+    var prev=window.submitStudentQuiz;if(typeof prev!=='function')return;
+    window.submitStudentQuiz=async function(){
+      var run=cbtRunner,qs=run&&run.questions,ans={};
+      if(qs)qs.forEach(function(q){var el=document.querySelector('input[name="q_'+q.id+'"]:checked');ans[q.id]=el?el.value:'';});
+      var res=await prev.apply(this,arguments);
+      try{
+        if(run&&!cbtRunner){
+          var box=document.getElementById('studentQuizResult');
+          if(box&&!box.classList.contains('hidden')){
+            var d=document.createElement('div');d.style.cssText='max-width:720px;margin:0 auto;padding:0 8px 20px;text-align:left';
+            d.innerHTML='<h3 style="color:#1a5f2a;margin:6px 0 12px"><i class="fas fa-search"></i> Your corrections</h3>'+window.cbtReviewHtml(qs,ans,'student');
+            box.appendChild(d);
+          }
+        }
+      }catch(e){console.warn('Corrections view failed',e);}
+      return res;
+    };
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();
+})();
+</script>
 </body>
 </html>
