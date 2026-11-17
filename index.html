@@ -668,6 +668,34 @@ table.rgs{border-collapse:collapse;width:100%;font-size:.82rem}.rgs th{backgroun
 .rg-h{font-weight:700;margin:14px 0 8px;color:#1a5f2a}
 .rg-drop{border:2px dashed #1a5f2a;border-radius:12px;padding:22px;text-align:center;background:#f6fbf7}
 
+
+/* ===== Register: phone layout (one day at a time, big AM / PM buttons) ===== */
+.rgm-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;position:sticky;top:62px;z-index:5;background:#fff;padding:6px 0}
+.rgm-tab{border:2px solid #d8e6dc;background:#f6fbf7;border-radius:10px;padding:7px 0 5px;cursor:pointer;color:#1a5f2a;line-height:1.15}
+.rgm-tab b{display:block;font-size:.88rem}.rgm-tab small{display:block;font-size:.68rem;opacity:.8}
+.rgm-tab.on{background:#1a5f2a;border-color:#1a5f2a;color:#fff}.rgm-tab.cl{background:repeating-linear-gradient(45deg,#eee,#eee 4px,#f8f8f8 4px,#f8f8f8 8px);color:#999;border-color:#ddd}
+.rgm-tab.cl.on{background:#777;color:#fff}
+.rgm-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px;font-size:.78rem}
+.rgm-stat{display:flex;gap:12px;flex-wrap:wrap;color:#555}.rgm-stat i{font-style:normal;font-weight:800}.pcg{color:#27ae60}.pcr{color:#c0392b}
+.rgm-nd{border:1px solid #ddd;background:#fff;border-radius:8px;padding:6px 10px;font-size:.75rem;cursor:pointer;color:#666}
+table.rgm-t{width:100%;border-collapse:separate;border-spacing:0}
+.rgm-t th{background:#1a5f2a;color:#fff;padding:8px 4px;font-size:.8rem;position:sticky;top:118px;z-index:4}
+.rgm-t th:first-child{text-align:left;padding-left:10px;border-radius:8px 0 0 0}.rgm-t th:last-child{border-radius:0 8px 0 0}
+.rgm-t td{padding:5px 4px;border-bottom:1px solid #eee;text-align:center;width:64px}
+.rgm-t td.sname{width:auto;text-align:left;padding-left:8px;font-size:.88rem;line-height:1.2;white-space:normal}
+.rgm-t td.sname span{vertical-align:middle}
+.rgm-t button.rg{width:54px;height:44px;border-radius:10px;font-size:1.05rem}
+.rgm-t .rg-g{width:24px;height:24px;font-size:.72rem;flex:0 0 24px}
+@media(max-width:768px){
+ #regMark.section>.card{padding:10px 8px}
+ #regMark .card-header{margin-bottom:6px}#regMark .card-header h3{font-size:.95rem}
+ #regMark .rg-bar{grid-template-columns:1fr 1fr;gap:6px}#regMark .rg-bar .form-group{margin-bottom:0}
+ #regMark .rg-bar .form-group:nth-child(3){grid-column:1/-1}
+ #regMark .rg-bar label{font-size:.72rem;margin-bottom:2px}#regMark .rg-bar select{padding:8px;font-size:.88rem}
+ #regMark .rg-act{flex-wrap:nowrap;overflow-x:auto;gap:6px;margin:6px 0 4px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+ #regMark .rg-act .btn{white-space:nowrap;flex:0 0 auto}
+ #regMark .rg-legend{gap:4px 8px;font-size:.7rem;margin-bottom:2px}#regMark .rg-legend span:last-child{display:none}
+}
 /* ===== E-Notes ===== */
 .en-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-top:10px}
 .en-card{border:1px solid #e3e3e3;border-radius:12px;padding:14px;background:#fff;cursor:pointer;transition:.2s;position:relative;border-top:4px solid #1a5f2a}
@@ -1115,6 +1143,7 @@ body.ngis-section-mode #adminLoginTab,body.ngis-section-mode #managementLoginTab
 <div class="nav-item" data-mg="mgDashboard" onclick="showSection('mgDashboard',this)"><i class="fas fa-briefcase"></i> Management Portal</div>
 <div class="nav-item" data-mg="mgAccounts" onclick="showSection('mgAccounts',this)"><i class="fas fa-users-cog"></i> Management Accounts</div>
 <div class="nav-item active" onclick="showSection('adminDashboard',this)"><i class="fas fa-home"></i> Dashboard</div>
+<div class="nav-item" onclick="showSection('staffActivity',this);ngisStaffActLoad()"><i class="fas fa-user-clock"></i> Staff Activity</div>
 <div class="nav-item" onclick="showSection('classesMgmt',this)"><i class="fas fa-school"></i> Classes</div>
 <div class="nav-item" onclick="showSection('termsSessionsMgmt',this)"><i class="fas fa-calendar-alt"></i> Terms & Sessions</div>
 <div class="nav-item" onclick="showSection('weeksMgmt',this)"><i class="fas fa-calendar-week"></i> Weeks</div>
@@ -2203,6 +2232,14 @@ Only the class teacher assigned to this class can save the comment.
 </div>
 </div>
 
+<div id="staffActivity" class="section hidden"><div class="card">
+<div class="card-header"><h3><i class="fas fa-user-clock"></i> Staff Activity &ndash; who is using the app</h3><span id="saStatus" class="rg-status"></span></div>
+<div id="saBanner"></div>
+<div class="rg-bar" style="grid-template-columns:1fr 1fr"><div class="form-group"><label>Date</label><input type="date" id="saDate" onchange="ngisStaffActLoad()"></div>
+<div class="form-group"><label>Show</label><select id="saFilter" onchange="ngisStaffActRender()"><option value="all">All staff</option><option value="online">Online now</option><option value="teacher">Teachers</option><option value="admin">Admin</option><option value="management">Management</option></select></div></div>
+<div class="rg-act"><button class="btn btn-sm btn-primary" onclick="ngisStaffActLoad()"><i class="fas fa-sync"></i> Refresh</button><button class="btn btn-sm btn-success" onclick="ngisStaffActExcel()"><i class="fas fa-file-excel"></i> Excel</button></div>
+<div id="saBody"></div>
+</div></div>
 <div id="adminDashboard" class="section hidden">
 <div class="card" style="margin-bottom:25px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;">
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
@@ -2276,7 +2313,7 @@ Only the class teacher assigned to this class can save the comment.
 
 <div id="subjectsMgmt" class="section hidden">
 <div class="card">
-<div class="card-header"><h3><i class="fas fa-book"></i> Subject Management</h3><button class="btn btn-primary btn-sm" onclick="openModal('subjectModal')"><i class="fas fa-plus"></i> Add Subject</button></div>
+<div class="card-header"><h3><i class="fas fa-book"></i> Subject Management</h3><button class="btn btn-primary btn-sm" onclick="ngisSubjNew()"><i class="fas fa-plus"></i> Add Subject</button></div>
 <div id="subjSetup"></div>
 <div class="ts-btnrow" id="subjBar" style="align-items:center"><button class="btn btn-primary btn-sm" onclick="ngisSubjAssignSelected()"><i class="fas fa-sitemap"></i> Assign Selected to Sections / Classes</button><label style="font-size:.85rem;display:flex;gap:6px;align-items:center">Show <select id="subjFilter" onchange="renderSubjectsTable()" style="padding:6px;border-radius:6px;border:1px solid #ccc"><option value="">All subjects</option><option value="nursery">Nursery</option><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="none">Not assigned</option></select></label></div>
 <div class="table-container"><table><thead><tr><th style="width:34px"><input type="checkbox" id="subjSelAll" onchange="ngisSubjSelAll(this.checked)"></th><th>Subject Name</th><th>Section(s)</th><th>Classes</th><th>Actions</th></tr></thead><tbody id="subjectsTable"></tbody></table></div>
@@ -2321,7 +2358,7 @@ Only the class teacher assigned to this class can save the comment.
 <div class="card">
 <div class="card-header"><h3><i class="fas fa-chalkboard-teacher"></i> Teacher Management</h3><button class="btn btn-primary btn-sm" onclick="openModal('teacherModal')"><i class="fas fa-plus"></i> Add Teacher</button></div>
 <div class="form-group" style="max-width:420px;margin-bottom:14px"><label><i class="fas fa-search"></i> Search Teacher</label><div class="ngis-search"><input type="search" id="teacherSearch" oninput="renderTeachersTable()" placeholder="Name, email, subject or class…" autocomplete="off"><button type="button" class="ngis-search-x" onclick="ngisClearSearch('teacherSearch',renderTeachersTable)" title="Clear">&times;</button></div><div class="ngis-search-count" id="teacherSearchCount"></div></div>
-<div class="table-container"><table><thead><tr><th>Name</th><th>Email</th><th>Subjects</th><th>Assigned Classes</th><th>Section(s)</th><th>Role</th><th>Actions</th></tr></thead><tbody id="teachersTable"></tbody></table></div>
+<div class="table-container"><table><thead><tr><th>Name</th><th>Login Email</th><th>Password <button type="button" class="btn btn-sm btn-secondary" style="padding:1px 8px;font-size:11px;margin-left:4px" onclick="ngisToggleAllTeacherPw(this)">Show all</button></th><th>Subjects</th><th>Assigned Classes</th><th>Section(s)</th><th>Role</th><th>Actions</th></tr></thead><tbody id="teachersTable"></tbody></table></div>
 </div>
 </div>
 
@@ -2537,9 +2574,10 @@ Only the class teacher assigned to this class can save the comment.
 <div class="form-group"><label>End Date</label><input type="date" id="weekEndInput"></div>
 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;"><button class="btn" style="background:#eee;color:#333;" onclick="closeModal('weekModal')">Cancel</button><button class="btn btn-primary" onclick="saveWeek()">Save Week</button></div>
 </div>
-<div class="modal hidden" id="subjectModal">
+<div class="modal hidden" id="subjectModal" style="max-width:640px">
 <h3><i class="fas fa-book"></i> Add New Subject</h3>
 <div class="form-group"><label>Subject Name</label><input type="text" id="subjectNameInput" placeholder="e.g. Mathematics, English Language"></div>
+<div id="newSubjPicker"></div>
 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;"><button class="btn" style="background:#eee;color:#333;" onclick="closeModal('subjectModal')">Cancel</button><button class="btn btn-primary" onclick="saveSubject()">Save Subject</button></div>
 </div>
 <div class="modal hidden" id="studentModal">
@@ -3615,6 +3653,12 @@ closeModal('editStudentModal');
 loadStudents();
 }
 
+function ngisToggleAllTeacherPw(btn){
+  const spans=document.querySelectorAll('#teachersTable .ngis-tpw');
+  const show=btn.textContent.trim()==='Show all';
+  spans.forEach(sp=>{sp.textContent=show?sp.dataset.p:'••••••';});
+  btn.textContent=show?'Hide all':'Show all';
+}
 function renderTeachersTable(){
   const tbody=document.getElementById('teachersTable');
   if(!tbody)return;
@@ -3630,9 +3674,9 @@ function renderTeachersTable(){
     const sectionNames=(t.ngis_sections||[]).map(k=>NGIS_SECTION_NAMES[k]||k).join(', ')||'Not assigned';
     rows.push(t);
     if(q&&!ngisMatch([t.name,t.email,subjNames,classNames,sectionNames,t.role],q)){rows.pop();return '';}
-    return '<tr><td><strong>'+escapeHtml(t.name||'')+'</strong></td><td>'+escapeHtml(t.email||'')+'</td><td>'+escapeHtml(subjNames)+'</td><td>'+escapeHtml(classNames)+'</td><td>'+escapeHtml(sectionNames)+'</td><td><span class="grade-badge '+(t.role==='admin'?'grade-a':'grade-c')+'">'+escapeHtml((t.role||'teacher').toUpperCase())+'</span></td><td><button type="button" class="btn btn-primary btn-sm edit-teacher-btn" data-teacher-id="'+escapeHtml(String(t.id))+'" onclick="return ngisOpenTeacherEdit(event,this)" style="margin-right:5px"><i class="fas fa-edit"></i> Edit</button><button type="button" class="btn btn-danger btn-sm delete-teacher-btn" data-teacher-id="'+escapeHtml(String(t.id))+'"><i class="fas fa-trash"></i></button></td></tr>';
-  }).join('')||'<tr><td colspan="7" class="empty-state">No teachers yet</td></tr>';
-  if(q&&!rows.length)tbody.innerHTML='<tr><td colspan="7" class="empty-state">No teacher matches your search</td></tr>';
+    return '<tr><td><strong>'+escapeHtml(t.name||'')+'</strong></td><td>'+escapeHtml(t.email||'')+'</td><td><span class="mg-pw ngis-tpw" style="cursor:pointer;font-family:monospace" onclick="this.textContent=this.textContent===\'••••••\'?this.dataset.p:\'••••••\'" data-p="'+escapeHtml(t.password||'(not set)')+'" title="Click to show / hide">••••••</span></td><td>'+escapeHtml(subjNames)+'</td><td>'+escapeHtml(classNames)+'</td><td>'+escapeHtml(sectionNames)+'</td><td><span class="grade-badge '+(t.role==='admin'?'grade-a':'grade-c')+'">'+escapeHtml((t.role||'teacher').toUpperCase())+'</span></td><td><button type="button" class="btn btn-primary btn-sm edit-teacher-btn" data-teacher-id="'+escapeHtml(String(t.id))+'" onclick="return ngisOpenTeacherEdit(event,this)" style="margin-right:5px"><i class="fas fa-edit"></i> Edit</button><button type="button" class="btn btn-danger btn-sm delete-teacher-btn" data-teacher-id="'+escapeHtml(String(t.id))+'"><i class="fas fa-trash"></i></button></td></tr>';
+  }).join('')||'<tr><td colspan="8" class="empty-state">No teachers yet</td></tr>';
+  if(q&&!rows.length)tbody.innerHTML='<tr><td colspan="8" class="empty-state">No teacher matches your search</td></tr>';
   const cnt=document.getElementById('teacherSearchCount');
   if(cnt)cnt.textContent=q?(rows.length+' of '+teachers.length+' teachers'):'';
 }
@@ -8124,6 +8168,21 @@ window.regFillWeeks=function(){
   if(old&&l.some(w=>sameId(w.id,old)))sel.value=old;else{const t=new Date().toISOString().slice(0,10),cur=l.find(w=>w.start_date&&w.end_date&&w.start_date<=t&&t<=w.end_date);sel.value=cur?cur.id:(l.length?l[l.length-1].id:'');}
   regRender();
 };
+const isMobileReg=()=>window.innerWidth<=768;
+const DFULL=['Mon','Tue','Wed','Thu','Fri'];
+function todayIdx(w){const d=new Date().getDay();return(d>=1&&d<=5)?d-1:0;}
+function renderMobile(cid,wid,w,stu,meta,edit){
+  if(st.mDay==null)st.mDay=todayIdx(w);
+  const d=st.mDay,cl=meta.closed[d]==='1';
+  let h='<div class="rgm"><div class="rgm-tabs">';
+  DFULL.forEach((n,i)=>{const c=meta.closed[i]==='1';h+='<button type="button" class="rgm-tab'+(i===d?' on':'')+(c?' cl':'')+'" data-d="'+i+'"><b>'+n+'</b><small>'+(wDate(w,i)||'&nbsp;')+'</small></button>';});
+  h+='</div><div class="rgm-bar"><div class="rgm-stat" id="rgmStat"></div>'+(edit?'<button type="button" class="rgm-nd" onclick="regDay('+d+')"><i class="fas fa-'+(cl?'lock-open':'ban')+'"></i> '+(cl?'Re-open day':'No school')+'</button>':'')+'</div>';
+  if(cl){return h+'<div class="empty-state" style="padding:26px 10px">'+DFULL[d]+' is marked as a no-school day.</div></div><div id="regSum"></div>';}
+  h+='<table class="rgm-t"><thead><tr><th class="sname">Student ('+stu.length+')</th><th>AM'+(edit?'<button type="button" class="rg-x" onclick="regAll('+(d*2)+')">✓ all</button>':'')+'</th><th>PM'+(edit?'<button type="button" class="rg-x" onclick="regAll('+(d*2+1)+')">✓ all</button>':'')+'</th></tr></thead><tbody>';
+  stu.forEach((s,n)=>{const m=marksOf(s.id,wid),g=gender(s);
+    h+='<tr data-sid="'+esc(s.id)+'"><td class="sname"><button class="rg-g '+g+'" title="Set Boy / Girl">'+(g||'?')+'</button><span>'+esc(s.name)+'</span></td>'+cellHtml(m[d*2],d*2,edit)+cellHtml(m[d*2+1],d*2+1,edit)+'</tr>';});
+  return h+'</tbody></table></div><div id="regSum"></div>';
+}
 function cellHtml(ch,i,on){return'<td><button class="rg c-'+(ch==='-'?'n':ch)+'" data-i="'+i+'"'+(on?'':' disabled')+'>'+(ch==='-'?'·':ch)+'</button></td>';}
 window.regRender=function(){
   const cid=$('regClass').value,wid=$('regWeek').value,box=$('regGrid');
@@ -8131,6 +8190,7 @@ window.regRender=function(){
   const w=wObj(wid),stu=classStudents(cid);
   if(!stu.length){box.innerHTML='<div class="empty-state">No students in this class yet.</div>';return;}
   const meta=getMeta(cid,wid),edit=canEditClass(cid,meta);
+  if(isMobileReg()){box.innerHTML=renderMobile(cid,wid,w,stu,meta,edit);regCalc();return;}
   let h='<div class="rg-wrap"><table class="rgt"><thead><tr><th rowspan="2" class="sn">#</th><th rowspan="2" class="sname">Student</th>';
   DL.forEach((d,i)=>{const cl=meta.closed[i]==='1';h+='<th colspan="2" class="'+(cl?'cl':'')+'">'+d+'<small>'+wDate(w,i)+'</small>'+(edit?'<button class="rg-x" title="No-school day on/off" onclick="regDay('+i+')"><i class="fas fa-'+(cl?'lock-open':'ban')+'"></i></button>':'')+'</th>';});
   h+='<th rowspan="2">Pres</th><th rowspan="2">Abs</th><th rowspan="2">%</th></tr><tr>';
@@ -8144,11 +8204,15 @@ window.regRender=function(){
   box.innerHTML=h;regCalc();
 };
 function regCalc(){
-  const cid=$('regClass').value,wid=$('regWeek').value;if(!cid||!wid||!$('regFoot'))return;
+  const cid=$('regClass').value,wid=$('regWeek').value;if(!cid||!wid||(!$('regFoot')&&!$('rgmStat')&&!$('regSum')))return;
   const c=calcWeek(cid,wid),meta=getMeta(cid,wid);
-  document.querySelectorAll('#regGrid tbody tr').forEach((tr,i)=>{const r=c.rows[i];if(!r)return;tr.querySelector('.rp').textContent=r.p;tr.querySelector('.ra').textContent=r.a;const e=tr.querySelector('.rpc');e.textContent=fp(r.pct);e.className='rpc '+pcCls(r.pct);});
+  if($('rgmStat')){const d=st.mDay||0,a=c.half[d*2],b=c.half[d*2+1],pr=h=>h.B+h.G+h.U;
+    $('rgmStat').innerHTML='<span><b>AM</b> <i class="pcg">'+pr(a)+'</i> present · <i class="pcr">'+a.abs+'</i> absent</span><span><b>PM</b> <i class="pcg">'+pr(b)+'</i> present · <i class="pcr">'+b.abs+'</i> absent</span>';}
+  if($('regFoot')){
+  document.querySelectorAll('#regGrid tbody tr').forEach((tr,i)=>{const r=c.rows[i];if(!r)return;const p=tr.querySelector('.rp');if(!p)return;p.textContent=r.p;tr.querySelector('.ra').textContent=r.a;const e=tr.querySelector('.rpc');e.textContent=fp(r.pct);e.className='rpc '+pcCls(r.pct);});
   const row=(lbl,f,tot)=>{let x='<tr><td colspan="2" class="lbl">'+lbl+'</td>';for(let i=0;i<10;i++)x+=meta.closed[i>>1]==='1'?'<td>—</td>':'<td>'+f(c.half[i])+'</td>';return x+'<td colspan="3">'+tot+'</td></tr>';};
   $('regFoot').innerHTML=row('Boys present',h=>h.B,c.bP)+row('Girls present',h=>h.G,c.gP)+(c.unk?row('Gender not set',h=>h.U,''):'')+row('Total present',h=>h.B+h.G+h.U,c.P)+row('Total absent',h=>h.abs,c.A);
+  }
   const sg=meta.signed_by?'<div class="rg-sign">'+esc(meta.signed_by)+'</div><small>Signed '+esc(S(meta.signed_at).slice(0,10))+(meta.locked?' · locked':'')+'</small>':'<div class="rg-sign"></div><small>Not yet signed</small>';
   $('regSum').innerHTML='<div class="rg-sum">'+
    '<div class="rg-box"><h4>No. on roll</h4><table><tr><th>Boys</th><th>Girls</th><th>Total</th></tr><tr><td>'+c.boys+'</td><td>'+c.girls+'</td><td>'+c.roll+'</td></tr></table>'+(c.unk?'<small style="color:#c0392b">'+c.unk+' student(s) have no gender – tap the grey ? beside their name.</small>':'')+'</div>'+
@@ -8159,6 +8223,8 @@ function regCalc(){
 function bindGrid(){const box=$('regGrid');if(box.dataset.b)return;box.dataset.b=1;
   box.addEventListener('click',e=>{
     const cid=$('regClass').value,wid=$('regWeek').value;
+    const tb=e.target.closest('button.rgm-tab');
+    if(tb){st.mDay=+tb.dataset.d;regRender();return;}
     const b=e.target.closest('button.rg');
     if(b&&!b.disabled){const sid=b.closest('tr').dataset.sid,i=+b.dataset.i,cur=marksOf(sid,wid)[i],nx=ORDER[(ORDER.indexOf(cur)+1)%5];
       setMark(sid,cid,wid,i,nx);b.className='rg c-'+(nx==='-'?'n':nx);b.textContent=nx==='-'?'·':nx;regCalc();return;}
@@ -8166,6 +8232,7 @@ function bindGrid(){const box=$('regGrid');if(box.dataset.b)return;box.dataset.b
     if(g&&canEditClass(cid,getMeta(cid,wid))){const sid=g.closest('tr').dataset.sid,s=students.find(x=>sameId(x.id,sid)),cur=gender(s),nx=cur===''?'B':cur==='B'?'G':'';
       st.gen[S(sid)]=nx;pend.gen.set(S(sid),{student_id:S(sid),gender:nx});queueSave();g.className='rg-g '+nx;g.textContent=nx||'?';regCalc();}
   });}
+let _rgMob=null;window.addEventListener('resize',()=>{const m=isMobileReg();if(_rgMob!==null&&m!==_rgMob&&$('regGrid')&&$('regGrid').dataset.b&&$('regMark')&&!$('regMark').classList.contains('hidden'))regRender();_rgMob=m;});_rgMob=isMobileReg();
 window.regDay=function(i){const cid=$('regClass').value,wid=$('regWeek').value,m={...getMeta(cid,wid)};m.closed=m.closed.slice(0,i)+(m.closed[i]==='1'?'0':'1')+m.closed.slice(i+1);saveMeta(m);regRender();};
 window.regAll=function(i){const cid=$('regClass').value,wid=$('regWeek').value;classStudents(cid).forEach(s=>{if(marksOf(s.id,wid)[i]==='-')setMark(s.id,cid,wid,i,'P');});regRender();};
 window.regMarkAllWeek=function(){const cid=$('regClass').value,wid=$('regWeek').value;if(!cid||!wid)return;const meta=getMeta(cid,wid);if(!canEditClass(cid,meta)){showToast('This week is locked or not your class','error');return;}
@@ -14802,7 +14869,7 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
       pill.innerHTML='<span class="d"></span><span><b id="ngisOnCount">0</b> online</span>';
       pill.onclick=function(){window.ngisOpenOnline();};document.body.appendChild(pill);
       var ov=document.createElement('div');ov.id='ngisOnOverlay';
-      ov.innerHTML='<div id="ngisOnBox"><header><h3><i class="fas fa-circle" style="color:#2ecc71;font-size:.7rem"></i> Who is online right now</h3><button type="button" aria-label="Close" onclick="document.getElementById(\'ngisOnOverlay\').style.display=\'none\'">&times;</button></header><div id="ngisOnBody"></div></div>';
+      ov.innerHTML='<div id="ngisOnBox"><header><h3><i class="fas fa-circle" style="color:#2ecc71;font-size:.7rem"></i> Who is online right now</h3><button type="button" aria-label="Close" onclick="document.getElementById(\'ngisOnOverlay\').style.display=\'none\'">&times;</button></header><div id="ngisOnBody"></div><div style="padding:0 20px 16px"><button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById(\'ngisOnOverlay\').style.display=\'none\';showSection(\'staffActivity\',null);ngisStaffActLoad()"><i class="fas fa-user-clock"></i> Login &amp; logout history</button></div></div>';
       ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
       document.body.appendChild(ov);
     }
@@ -14835,6 +14902,199 @@ window.showSection=function(id,nav){_sx(id,nav);if(id==='caRecord'){const pt=$('
   setInterval(function(){if(document.getElementById('ngisOnOverlay')&&document.getElementById('ngisOnOverlay').style.display==='flex')render();},30000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)track();});
   window.addEventListener('pagehide',function(){try{if(ch)ch.untrack();}catch(e){}});
+})();
+</script>
+
+<script>
+/* ================= STAFF ACTIVITY: saved login / logout history (table: staff_sessions) ================= */
+(function(){
+  'use strict';
+  var KEY='ngis_sess_key',HB=120000,ONLINE_MS=4*60000,tim=null,rows=[],missing=false;
+  function sb(){return typeof supabaseClient!=='undefined'?supabaseClient:null;}
+  function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function isStaff(){return currentUser&&currentUser.role!=='student'&&(currentUser.role==='admin'||currentUser.role==='management'||currentUser.role==='teacher');}
+  function secText(u){
+    var N={nursery:'Nursery',primary:'Primary',junior_secondary:'Junior Secondary',senior_secondary:'Senior Secondary'};
+    if(u.role==='admin')return 'Administration';if(u.role==='management')return 'Management';
+    var a=Array.isArray(u.school_sections)?u.school_sections.map(function(k){return N[k]||k;}):[];return a.length?a.join(', '):'';
+  }
+  function pageNow(){var t=document.getElementById('pageTitle');return t?t.textContent.trim().slice(0,80):'';}
+  function dev(){var u=navigator.userAgent||'';return /Mobi|Android|iPhone/i.test(u)?'Phone':'Computer';}
+  async function start(){
+    var c=sb();if(!c||!isStaff())return;
+    try{
+      var k=sessionStorage.getItem(KEY),now=new Date().toISOString();
+      if(k){var r=await c.from('staff_sessions').update({last_seen:now,logout_at:null,last_page:pageNow()}).eq('session_key',k);if(r.error)throw r.error;}
+      else{
+        k='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+        var u=currentUser;
+        var r2=await c.from('staff_sessions').insert({session_key:k,user_uid:u.role+':'+u.id,name:u.name||'Staff',role:u.role,
+          position:u.role==='management'?(u.position||'Management'):u.role==='admin'?'Administrator':'Teacher',sections:secText(u),login_at:now,last_seen:now,last_page:pageNow(),device:dev()});
+        if(r2.error)throw r2.error;
+        sessionStorage.setItem(KEY,k);
+      }
+      clearInterval(tim);tim=setInterval(beat,HB);
+    }catch(e){console.warn('Staff activity not recorded:',e.message||e);}
+  }
+  function beat(){
+    var k=sessionStorage.getItem(KEY),c=sb();if(!k||!c||!isStaff())return;
+    c.from('staff_sessions').update({last_seen:new Date().toISOString(),last_page:pageNow()}).eq('session_key',k).then(function(){},function(){});
+  }
+  function stop(){
+    var k=sessionStorage.getItem(KEY),c=sb();clearInterval(tim);tim=null;sessionStorage.removeItem(KEY);
+    if(!k||!c)return;var n=new Date().toISOString();
+    c.from('staff_sessions').update({logout_at:n,last_seen:n}).eq('session_key',k).then(function(){},function(){});
+  }
+  var _sd=window.setupDashboard;
+  window.setupDashboard=async function(){var r=await _sd.apply(this,arguments);start();return r;};
+  var _lo=window.logout;
+  window.logout=function(){stop();return _lo.apply(this,arguments);};
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)beat();});
+
+  /* ---------- Staff Activity page ---------- */
+  function dayRange(v){var a=new Date(v+'T00:00:00'),b=new Date(a);b.setDate(b.getDate()+1);return [a.toISOString(),b.toISOString()];}
+  function hm(iso){return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+  function dur(a,b){var m=Math.max(0,Math.round((new Date(b)-new Date(a))/60000));return m<60?m+' min':Math.floor(m/60)+'h '+(m%60)+'m';}
+  function status(r){
+    if(r.logout_at)return {k:'out',t:'Logged out'};
+    return (Date.now()-new Date(r.last_seen).getTime())<ONLINE_MS?{k:'on',t:'Online now'}:{k:'gone',t:'Left without logging out'};
+  }
+  window.ngisStaffActLoad=async function(){
+    var d=document.getElementById('saDate');if(!d)return;
+    if(!d.value){var n=new Date();d.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
+    var c=sb();if(!c)return;var rg=dayRange(d.value),st=document.getElementById('saStatus');if(st)st.textContent='Loading…';
+    var r=await c.from('staff_sessions').select('*').gte('login_at',rg[0]).lt('login_at',rg[1]).order('login_at',{ascending:false}).limit(1000);
+    var bn=document.getElementById('saBanner');
+    if(r.error){missing=true;rows=[];if(bn)bn.innerHTML='<div class="rg-warn bad"><b>Staff activity table not found.</b> Ask the administrator to run <code>staff_activity_setup.sql</code> once in Supabase &gt; SQL Editor, then tap Refresh.<br><small>'+esc(r.error.message)+'</small></div>';}
+    else{missing=false;rows=r.data||[];if(bn)bn.innerHTML='';}
+    if(st)st.textContent=missing?'':'Updated '+hm(new Date().toISOString());
+    ngisStaffActRender();
+    clearInterval(window._saT);window._saT=setInterval(function(){var sec=document.getElementById('staffActivity');if(sec&&!sec.classList.contains('hidden'))ngisStaffActLoad();else clearInterval(window._saT);},30000);
+  };
+  window.ngisStaffActRender=function(){
+    var body=document.getElementById('saBody');if(!body)return;
+    var f=document.getElementById('saFilter').value,list=rows.filter(function(r){
+      if(f==='online')return status(r).k==='on';if(f==='all')return true;return r.role===f;});
+    var online={};rows.forEach(function(r){if(status(r).k==='on')online[r.user_uid]=1;});
+    var people={};rows.forEach(function(r){people[r.user_uid]=1;});
+    var h='<div class="rg-sum" style="margin:0 0 12px"><div class="rg-box"><h4>Online now</h4><div class="big pc-good">'+Object.keys(online).length+'</div></div><div class="rg-box"><h4>Staff who logged in</h4><div class="big">'+Object.keys(people).length+'</div></div><div class="rg-box"><h4>Total logins</h4><div class="big">'+rows.length+'</div></div></div>';
+    if(!list.length){body.innerHTML=h+'<div class="empty-state">No staff activity for this selection.</div>';return;}
+    h+='<div class="sa-wrap"><table class="sa-t"><thead><tr><th>Staff</th><th>Logged in</th><th>Logged out</th><th>Time used</th><th>Status</th></tr></thead><tbody>';
+    list.forEach(function(r){var s=status(r),end=r.logout_at||r.last_seen;
+      h+='<tr><td data-l="Staff"><b>'+esc(r.name)+'</b><br><small>'+esc(r.position||r.role)+(r.sections&&r.role==='teacher'?' · '+esc(r.sections):'')+'</small></td>'+
+        '<td data-l="Logged in">'+hm(r.login_at)+'</td>'+
+        '<td data-l="Logged out">'+(r.logout_at?hm(r.logout_at):(s.k==='on'?'—':'Last seen '+hm(r.last_seen)))+'</td>'+
+        '<td data-l="Time used">'+dur(r.login_at,end)+'</td>'+
+        '<td data-l="Status"><span class="sa-b '+s.k+'">'+s.t+'</span>'+(s.k==='on'&&r.last_page?'<br><small>'+esc(r.last_page)+'</small>':'')+'</td></tr>';});
+    body.innerHTML=h+'</tbody></table></div><p style="font-size:.74rem;color:#888;margin-top:8px">“Left without logging out” means the app was closed without tapping Logout; the time shown is when the phone last reported in.</p>';
+  };
+  window.ngisStaffActExcel=function(){
+    if(!rows.length||typeof XLSX==='undefined'){showToast('Nothing to export','error');return;}
+    var data=rows.map(function(r){var end=r.logout_at||r.last_seen;return {Staff:r.name,Role:r.position||r.role,Section:r.sections||'',Date:new Date(r.login_at).toLocaleDateString(),Logged_in:hm(r.login_at),Logged_out:r.logout_at?hm(r.logout_at):'',Last_seen:hm(r.last_seen),Time_used:dur(r.login_at,end),Status:status(r).t,Device:r.device||''};});
+    var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),'Staff Activity');
+    XLSX.writeFile(wb,'NGIS_Staff_Activity_'+document.getElementById('saDate').value+'.xlsx');
+  };
+})();
+</script>
+<style>
+.sa-wrap{overflow-x:auto}.sa-t{width:100%;border-collapse:collapse;font-size:.88rem}
+.sa-t th{background:#1a5f2a;color:#fff;padding:9px 8px;text-align:left;white-space:nowrap}.sa-t td{padding:8px;border-bottom:1px solid #eee;vertical-align:top}
+.sa-t small{color:#777}.sa-b{display:inline-block;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:700;color:#fff;background:#999}
+.sa-b.on{background:#27ae60}.sa-b.gone{background:#e67e22}.sa-b.out{background:#7f8c8d}
+@media(max-width:700px){.sa-t thead{display:none}.sa-t,.sa-t tbody,.sa-t tr,.sa-t td{display:block;width:100%}
+ .sa-t tr{border:1px solid #e3e3e3;border-radius:12px;margin-bottom:10px;padding:8px 10px}.sa-t td{border:0;padding:3px 0;display:flex;justify-content:space-between;gap:10px;text-align:right}
+ .sa-t td::before{content:attr(data-l);font-weight:600;color:#1a5f2a;text-align:left}.sa-t td:first-child{display:block;text-align:left;font-size:1rem}.sa-t td:first-child::before{content:none}}
+</style>
+
+<script>
+/* ===== ADD SUBJECT: choose section(s), class(es) and teacher(s) in one step ===== */
+(function(){
+'use strict';
+var SECS={nursery:'Nursery',primary:'Primary',secondary:'Secondary'},COL={nursery:'#e67e22',primary:'#1565c0',secondary:'#1a5f2a'};
+var $=function(id){return document.getElementById(id);},E=function(v){return escapeHtml(v);};
+function secOf(c){try{return ngisSectionOfClass(c.name)||'other';}catch(_){return 'other';}}
+function tsecs(t){return (Array.isArray(t.school_sections)?t.school_sections:[]).map(function(k){return /secondary/.test(k)?'secondary':k;});}
+function chosen(){
+  var classIds=[].slice.call(document.querySelectorAll('.as-cls:checked')).map(function(c){return c.value;});
+  var secs={};[].slice.call(document.querySelectorAll('.as-sec:checked')).forEach(function(c){secs[c.dataset.k]=1;});
+  classIds.forEach(function(id){var c=(classes||[]).find(function(x){return String(x.id)===id;});var k=c?secOf(c):'';if(SECS[k])secs[k]=1;});
+  return {classIds:classIds,secs:secs};
+}
+function renderTeachers(){
+  var box=$('asTch');if(!box)return;
+  var keep={};[].slice.call(document.querySelectorAll('.as-tch:checked')).forEach(function(c){keep[c.dataset.c+'|'+c.value]=1;});
+  var ch=chosen();
+  var cls=ch.classIds.map(function(id){return (classes||[]).find(function(x){return String(x.id)===id;});}).filter(Boolean);
+  if(!cls.length){box.innerHTML='<span style="color:#888;font-size:.84rem">Tick one or more classes above, then choose the teacher(s) for each class here.</span>';return;}
+  box.innerHTML=cls.map(function(c,i){
+    var k=secOf(c);
+    var list=(teachers||[]).filter(function(t){var ts=tsecs(t);return !ts.length||!SECS[k]||ts.indexOf(k)>-1;})
+      .sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+    var cid=String(c.id);
+    return '<div style="border:1px solid #e3e9e5;border-radius:10px;padding:8px 12px;margin-bottom:8px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:'+(COL[k]||'#555')+'">'+E(c.name)+'</b>'+
+      (cls.length>1&&i===0?'<a href="#" onclick="ngisNTchAll(\''+E(cid)+'\');return false" style="font-size:.78rem;color:#1565c0">Use these teachers for all classes</a>':'')+'</div>'+
+      '<div style="display:flex;gap:4px 16px;flex-wrap:wrap;margin-top:6px">'+(list.length?list.map(function(t){
+        return '<label style="display:flex;gap:5px;align-items:center;font-size:.86rem"><input type="checkbox" class="as-tch" data-c="'+E(cid)+'" value="'+E(t.id)+'"'+(keep[cid+'|'+String(t.id)]?' checked':'')+' style="width:auto"> '+E(t.name)+'</label>';
+      }).join(''):'<span style="color:#888;font-size:.82rem">No teachers registered for this section yet</span>')+'</div></div>';
+  }).join('');
+}
+window.ngisNTchAll=function(fromId){
+  var on={};[].slice.call(document.querySelectorAll('.as-tch[data-c="'+fromId+'"]:checked')).forEach(function(c){on[c.value]=1;});
+  [].slice.call(document.querySelectorAll('.as-tch')).forEach(function(c){c.checked=!!on[c.value];});
+};
+window.ngisSubjNew=function(){
+  if(currentUser&&currentUser.role!=='admin'){showToast('Only administrators can add subjects.','error');return;}
+  var inp=$('subjectNameInput');if(inp)inp.value='';
+  $('newSubjPicker').innerHTML='<div style="font-weight:700;margin:6px 0 8px;color:#1a5f2a">1. Which section / classes will offer it?</div>'+
+  ['nursery','primary','secondary','other'].map(function(k){
+    var list=(classes||[]).filter(function(c){return secOf(c)===k;});
+    if(!list.length&&k==='other')return '';
+    return '<div style="border:1px solid #e3e9e5;border-radius:10px;padding:10px 12px;margin-bottom:8px"><label style="font-weight:800;display:flex;gap:8px;align-items:center;color:'+(COL[k]||'#555')+'">'+
+    (k==='other'?'':'<input type="checkbox" class="as-sec" data-k="'+k+'" onchange="ngisNSecTog(this)" style="width:auto">')+' '+(SECS[k]||'Other classes')+(k==='other'?'':' (whole section)')+'</label>'+
+    '<div style="display:flex;gap:6px 16px;flex-wrap:wrap;margin-top:8px">'+(list.length?list.map(function(c){return '<label style="display:flex;gap:5px;align-items:center;font-size:.86rem"><input type="checkbox" class="as-cls" data-k="'+k+'" value="'+E(c.id)+'" onchange="ngisNClsTog(\''+k+'\')" style="width:auto"> '+E(c.name)+'</label>';}).join(''):'<span style="color:#888;font-size:.82rem">No classes in this section yet</span>')+'</div></div>';
+  }).join('')+
+  '<div style="font-weight:700;margin:14px 0 4px;color:#1a5f2a">2. Which teacher(s) will teach it in each class? <small style="font-weight:400;color:#777">(optional – you can leave a class without a teacher and assign later)</small></div><div id="asTch"></div>';
+  renderTeachers();openModal('subjectModal');
+};
+window.ngisNSecTog=function(el){document.querySelectorAll('.as-cls[data-k="'+el.dataset.k+'"]').forEach(function(c){c.checked=el.checked;});renderTeachers();};
+window.ngisNClsTog=function(k){var cls=[].slice.call(document.querySelectorAll('.as-cls[data-k="'+k+'"]')),h=document.querySelector('.as-sec[data-k="'+k+'"]');if(h&&cls.length)h.checked=cls.every(function(c){return c.checked;});renderTeachers();};
+
+window.saveSubject=async function(){
+  if(!currentUser||currentUser.role!=='admin'){showToast('Only administrators can add subjects.','error');return;}
+  var input=$('subjectNameInput'),name=(input&&input.value||'').trim();
+  if(!name){showToast('Enter a subject name.','error');if(input)input.focus();return;}
+  if((subjects||[]).some(function(s){return String(s.name||'').trim().toLowerCase()===name.toLowerCase();})){showToast('This subject already exists.','error');return;}
+  var ch=chosen(),sections=Object.keys(SECS).filter(function(k){return ch.secs[k];});
+  var pairs=[],seenT={},tIds=[];
+  [].slice.call(document.querySelectorAll('.as-tch:checked')).forEach(function(c){
+    var t=(teachers||[]).find(function(x){return String(x.id)===c.value;}),cl=(classes||[]).find(function(x){return String(x.id)===c.dataset.c;});
+    var tid=t?t.id:c.value,cid=cl?cl.id:c.dataset.c;
+    pairs.push({teacher_id:tid,class_id:cid});
+    if(!seenT[String(tid)]){seenT[String(tid)]=1;tIds.push(tid);}
+  });
+  var cIds=ch.classIds.map(function(id){var c=(classes||[]).find(function(x){return String(x.id)===id;});return c?c.id:id;});
+  var r=await supabaseClient.from('subjects').insert([{name:name}]).select().single();
+  if(r.error||!r.data||!r.data.id){showToast('Error adding subject: '+(r.error?r.error.message:'check INSERT policy on subjects'),'error');return;}
+  var sid=r.data.id,notes=[];
+  if(sections.length||cIds.length){
+    var u=await supabaseClient.from('subjects').update({sections:sections,class_ids:cIds.map(String)}).eq('id',sid);
+    if(u.error)notes.push('Sections/classes not saved – run the one-time SQL shown on the Subjects page, then use Assign.');
+  }
+  if(tIds.length){
+    var t1=await supabaseClient.from('teacher_subjects').insert(tIds.map(function(id){return {teacher_id:id,subject_id:sid};}));
+    if(t1.error)notes.push('Teachers not linked: '+t1.error.message);
+    else if(pairs.length){
+      var have={};(classTeachers||[]).forEach(function(x){have[String(x.teacher_id)+'|'+String(x.class_id)]=1;});
+      var add=pairs.filter(function(x){return !have[String(x.teacher_id)+'|'+String(x.class_id)];});
+      if(add.length){var t2=await supabaseClient.from('class_teachers').insert(add);if(t2.error)notes.push('Teacher–class links not saved: '+t2.error.message);}
+    }
+  }
+  if(input)input.value='';closeModal('subjectModal');
+  await loadSubjects();
+  try{await loadTeachers();}catch(e){}try{await loadClassTeachers();}catch(e){}
+  showToast(notes.length?('Subject added. '+notes.join(' ')):('Subject added'+(sections.length?' to '+sections.map(function(k){return SECS[k];}).join(' & '):'')+(tIds.length?' with '+tIds.length+' teacher'+(tIds.length>1?'s':''):'')),notes.length?'error':'success');
+};
 })();
 </script>
 </body>
